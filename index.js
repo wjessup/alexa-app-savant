@@ -16,30 +16,45 @@ app.launch(function(req,res) {
 	res.say(skillName);
 });
 
+//Import all intents from /defaultIntents folder
 var defaultIntentsPath = require("path").join(__dirname, "/defaultIntents/");
 require("fs").readdirSync(defaultIntentsPath).forEach(function(file) {
   if (path.extname(file) === ".js") {
     require(defaultIntentsPath + file)(app,function(loadedIntent){
-      console.log('Importing Default Intent: '+ loadedIntent[0]);
+      if (loadedIntent.intentEnabled === 1){
+				console.log('Importing Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}else{
+				console.log('Skipping Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}
     });
   }
 
 });
 
+//Import all intents from /customIntents folder
 var customIntentsPath = require("path").join(__dirname, "/customIntents/");
 require("fs").readdirSync(customIntentsPath).forEach(function(file) {
   if (path.extname(file) === ".js") {
     require(customIntentsPath + file)(app,function(loadedIntent){
-      console.log('Importing Custom Intent: '+ loadedIntent[0]);
+			if (loadedIntent.intentEnabled === 1){
+				console.log('Importing Custom Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}else{
+				console.log('Skipping Custom Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}
     });
   }
 });
 
+//Import all intents from /userIntents folder
 var userIntentsPath = require("path").join(__dirname, "/userIntents/");
 require("fs").readdirSync(userIntentsPath).forEach(function(file) {
   if (path.extname(file) === ".js") {
     require(userIntentsPath + file)(app,function(loadedIntent){
-      console.log('Importing User Intent: '+ loadedIntent[0]);
+			if (loadedIntent.intentEnabled === 1){
+				console.log('Importing User Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}else{
+				console.log('Skipping User Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}
     });
   }
 });

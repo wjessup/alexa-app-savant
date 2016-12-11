@@ -1,5 +1,5 @@
 //Intent includes
-var savantLib = require('../savantLib');
+var savantLib = require('../lib/savantLib');
 
 //Intent exports
 module.change_code = 1;

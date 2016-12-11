@@ -1,7 +1,7 @@
 //Intent includes
 var didYouMean = require('didYouMean');
-var zoneParse = require('../zoneParse');
-var savantLib = require('../savantLib');
+var zoneParse = require('../lib/zoneParse');
+var savantLib = require('../lib/savantLib');
 
 //Intent exports
 module.change_code = 1;

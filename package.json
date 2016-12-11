@@ -1,0 +1,18 @@
+{
+  "name": "alexa-savant-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Christopher Clark",
+  "license": "",
+  "alexa": {
+    "applicationId":"amzn1.echo-sdk-ams.app.3ae20262-058f-4fcd-85fc-66f496ba1f80"
+  },
+  "dependencies": {
+    "alexa-app": "^2.3.4",
+    "body-parser": "^1.15.2",
+    "bplist-parser": "^0.1.1",
+    "didyoumean": "^1.2.1",
+    "dnode": "^1.2.2"
+  }
+}

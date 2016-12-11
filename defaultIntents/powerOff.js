@@ -1,3 +1,7 @@
+var didYouMean = require('didYouMean');
+var zoneParse = require('../zoneParse');
+var savantLib = require('../savantLib');
+
 module.change_code = 1;
 module.exports = function(app,callback){
   var intentArray = [
@@ -10,7 +14,7 @@ module.exports = function(app,callback){
   		"slots":{"ZONE":"LITERAL"}
   		,"utterances":["{actionPrompt} off {systemZones|ZONE}"]
   	},function(req,res) {
-  		//get zone list and match to request
+        //get zone list and match to request
   		zoneParse.getZones(zoneInfo, function (err, foundZones) {
   			//console.log("Found the following zones: ");
   			//console.log(req.slot('ZONE'));

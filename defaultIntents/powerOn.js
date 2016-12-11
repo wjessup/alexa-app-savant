@@ -1,3 +1,7 @@
+var didYouMean = require('didYouMean');
+var zoneParse = require('../zoneParse');
+var savantLib = require('../savantLib');
+
 module.change_code = 1;
 module.exports = function(app,callback){
   intentArray = [
@@ -5,7 +9,7 @@ module.exports = function(app,callback){
     intentVersion = '1.0',
     intentDescription = 'Power on requested zone with last used service'
   ];
-  
+
   app.intent('powerOn', {
       "slots":{"ZONE":"LITERAL"}
       ,"utterances":["{actionPrompt} on {systemZones|ZONE}"]

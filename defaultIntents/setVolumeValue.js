@@ -1,3 +1,7 @@
+var didYouMean = require('didYouMean');
+var zoneParse = require('../zoneParse');
+var savantLib = require('../savantLib');
+
 module.change_code = 1;
 module.exports = function(app,callback){
   var intentArray = [

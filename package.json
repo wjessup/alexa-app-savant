@@ -9,29 +9,25 @@
   },
   "bugs": {
     "url": "https://tree.taiga.io/project/twentyeight7-alexa-app-savant/issues",
-    "email" : "Christopher.Clark@28seven.com"
+    "email": "Christopher.Clark@28seven.com"
   },
   "keywords": [
-    "alexa",
     "alexa-app",
+    "alexa",
     "savant"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-  "nodejitsu",
-  "example",
-  "browsenpm"
-  ],
   "author": {
-  "name": "Christopher Clark",
-  "email" : "Christopher.Clark@28seven.com",
-   "url" : "http://28seven.com/christopherclark"
- },
+    "name": "Christopher Clark",
+    "email": "Christopher.Clark@28seven.com",
+    "url": "http://28seven.com/christopherclark"
+  },
   "license": "ISC",
   "dependencies": {
     "alexa-app": "^2.3.4",
+    "alexa-app-server": "^2.3.1",
     "alexa-verifier": "0.0.5",
     "bluebird": "^2.9.34",
     "body-parser": "~1.0.1",

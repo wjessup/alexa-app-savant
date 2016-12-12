@@ -19,7 +19,7 @@ module.exports = function(app,callback){
 //Intent
     app.intent('fanSpeed', {
     		"slots":{"SPEED":"LITERAL"}
-    		,"utterances":["{actionPrompt} {kitchen |} fan {to |} {speedPrompt|SPEED}","{actionPrompt} {on|off|SPEED} the {kitchen |} fan"]
+    		,"utterances":["{actionPrompt} {kitchen |} fan to {speedPrompt|SPEED}","{actionPrompt} {on|off|SPEED} the {kitchen |} fan"]
     	},function(req,res) {
     		//check request as asign workflow
     		switch (req.slot('SPEED').toLowerCase()){

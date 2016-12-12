@@ -1,20 +1,42 @@
 {
-  "name": "alexa-savant-app",
-  "version": "1.0.0",
-  "description": "",
+  "name": "alexa-app-savant",
+  "version": "0.0.1",
+  "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
-  "author": "Christopher Clark",
-  "license": "",
-  "alexa": {
-    "applicationId": "amzn1.echo-sdk-ams.app.3ae20262-058f-4fcd-85fc-66f496ba1f80"
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/twentyeight7/alexa-app-savant.git"
   },
+  "bugs": {
+    "url": "https://tree.taiga.io/project/twentyeight7-alexa-app-savant/issues",
+    "email" : "Christopher.Clark@28seven.com"
+  },
+  "keywords": [
+    "alexa",
+    "alexa-app",
+    "savant"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+  "nodejitsu",
+  "example",
+  "browsenpm"
+  ],
+  "author": {
+  "name": "Christopher Clark",
+  "email" : "Christopher.Clark@28seven.com",
+   "url" : "http://28seven.com/christopherclark"
+ },
+  "license": "ISC",
   "dependencies": {
     "alexa-app": "^2.3.4",
-    "body-parser": "^1.15.2",
-    "bplist-parser": "^0.1.1",
-    "didyoumean": "^1.2.1",
-    "dnode": "^1.2.2",
-    "lodash": "^4.17.2",
-    "simple-plist": "^0.2.1"
+    "alexa-verifier": "0.0.5",
+    "bluebird": "^2.9.34",
+    "body-parser": "~1.0.1",
+    "ejs": "~0.7.1",
+    "express": "~4.0.0",
+    "hotswap": "^1.1.0"
   }
 }

@@ -19,7 +19,7 @@ module.exports = function(app,callback){
 //Intent
     app.intent('setHeatPointTemperature', {
         "slots":{"tempToSet":"NUMBER"}
-        ,"utterances":["{actionPrompt} heat to {65-85|tempToSet} {degrees |}"]
+        ,"utterances":["{actionPrompt} heat {set point |} to {65-85|tempToSet} {degrees |}"]
       },function(req,res) {
         //get current heatpoint, check againts request and decide what to do
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentHeatPoint_'+tstatScope[5], function(currentSetPoint) {
@@ -30,8 +30,8 @@ module.exports = function(app,callback){
             res.say('The heat is already '+ currentSetPoint).send();
           } else {
             console.log('setHeatPointTemperature Intent: Setting setpoint to'+ req.slot('tempToSet'));
-            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHeatPointTemperature","HeatPointTemperature",req.slot('tempToSet')],"full");
+            //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
+            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHeatPointTemperature","ThermostatAddress",tstatScope[5],"HeatPointTemperature",req.slot('tempToSet')],"full");
             res.say('Setting heat setpoint to'+ req.slot('tempToSet')).send();
           }
         });

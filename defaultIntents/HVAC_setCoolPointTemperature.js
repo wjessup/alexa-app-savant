@@ -30,8 +30,7 @@ module.exports = function(app,callback){
             res.say('The AC is already '+ currentSetPoint).send();
           } else {
             console.log('setCoolPointTemperature Intent: Setting AC to'+ req.slot('tempToSet'));
-            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","CoolPointTemperature",req.slot('tempToSet')],"full");
+            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","ThermostatAddress",tstatScope[5],"CoolPointTemperature",req.slot('tempToSet')],"full");
             res.say('Setting AC to'+ req.slot('tempToSet')).send();
           }
         });

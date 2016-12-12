@@ -37,7 +37,7 @@ module.exports = function(app,callback){
 
               var ZoneName = didYouMean(req.slot('ZONE'), foundZones);
               console.log("ZoneName: "+ZoneName);
-              if (ZoneName == undefined){
+              if (typeof ZoneName == 'undefined'){
                 console.log ('StartService Intent: I didnt understand what zone wanted, please try again.(zoneName undefined)');
                 res.say('I didnt understand which zone you wanted, please try again.').send();
               }else{
@@ -52,7 +52,8 @@ module.exports = function(app,callback){
         				console.log(zoneServiceNames);
         				var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceNames);
                 console.log("foundservices[ZoneName]: "+foundservices[ZoneName]);
-                if (foundservices[ZoneName] == undefined){
+                if (typeof foundservices == 'undefined'){
+                  console.log(foundservices[ZoneName]);
                   console.log ('StartService Intent: I had a problem reading from the savant system (foundservices[ZoneName} undefined])');
                   res.say('I had a problem reading from the savant system').send();
                 }else{
@@ -62,7 +63,7 @@ module.exports = function(app,callback){
           				})[0];
           				//console.log(ServiceArray);
                   console.log("ServiceName: "+ServiceName)
-          				if (ServiceName == undefined){
+          				if (typeof ServiceName == 'undefined'){
           					console.log ('StartService Intent: I didnt understand what service you wanted, please try again (service array undefined)');
           					res.say('I didnt understand what service you wanted, please try again').send();
           				} else{

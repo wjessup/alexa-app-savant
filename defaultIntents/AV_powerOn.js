@@ -32,15 +32,22 @@ module.exports = function(app,callback){
 
           //get last Service, remove LF, put in array
           savantLib.readState(cleanState, function(LastActiveService) {
-            //console.log("last service:  " +LastActiveService);
-            LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
-            cleanStateArray = LastActiveService.split("-");
-            //console.log("last service:  " +cleanStateArray);
+            console.log('LastActiveService: '+LastActiveService);
 
-            console.log('Power On Intent: Turning on '+cleanStateArray[1]+' in '+req.slot('ZONE'));
-            savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"PowerOn"],"full");
-            savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"Play"],"full");
-            res.say('Turning on '+cleanStateArray[1]+ 'in '+req.slot('ZONE')).send();
+            if (LastActiveService){
+              console.log('Power On Intent: No previous service. Please choose a service to turn on');
+              res.say('No previous service. Please choose a service to turn on').send();
+            }else{
+              //console.log("last service:  " +LastActiveService);
+              LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
+              cleanStateArray = LastActiveService.split("-");
+              //console.log("last service:  " +cleanStateArray);
+
+              console.log('Power On Intent: Turning on '+cleanStateArray[1]+' in '+req.slot('ZONE'));
+              savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"PowerOn"],"full");
+              savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"Play"],"full");
+              res.say('Turning on '+cleanStateArray[1]+ 'in '+req.slot('ZONE')).send();
+            }
           });
         });
         return false;

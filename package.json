@@ -1,6 +1,6 @@
 {
   "name": "alexa-app-savant",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
   "repository": {
@@ -17,7 +17,8 @@
     "savant"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "./setup/setup.sh"
   },
   "author": {
     "name": "Christopher Clark",

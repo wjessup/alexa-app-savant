@@ -2,7 +2,7 @@ var AlexaAppServer = require('alexa-app-server');
 
 AlexaAppServer.start( {
 	server_root : __dirname,
-	port:8181,
+	port:4141,
 	httpsPort:1414,
   httpsEnabled:true,
 	app_dir:"app",

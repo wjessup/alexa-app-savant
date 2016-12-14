@@ -13,7 +13,7 @@ module.exports = function(app){
 		"actionPrompt":["Turn","Set","Switch","Power"],
 		"disablePrompt":["disable","turn off", "stop"],
 		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","I want to"],
-		"services":["Plex","Roku","Tivo","Apple TV","Sonos"],
+		"services":["Plex","Roku","Tivo","Apple TV","Sonos","Video"],
 		"rangePrompt":["High","Medium","Low"]
 	};
 

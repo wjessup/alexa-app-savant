@@ -11,7 +11,7 @@ module.change_code = 1;
 // Define an alexa-app
 var app = new alexa.app(skillName);
 app.launch(function(req,res) {
-	res.say(skillName);
+	res.say("Welcome to your Savant System");
 });
 
 var appDictionary  = require('./lib/appDictionary')(app);

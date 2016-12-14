@@ -1,7 +1,7 @@
 module.change_code = 1;
 
 //Skill Name
-skillName = "Greentree";
+skillName = "savant";
 
 //Custom workflow location: customWorkflowScope = ["<<Zone Name>>","<<Host Name>>"];
 customWorkflowScope = ["Dining Room","Greentree"];
@@ -15,5 +15,5 @@ racepointfolder = "/Users/RPM/Library/Application Support/RacePointMedia";
 savePath = racepointfolder+"/statusfiles/";
 configPath = racepointfolder+"/userConfig.rpmConfig";
   //config file locations
-    zoneInfo = configPath+"/zoneInfo.plist"
-    serviceOrderPlist = configPath+"/serviceOrder.plist";
+  zoneInfo = configPath+"/zoneInfo.plist"
+  serviceOrderPlist = configPath+"/serviceOrder.plist";

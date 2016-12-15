@@ -16,20 +16,6 @@ app.launch(function(req,res) {
 
 var appDictionary  = require('./lib/appDictionary')(app);
 
-//Import all intents from /defaultIntents folder
-var defaultIntentsPath = require("path").join(__dirname, "/defaultIntents/");
-require("fs").readdirSync(defaultIntentsPath).forEach(function(file) {
-  if (path.extname(file) === ".js") {
-    require(defaultIntentsPath + file)(app,function(loadedIntent){
-      if (loadedIntent.intentEnabled === 1){
-				console.log('Importing Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
-			}else{
-				console.log('Skipping Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
-			}
-    });
-  }
-});
-
 //Import all intents from /customIntents folder
 var customIntentsPath = require("path").join(__dirname, "/customIntents/");
 require("fs").readdirSync(customIntentsPath).forEach(function(file) {
@@ -39,6 +25,20 @@ require("fs").readdirSync(customIntentsPath).forEach(function(file) {
 				console.log('Importing Custom Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
 			}else{
 				console.log('Skipping Custom Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}
+    });
+  }
+});
+
+//Import all intents from /defaultIntents folder
+var defaultIntentsPath = require("path").join(__dirname, "/defaultIntents/");
+require("fs").readdirSync(defaultIntentsPath).forEach(function(file) {
+  if (path.extname(file) === ".js") {
+    require(defaultIntentsPath + file)(app,function(loadedIntent){
+      if (loadedIntent.intentEnabled === 1){
+				console.log('Importing Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
+			}else{
+				console.log('Skipping Default Intent: '+ loadedIntent.intentName + ', Version: '+ loadedIntent.intentVersion);
 			}
     });
   }

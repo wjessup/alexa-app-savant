@@ -21,18 +21,31 @@ module.exports = function(app,callback){
 //Intent
     app.intent('raiseVolumeAlot', {
     		"slots":{"ZONE":"LITERAL"}
-    		,"utterances":["raise volume in {systemZones|ZONE} a lot", "Make {systemZones|ZONE} much louder"]
+    		,"utterances":["{increasePrompt} volume in {systemZones|ZONE} a lot", "Make {systemZones|ZONE} much louder"]
     	},function(req,res) {
-    		//make a list of zones and make sure it matches request
-    		zoneParse.getZones(zoneInfo, function (err, foundZones) {
-    			var ZoneName = didYouMean(req.slot('ZONE'), foundZones);
+        //Match request to zone list
+        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
 
-    			savantLib.readState(ZoneName+'.CurrentVolume', function(currentVolume) {
-    				newVolume = Number(currentVolume)+20
-    				savantLib.serviceRequest([ZoneName],"volume","",[newVolume]);
-    				res.say("Increasing volume a lot in "+ ZoneName).send();
-    			});
-    		});
+        //make sure cleanZone exists
+        if (typeof cleanZone == 'undefined' || cleanZone == null){
+          var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          res.say(voiceMessage).send();
+          return
+        }
+
+  			savantLib.readState(cleanZone+'.CurrentVolume', function(currentVolume) {
+  				//adjust volume
+          newVolume = Number(currentVolume)+20
+
+          //set volume
+          savantLib.serviceRequest([cleanZone],"volume","",[newVolume]);
+
+          //inform
+          var voiceMessage = 'Increasing volume alot in '+ cleanZone;
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+  			});
     	return false;
     	}
     );

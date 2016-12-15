@@ -21,13 +21,14 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"LITERAL"}
     		,"utterances":["reboot","reload","reboot skill","reload skill","reboot intents","reload intents","load intents","add intents"]
     	},function(req,res) {
-          res.say("I'll be back").send();
-          console.log("Running:  pm2 restart all --update-env");
+        var voiceMessage = "I'll be back";
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (pm2 restart all --update-env)");
+        res.say(voiceMessage).send();
 
-        	var child = require('child_process');
-        	var ps = child.exec("pm2 restart all --update-env", (error, stdout, stderr) =>{
-        	   console.log('Reboot Response: '+ stdout)
-           });
+      	var child = require('child_process');
+      	var ps = child.exec("pm2 restart all --update-env", (error, stdout, stderr) =>{
+      	   console.log('Reboot Response: '+ stdout)
+         });
     		return false;
     	}
     );

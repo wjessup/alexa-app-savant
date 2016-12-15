@@ -31,81 +31,85 @@ module.exports = function(app,callback){
 
           //Make sure foundservices exists
           if (typeof foundservices == 'undefined'){
-            console.log ('StartService Intent: I had a problem reading from the savant system( empty response from getZoneService)');
-            res.say('I had a problem reading from the savant system').send();
+            var voiceMessage = 'I had a problem reading from the savant system';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (empty response from getZoneService)");
+            res.say(voiceMessage).send();
             return
           }
 
           //make a list of zones and make sure it matches request
-    			zoneParse.getZones(zoneInfo, function (err, foundZones) {
+          //Match request to zone list
+        	var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
+          console.log("cleanZone: "+cleanZone);
 
-            var ZoneName = didYouMean(req.slot('ZONE'), foundZones);
-            console.log("ZoneName: "+ZoneName);
+          //make sure cleanZone exists
+          if (typeof cleanZone == 'undefined' || cleanZone == null){
+            var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+            res.say(voiceMessage).send();
+            return
+          }
+          console.log('Going to do stuff in : '+ cleanZone)
 
-            //make sure ZoneName exists
-            if (typeof ZoneName == 'undefined'){
-              console.log ('StartService Intent: I didnt understand what zone wanted, please try again.(zoneName undefined)');
-              res.say('I didnt understand which zone you wanted, please try again.').send();
-              return
-            }
-            console.log('Going to do stuff in : '+ ZoneName)
+  				//make a list of services in zone we want and make sure it matches request
+  				var zoneServiceAlias = []
+          var zoneServiceProfileName = []
+  				for (var key in foundservices[cleanZone]){
+  					zoneServiceAlias.push(foundservices[cleanZone][key][6]);
+            zoneServiceProfileName.push(foundservices[cleanZone][key][1]);
+  				}
 
-    				//make a list of services in zone we want and make sure it matches request
-    				var zoneServiceAlias = []
-            var zoneServiceProfileName = []
-    				for (var key in foundservices[ZoneName]){
-    					zoneServiceAlias.push(foundservices[ZoneName][key][6]);
-              zoneServiceProfileName.push(foundservices[ZoneName][key][1]);
-    				}
+          //validate service name against request.  First check if service alias matchs request
+          //console.log('Looking for: '+req.slot('SERVICE'));
+  				//console.log('Looking in zoneServiceAlias: '+zoneServiceAlias);
+  				var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceAlias);
+          //console.log("ServiceName: "+ServiceName);
 
-            //validate service name against request.  First check if service alias matchs request
-            console.log('Looking for: '+req.slot('SERVICE'));
-    				console.log('Looking in zoneServiceAlias: '+zoneServiceAlias);
-    				var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceAlias);
+
+          //get service array if we found a match
+          if (ServiceName !== 'null'){
+            //match requested service to service list
+            //console.log(foundservices[cleanZone]);
+    				var ServiceArray = foundservices[cleanZone].filter(function (el) {
+        			return (el[6] === ServiceName);
+    				})[0];
+          }
+
+          // if we have not yet found a match look in profile names
+          if (typeof ServiceArray == 'undefined') {
+            console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
+            var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceProfileName);
             console.log("ServiceName: "+ServiceName);
-            //make sure ServiceName exists
-
-            //get service array if we found a match
-            if (ServiceName !== 'null'){
-              //match requested service to service list
-              //console.log(foundservices[ZoneName]);
-      				var ServiceArray = foundservices[ZoneName].filter(function (el) {
-          			return (el[6] === ServiceName);
-      				})[0];
-            }
-
-            // if we have not yet found a match look in profile names
-            if (typeof ServiceArray == 'undefined') {
-              console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
-              var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceProfileName);
-              console.log("ServiceName: "+ServiceName);
-              var ServiceArray = foundservices[ZoneName].filter(function (el) {
-          			return (el[1] === ServiceName);
-      				})[0];
-            } else if (ServiceName == 'null') {
-              //we did not find a match in alias or profile names
-              console.log ('StartService Intent: I didnt understand what service you wanted, please try again.(ServiceName undefined)');
-              res.say('I didnt understand what service you wanted, please try again.').send();
-              return
-            }
+            var ServiceArray = foundservices[cleanZone].filter(function (el) {
+        			return (el[1] === ServiceName);
+    				})[0];
+          } else if (ServiceName == 'null') {
+            //we did not find a match in alias or profile names
+            var voiceMessage = 'I didnt understand what service you wanted, please try again.';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceName undefined)");
+            res.say(voiceMessage).send();
+            return
+          }
 
 
 
 
-            //console.log(ServiceArray);
-    				if (typeof ServiceArray == 'undefined'){
-    					console.log ('StartService Intent: I didnt understand what service you wanted, please try again (service array undefined)');
-    					res.say('I didnt understand what service you wanted, please try again').send();
-              return
-    				}
+          //console.log(ServiceArray);
+  				if (typeof ServiceArray == 'undefined'){
+            var voiceMessage = 'I didnt understand what service you wanted, please try again.';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceArray undefined)");
+            res.say(voiceMessage).send();
+            return
+  				}
 
-            console.log ('StartService Intent: Turning on '+ServiceName+' in '+ ZoneName);
-  					savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"PowerOn"],"full");
-            savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"Play"],"full");
-  					res.say("turning on "+ServiceName+" in "+ ZoneName).send();
+          //Turn on serviceRequest
+					savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"PowerOn"],"full");
+          savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"Play"],"full");
 
-          });
-
+          //inform
+          var voiceMessage = 'turning on '+ServiceName+' in '+ cleanZone;
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
     	return false;
       });

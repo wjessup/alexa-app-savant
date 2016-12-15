@@ -23,8 +23,9 @@ module.exports = function(app,callback){
       },function(req,res) {
         //query cool point state
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentCoolPoint_'+tstatScope[5], function(currentTemp) {
-          console.log('queryCoolSetPoint Intent: The Cool Point is currently set to '+ currentTemp +' degrees');
-          res.say("The Cool Point is currently set to "+ currentTemp +" degrees").send();
+          var voiceMessage = 'The AC is currently set to '+ currentTemp +' degrees';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
         return false;
       }

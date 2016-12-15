@@ -24,30 +24,40 @@ module.exports = function(app,callback){
     		,"utterances":["set volume in {systemZones|ZONE} {to |} {rangePrompt|RANGE}","set {systemZones|ZONE} volume {to |} {rangePrompt|RANGE}"]
     	},function(req,res) {
     		console.log("Received range: "+ req.slot('RANGE'));
-    		//make a list of zones and make sure it matches request
-    		zoneParse.getZones(zoneInfo, function (err, foundZones) {
-    			var ZoneName = didYouMean(req.slot('ZONE'), foundZones);
+        //Match request to zone list
+        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
 
-    		if (req.slot('RANGE') == undefined && ZoneName == undefined){
-    			res.say("I didnt understand please try again").send();
-    		} else{
-    			//set volume scale
-    			switch (req.slot('RANGE').toLowerCase()){
-    				case "high":
-    					savantLib.serviceRequest([ZoneName],"volume","",[34]);
-    					res.say("Setting volume to "+req.slot('RANGE')+" in "+ ZoneName).send();
-    				break;
-    				case "medium":
-    					savantLib.serviceRequest([ZoneName],"volume","",[25]);
-    					res.say("Setting volume to "+req.slot('RANGE')+" in "+ ZoneName).send();
-    				break;
-    				case "low":
-    					savantLib.serviceRequest([ZoneName],"volume","",[15]);
-    					res.say("Setting volume to "+req.slot('RANGE')+" in "+ ZoneName).send();
-    				break;
-    			}
-    		}
-    		});
+        //make sure cleanZone exists
+        if (typeof cleanZone == 'undefined' || cleanZone == null){
+          var voiceMessage = 'I didnt understand what zone wanted, please try again.';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          res.say(voiceMessage).send();
+          return
+        }
+
+        //set volume scale
+  			switch (req.slot('RANGE').toLowerCase()){
+  				case "high":
+  					savantLib.serviceRequest([cleanZone],"volume","",[34]);
+
+  				  break;
+  				case "medium":
+  					savantLib.serviceRequest([cleanZone],"volume","",[25]);
+  				  break;
+  				case "low":
+  					savantLib.serviceRequest([cleanZone],"volume","",[15]);
+  				  break;
+          default:
+            var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+      			return false;
+    			  break;
+  			}
+        //inform
+        var voiceMessage = 'Setting volume to '+req.slot('RANGE')+' in '+ cleanZone;
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
     	return false;
     	}
     );

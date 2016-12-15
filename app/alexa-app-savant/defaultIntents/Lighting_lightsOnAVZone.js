@@ -23,19 +23,25 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"LITERAL"}
     		,"utterances":["{actionPrompt} on {systemZones|ZONE} lights","{actionPrompt} on lights in {systemZones|ZONE}"]
     	},function(req,res) {
-    		//get zone list and match to request
-    		zoneParse.getZones(zoneInfo, function (err, foundZones) {
-    			//console.log("Found the following zones: ");
-    			//console.log(req.slot('ZONE'));
-    			//console.log(foundZones);
-    			cleanZone = didYouMean(req.slot('ZONE'), foundZones);
-    			//console.log(cleanZone);
+        //Match request to zone list
+        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
 
-    			console.log('Lights On Intent: Turning on '+cleanZone+' lights');
-    			savantLib.serviceRequest([cleanZone],"lighting","",[100]);
-    			res.say('Turning on '+cleanZone+'lights').send();
-    		});
-    		return false;
+        //make sure cleanZone exists
+        if (typeof cleanZone == 'undefined' || cleanZone == null){
+          var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          res.say(voiceMessage).send();
+          return
+        }
+
+        //set dim level
+        savantLib.serviceRequest([cleanZone],"lighting","",[100]);
+
+        //inform
+        var voiceMessage = 'Turning on '+cleanZone+'lights';
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+        res.say(voiceMessage).send();
+    	return false;
     	}
     );
   }

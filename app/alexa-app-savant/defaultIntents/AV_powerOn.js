@@ -23,32 +23,41 @@ module.exports = function(app,callback){
         "slots":{"ZONE":"LITERAL"}
         ,"utterances":["{actionPrompt} on {systemZones|ZONE}"]
       },function(req,res) {
-        //get zone list and match to request
-        zoneParse.getZones(zoneInfo, function (err, foundZones) {
-          //console.log("Found the following zones: ");
-          //console.log(req.slot('ZONE'));
-          //console.log(foundZones);
-          cleanState = didYouMean(req.slot('ZONE'), foundZones)+'.LastActiveService';
+        //Match request to zone list / build LastActiveService state
+        cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray)+'.LastActiveService';
+        console.log('cleanZone: '+ cleanZone);
 
-          //get last Service, remove LF, put in array
-          savantLib.readState(cleanState, function(LastActiveService) {
-            console.log('LastActiveService: '+LastActiveService);
+        //make sure cleanZone exists
+        if (typeof cleanZone == 'undefined' || cleanZone == null){
+          var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          res.say(voiceMessage).send();
+          return
+        }
 
-            if (LastActiveService){
-              //console.log("last service:  " +LastActiveService);
-              LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
-              cleanStateArray = LastActiveService.split("-");
-              //console.log("last service:  " +cleanStateArray);
+        //get last Service, remove LF, put in array
+        savantLib.readState(cleanZone, function(LastActiveService) {
+          //remove lf from response
+          LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
 
-              console.log('Power On Intent: Turning on '+cleanStateArray[1]+' in '+req.slot('ZONE'));
-              savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"PowerOn"],"full");
-              savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"Play"],"full");
-              res.say('Turning on '+cleanStateArray[1]+ 'in '+req.slot('ZONE')).send();
-            }else{
-              console.log('Power On Intent: No previous service. Please choose a service to turn on');
-              res.say('No previous service. Please choose a service to turn on').send();
-            }
-          });
+          if (typeof LastActiveService == 'undefined' || LastActiveService == ''){
+            var voiceMessage = 'No previous service. Please say which service to turn on';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+            return
+          }
+
+          cleanZoneArray = LastActiveService.split("-");
+          //console.log("last service:  " +LastActiveService);
+
+          //turn on zone
+          savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"PowerOn"],"full");
+          savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
+
+          //inform
+          var voiceMessage = 'Turning on '+cleanZoneArray[1]+ 'in '+req.slot('ZONE');
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
         return false;
       }

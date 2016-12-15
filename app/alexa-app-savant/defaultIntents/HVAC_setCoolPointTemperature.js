@@ -19,20 +19,35 @@ module.exports = function(app,callback){
 //Intent
     app.intent('setCoolPointTemperature', {
         "slots":{"tempToSet":"NUMBER"}
-        ,"utterances":["{actionPrompt} {AC|A.C.|cooling} to {65-85|tempToSet} {degrees |}"]
+        ,"utterances":["{actionPrompt} {AC|A.C.|cooling} to {60-90|tempToSet} {degrees |}"]
       },function(req,res) {
+        //check requested temp
+        if (req.slot('tempToSet')< 59 ||req.slot('tempToSet')>91){
+          var voiceMessage = 'I didnt understand please try again. Say a number between 60 and 90';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+          return
+        }
+
         //get current heatpoint, check againts request and decide what to do
-        savantLib.readState('Savant SSTW100.HVAC_controller.ThermostatCurrentCoolPoint_1', function(currentSetPoint) {
+        savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentCoolPoint_'+tstatScope[5], function(currentSetPoint) {
           //console.log("The Current Set point is: "+currentSetPoint);
           //console.log("The requested Set point is: "+req.slot('tempToSet'));
           if (currentSetPoint == req.slot('tempToSet') ){
-            console.log('setCoolPointTemperature Intent: The AC is already '+ currentSetPoint);
-            res.say('The AC is already '+ currentSetPoint).send();
-          } else {
-            console.log('setCoolPointTemperature Intent: Setting AC to'+ req.slot('tempToSet'));
-            savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","ThermostatAddress",tstatScope[5],"CoolPointTemperature",req.slot('tempToSet')],"full");
-            res.say('Setting AC to'+ req.slot('tempToSet')).send();
+            var voiceMessage = 'The AC is already set to'+ currentSetPoint;
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+            return
           }
+
+          //adjust Thermostat
+          savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
+          savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","ThermostatAddress",tstatScope[5],"CoolPointTemperature",req.slot('tempToSet')],"full");
+
+          //inform
+          var voiceMessage = 'Setting AC to'+ req.slot('tempToSet');
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
         return false;
       }

@@ -19,12 +19,13 @@ module.exports = function(app,callback){
 //Intent
     app.intent('queryHVACMode', {
     		"slots":{}
-    		,"utterances":["what mode is the HVAC in"]
+    		,"utterances":["what mode is the {hvacSystemPrompt} in","is the {hvacSystemPrompt} on","is the {hvacSystemPrompt} off"]
     	},function(req,res) {
     		//query HVAc mode state
     		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5], function(currentMode) {
-    			console.log('queryHVACMode Intent: The mode is currently set to '+ currentMode);
-    			res.say('The mode is currently set to '+ currentMode).send();
+          var voiceMessage = 'The system is currently set to '+ currentMode;
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
     		});
     		return false;
     	}

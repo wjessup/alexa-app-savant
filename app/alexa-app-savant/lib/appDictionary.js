@@ -1,4 +1,7 @@
 var zoneParse = require('./zoneParse');
+var _ = require('lodash');
+
+GLOBAL.appDictionaryArray = [];
 
 module.exports = function(app){
 	obj = {
@@ -10,17 +13,21 @@ module.exports = function(app){
 		"closeMovementPrompt":["close","drop","lower"],
 		"hvacSystemPrompt":["HVAC","A.C.","H.V.A.C.","house","system"],
 		"hvacModes":["Heat","Cool","AC","Off","On","auto"],
-		"actionPrompt":["Turn","Set","Switch","Power"],
+		"actionPrompt":["Turn","Set","Switch","Power","Start"],
 		"disablePrompt":["disable","turn off", "stop"],
 		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","I want to"],
 		"services":["Plex","Roku","Tivo","Apple TV","Sonos","Video"],
-		"rangePrompt":["High","Medium","Low"]
-	};
+		"rangePrompt":["High","Medium","Low"],
+		"increasePrompt":["raise","increase"],
+		"decreasePrompt":["lower","decrease"],
+		};
 
 	zoneParse.getZones(zoneInfo, function (err, systemZones) {
 		//console.log(systemZones);
 		obj.systemZones = systemZones;
 		//console.log(obj);
 		app.dictionary = obj;
+
+		appDictionaryArray = _.values(app.dictionary.systemZones);
 	});
 };

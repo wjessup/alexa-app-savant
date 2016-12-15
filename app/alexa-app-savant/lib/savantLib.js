@@ -35,6 +35,7 @@ function readState(stateIn,callback){
     console.log("Looking for state: \""+ stateIn + "\"");
     sendToSCLI("readstate \""+ stateIn + "\"",function(response){
     	console.log("Readstate response: "+response);
+			response = response.replace(/(\r\n|\n|\r)/gm,"");
     	callback(response);
     });
 }

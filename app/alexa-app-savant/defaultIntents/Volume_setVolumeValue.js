@@ -23,24 +23,33 @@ module.exports = function(app,callback){
     		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"LITERAL"}
     		,"utterances":["{actionPrompt} volume in {systemZones|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {systemZones|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
     	},function(req,res) {
-    		//fix volume scale
-    		console.log("Raw Volume request: "+req.slot('VOLUMEVALUE'))
-    		var volumeValue = Math.round(req.slot('VOLUMEVALUE')/2);
+    		//Make sure volume request is between 1-100
+    		if (req.slot('VOLUMEVALUE')> 0 ||req.slot('VOLUMEVALUE')<101){
+          console.log("Raw Volume request: "+req.slot('VOLUMEVALUE'))
+    		  var volumeValue = Math.round(req.slot('VOLUMEVALUE')/2);
+        }else {
+          var voiceMessage = 'I didnt understand please try again. Say a number between 1 and 100';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        }
+        //Match request to zone list
+        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
 
-    		//make a list of zones and make sure it matches request
-    		zoneParse.getZones(zoneInfo, function (err, foundZones) {
-    			var ZoneName = didYouMean(req.slot('ZONE'), foundZones);
+        //make sure cleanZone exists
+        if (typeof cleanZone == 'undefined' || cleanZone == null){
+          var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          res.say(voiceMessage).send();
+          return
+        }
 
     		//Set Volume
-    		console.log ("Setting volume to "+volumeValue+" in "+ ZoneName);
-    		if (volumeValue == undefined && ZoneName == undefined && volumeValue > 0 && volumeValue<101){
-    			res.say("I didnt understand please try again").send();
-    		} else{
-    			savantLib.serviceRequest([ZoneName],"volume","",[volumeValue]);
-    			res.say("Setting volume to "+req.slot('VOLUMEVALUE')+" in "+ ZoneName).send();
-    		}
+  			savantLib.serviceRequest([cleanZone],"volume","",[volumeValue]);
 
-    		});
+        //inform
+        var voiceMessage = "Setting volume to "+req.slot('VOLUMEVALUE')+" in "+ cleanZone;
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
     	return false;
     	}
     );

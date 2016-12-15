@@ -23,8 +23,9 @@ module.exports = function(app,callback){
     },function(req,res) {
       //Get Current Temp state
       savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentTemperature_'+tstatScope[5], function(currentTemp) {
-        console.log('queryCurrentTemperature Intent: The current temperature is '+ currentTemp +' degrees');
-        res.say("The current temperature is "+ currentTemp +" degrees").send();
+        var voiceMessage = 'It is currently '+ currentTemp +' degrees inside';
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
       });
       return false;
     }

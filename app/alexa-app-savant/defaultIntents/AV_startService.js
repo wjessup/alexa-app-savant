@@ -21,7 +21,7 @@ module.exports = function(app,callback){
 //Intent
     app.intent('startService', {
     		"slots":{"SERVICE":"LITERAL","ZONE":"LITERAL"}
-    		,"utterances":["{enablePrompt} {services|SERVICE} in {systemZones|ZONE}"]
+    		,"utterances":["{enablePrompt} {services|SERVICE} in {the |} {systemZones|ZONE}"]
     	},function(req,res) {
     		//get services in all zones
         //console.log('plist: '+serviceOrderPlist);

@@ -9,9 +9,9 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'setVolumeValue',
+    'intentName' : 'lightsOnValue',
     'intentVersion' : '1.0',
-    'intentDescription' : 'Set volume for AV zone in percentage',
+    'intentDescription' : 'Set lighting for AV zone to a percentage',
     'intentEnabled' : 1
   };
 
@@ -19,14 +19,13 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
 
 //Intent
-    app.intent('setVolumeValue', {
-    		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"LITERAL"}
-    		,"utterances":["{actionPrompt} volume in {systemZones|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {systemZones|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
+    app.intent('lightsOnValue', {
+    		"slots":{"PERCENTAGE":"NUMBER","ZONE":"LITERAL"}
+    		,"utterances":["{actionPrompt} lights in {systemZones|ZONE} to {0-100|PERCENTAGE} {percent |}","{actionPrompt} {systemZones|ZONE} lights to {0-100|PERCENTAGE} {percent |}"]
     	},function(req,res) {
     		//Make sure volume request is between 1-100
-    		if (req.slot('VOLUMEVALUE')> 0 ||req.slot('VOLUMEVALUE')<101){
-          console.log("Raw Volume request: "+req.slot('VOLUMEVALUE'))
-    		  var volumeValue = Math.round(req.slot('VOLUMEVALUE')/2);
+    		if (req.slot('PERCENTAGE')> 0 ||req.slot('PERCENTAGE')<101|| req.slot('PERCENTAGE') == null|| typeof(req.slot('PERCENTAGE')) == 'undefined' ){
+          console.log("Raw Lighting request: "+req.slot('PERCENTAGE'))
         }else {
           var voiceMessage = 'I didnt understand please try again. Say a number between 1 and 100';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
@@ -44,11 +43,11 @@ module.exports = function(app,callback){
           return
         }
 
-    		//Set Volume
-  			savantLib.serviceRequest([cleanZone],"volume","",[volumeValue]);
+    		//Set Lighting
+  			savantLib.serviceRequest([cleanZone],"lighting","",[req.slot('PERCENTAGE')]);
 
         //inform
-        var voiceMessage = "Setting volume to "+req.slot('VOLUMEVALUE')+" in "+ cleanZone;
+        var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
     	return false;

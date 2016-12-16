@@ -39,7 +39,7 @@ module.exports = function(app,callback){
 
         //inform
         var voiceMessage = 'Turning on '+cleanZone+'lights';
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
     	return false;
     	}

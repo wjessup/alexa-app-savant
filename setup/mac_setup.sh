@@ -3,7 +3,7 @@
 mkdir ~/alexa-app-savant
 cd ~/alexa-app-savant
 npm install alexa-app-savant --save
-cp -a ~/alexa-app-savant/node_modules/alexa-app-savant/. /alexa-app-savant
+cp -a ~/alexa-app-savant/node_modules/alexa-app-savant/. ~/alexa-app-savant
 mkdir ~/alexa-app-savant/node_modules/alexa-app-server/sslcert
 mkdir ~/alexa-app-savant/app/alexa-app-savant/userIntents/
 

@@ -35,9 +35,10 @@ module.exports = function(app,callback){
 
 
         //make sure we have a reasonable time
-        if (req.slot('TIMER')< 0 ||req.slot('TIMER')>121|| typeof (req.slot('TIMER')) == 'undefined'){
+        var timerNumber = Number(req.slot('TIMER'));
+        if (timerNumber< 0 ||timerNumber>121 || typeof (timerNumber) == 'undefined'){
           var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+req.slot('TIMER')+')');
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+timerNumber+')');
           res.say(voiceMessage).send();
           return
         }
@@ -52,10 +53,10 @@ module.exports = function(app,callback){
           }
 
           //start timer
-          savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepIncrement","zone",cleanZone,"minutes",req.slot('TIMER')],"full");
+          savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepIncrement","zone",cleanZone,"minutes",timerNumber],"full");
 
           //inform
-          var voiceMessage = 'adding '+req.slot('TIMER')+' more minutes in '+cleanZone;
+          var voiceMessage = 'adding '+timerNumber+' more minutes in '+cleanZone;
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });

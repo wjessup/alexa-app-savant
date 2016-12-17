@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('sleepArm', {
-        "slots":{"TIMER":"NUMBER","ZONE":"LITERAL"}
-        ,"utterances":["{actionPrompt} sleep timer for {1-120|TIMER} minutes in {systemZones|ZONE}","{actionPrompt} sleep timer in {systemZones|ZONE} for {1-120|TIMER} minutes"]
+        "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
+        ,"utterances":["{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}","{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes"]
       },function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

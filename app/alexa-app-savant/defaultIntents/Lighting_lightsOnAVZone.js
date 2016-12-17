@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('lightsOnAVZone', {
-    		"slots":{"ZONE":"LITERAL"}
-    		,"utterances":["{turn|switch} on {systemZones|ZONE} lights","{turn|switch} on lights in {systemZones|ZONE}"]
+    		"slots":{"ZONE":"ZONE"}
+    		,"utterances":["{turn|switch} on {-|ZONE} lights","{turn|switch} on lights in {-|ZONE}"]
     	},function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

@@ -20,7 +20,7 @@ module.exports = function(app,callback){
 
 //Intent
     app.intent('powerOff_FirstFloor', {
-    		"slots":{"ZONE":"LITERAL"}
+    		"slots":{"ZONE":"ZONE"}
     		,"utterances":["{actionPrompt} off first floor"]
     	},function(req,res) {
   			console.log('Power Off Intent: Turning off first floor');

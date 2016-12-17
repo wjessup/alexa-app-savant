@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('setVolumeValue', {
-    		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"LITERAL"}
-    		,"utterances":["{actionPrompt} volume in {systemZones|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {systemZones|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
+    		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"ZONE"}
+    		,"utterances":["{actionPrompt} volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
     	},function(req,res) {
     		//Make sure volume request is between 1-100
     		if (req.slot('VOLUMEVALUE')> 0 ||req.slot('VOLUMEVALUE')<101){

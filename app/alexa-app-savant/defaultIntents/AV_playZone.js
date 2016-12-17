@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('playZone', {
-    		"slots":{"ZONE":"LITERAL"}
-    		,"utterances":["{to |} {send |} play {command |}{in |} {the |} {systemZones|ZONE}","{systemZones|ZONE} {to |} play"]
+    		"slots":{"ZONE":"ZONE"}
+    		,"utterances":["{to |} {send |} play {command |}{in |} {the |} {-|ZONE}","{-|ZONE} {to |} play"]
     	},function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('powerOff', {
-    		"slots":{"ZONE":"LITERAL"}
-    		,"utterances":["{actionPrompt} off {systemZones|ZONE}","{actionPrompt} {systemZones|ZONE} off"]
+    		"slots":{"ZONE":"ZONE"}
+    		,"utterances":["{actionPrompt} off {-|ZONE}","{actionPrompt} {-|ZONE} off"]
     	},function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

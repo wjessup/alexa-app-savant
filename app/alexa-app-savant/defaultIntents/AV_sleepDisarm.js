@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('sleepDisarm', {
-        "slots":{"ZONE":"LITERAL"}
-        ,"utterances":["{Stop|disable} {sleep |} timer in {systemZones|ZONE}"]
+        "slots":{"ZONE":"ZONE"}
+        ,"utterances":["{Stop|disable} {sleep |} timer in {-|ZONE}"]
       },function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

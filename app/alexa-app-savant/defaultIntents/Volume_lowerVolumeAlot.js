@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('lowerVolumeAlot', {
-    		"slots":{"ZONE":"LITERAL"}
-    		,"utterances":["{decreasePrompt} volume in {systemZones|ZONE} a lot", "Make {systemZones|ZONE} much lower","{systemZones|ZONE} is too loud"]
+    		"slots":{"ZONE":"ZONE"}
+    		,"utterances":["{decreasePrompt} volume in {-|ZONE} a lot", "Make {-|ZONE} much lower","{-|ZONE} is too loud"]
     	},function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

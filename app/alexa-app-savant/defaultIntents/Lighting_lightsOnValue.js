@@ -19,8 +19,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('lightsOnValue', {
-    		"slots":{"PERCENTAGE":"NUMBER","ZONE":"LITERAL"}
-    		,"utterances":["{actionPrompt} lights in {systemZones|ZONE} to {0-100|PERCENTAGE} {percent |}","{actionPrompt} {systemZones|ZONE} lights to {0-100|PERCENTAGE} {percent |}"]
+    		"slots":{"PERCENTAGE":"NUMBER","ZONE":"ZONE"}
+    		,"utterances":["{actionPrompt} {on |} lights in {-|ZONE} to {1-100|PERCENTAGE} {percent |}","{actionPrompt} {on |} {-|ZONE} lights to {1-100|PERCENTAGE} {percent |}"]
     	},function(req,res) {
     		//Make sure volume request is between 1-100
     		if (req.slot('PERCENTAGE')> 0 ||req.slot('PERCENTAGE')<101|| req.slot('PERCENTAGE') == null|| typeof(req.slot('PERCENTAGE')) == 'undefined' ){

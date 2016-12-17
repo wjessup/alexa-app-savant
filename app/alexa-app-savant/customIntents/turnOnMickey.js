@@ -18,7 +18,7 @@ module.exports = function(app,callback){
 
 //Intent
     app.intent('turnOnMickey', {
-        "slots":{"ZONE":"LITERAL"}
+        "slots":{"ZONE":"ZONE"}
         ,"utterances":["Turn on mickey"]
       },function(req,res) {
 

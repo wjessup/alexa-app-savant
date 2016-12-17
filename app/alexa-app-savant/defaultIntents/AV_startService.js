@@ -20,8 +20,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('startService', {
-    		"slots":{"SERVICE":"LITERAL","ZONE":"LITERAL"}
-    		,"utterances":["{enablePrompt} {services|SERVICE} in {the |} {systemZones|ZONE}"]
+    		"slots":{"SERVICE":"SERVICE","ZONE":"ZONE"}
+    		,"utterances":["{enablePrompt} {-|SERVICE} in {the |} {-|ZONE}"]
     	},function(req,res) {
     		//get services in all zones
         console.log('plist: '+serviceOrderPlist);

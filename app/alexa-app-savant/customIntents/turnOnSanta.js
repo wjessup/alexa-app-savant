@@ -18,7 +18,7 @@ module.exports = function(app,callback){
 
 //Intent
     app.intent('turnOnSanta', {
-    		"slots":{"ZONE":"LITERAL"}
+    		"slots":{"ZONE":"ZONE"}
     		,"utterances":["Turn on santa","make santa talk"]
     	},function(req,res) {
     		savantLib.serviceRequest(["Santa"],"custom");

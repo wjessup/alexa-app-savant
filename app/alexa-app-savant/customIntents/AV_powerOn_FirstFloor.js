@@ -20,7 +20,7 @@ module.exports = function(app,callback){
 
 //Intent
     app.intent('powerOn_FirstFloor', {
-        "slots":{"ZONE":"LITERAL"}
+        "slots":{"ZONE":"ZONE"}
         ,"utterances":["{actionPrompt} on First Floor"]
       },function(req,res) {
           cleanState = 'Family Room.LastActiveService';

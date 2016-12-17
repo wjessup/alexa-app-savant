@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('setVolumeRange', {
-    		"slots":{"RANGE":"LITERAL","ZONE":"LITERAL"}
-    		,"utterances":["set volume in {systemZones|ZONE} {to |} {rangePrompt|RANGE}","set {systemZones|ZONE} volume {to |} {rangePrompt|RANGE}"]
+    		"slots":{"RANGE":"LITERAL","ZONE":"ZONE"}
+    		,"utterances":["set volume in {-|ZONE} {to |} {rangePrompt|RANGE}","set {-|ZONE} volume {to |} {rangePrompt|RANGE}"]
     	},function(req,res) {
     		console.log("Received range: "+ req.slot('RANGE'));
         //Match request to zone then do something

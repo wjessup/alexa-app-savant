@@ -18,8 +18,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('sleepIncrement', {
-        "slots":{"TIMER":"NUMBER","ZONE":"LITERAL"}
-        ,"utterances":["add {1-120|TIMER} minutes to {sleep |} timer in {systemZones|ZONE}"]
+        "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
+        ,"utterances":["add {1-120|TIMER} minutes to {sleep |} timer in {-|ZONE}"]
       },function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){

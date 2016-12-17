@@ -19,8 +19,8 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('lightsOnRange', {
-    		"slots":{"RANGE":"LITERAL","ZONE":"LITERAL"}
-    		,"utterances":["set {systemZones|ZONE} lights {to |} {rangePrompt|RANGE}"]
+    		"slots":{"RANGE":"LITERAL","ZONE":"ZONE"}
+    		,"utterances":["{actionPrompt} {on |} {-|ZONE} lights {to |} {rangePrompt|RANGE}"]
     	},function(req,res) {
     		console.log("Received range: "+ req.slot('RANGE'));
         //Remove the word the if it exists

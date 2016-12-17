@@ -5,7 +5,7 @@ var savantLib = require('../lib/savantLib');
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
+  //Intent meta information
   var intentDictionary = {
     'intentName' : 'setCoolPointTemperature',
     'intentVersion' : '1.0',
@@ -13,10 +13,9 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
+  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
+    //Intent
     app.intent('setCoolPointTemperature', {
         "slots":{"tempToSet":"NUMBER"}
         ,"utterances":["{actionPrompt} {AC|A.C.|cooling} to {60-90|tempToSet} {degrees |}"]
@@ -53,6 +52,6 @@ module.exports = function(app,callback){
       }
     );
   }
-//Return intent meta info to index
+  //Return intent meta info to index
   callback(intentDictionary);
 };

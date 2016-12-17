@@ -16,7 +16,7 @@ module.exports = function(app,callback){
     'intentEnabled' : 1,
   };
 
-//Intent Enable/Disable
+  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('startService', {
@@ -108,6 +108,6 @@ module.exports = function(app,callback){
 
 
     }
-//Return intent meta info to index
+  //Return intent meta info to index
   callback(intentDictionary);
 };

@@ -6,7 +6,7 @@ var matcher = require('../lib/zoneMatcher');
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
+  //Intent meta information
   var intentDictionary = {
     'intentName' : 'sleepIncrement',
     'intentVersion' : '1.0',
@@ -14,10 +14,9 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
+  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
+    //Intent
     app.intent('sleepIncrement', {
         "slots":{"TIMER":"NUMBER","ZONE":"LITERAL"}
         ,"utterances":["add {1-120|TIMER} minutes to {sleep |} timer in {systemZones|ZONE}"]
@@ -61,6 +60,6 @@ module.exports = function(app,callback){
       }
     );
   }
-//Return intent meta info to index
+  //Return intent meta info to index
   callback(intentDictionary);
 };

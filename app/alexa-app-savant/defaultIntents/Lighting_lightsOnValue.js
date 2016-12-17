@@ -7,7 +7,7 @@ var savantLib = require('../lib/savantLib');
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
+  //Intent meta information
   var intentDictionary = {
     'intentName' : 'lightsOnValue',
     'intentVersion' : '1.0',
@@ -15,10 +15,9 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
+  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
+    //Intent
     app.intent('lightsOnValue', {
     		"slots":{"PERCENTAGE":"NUMBER","ZONE":"LITERAL"}
     		,"utterances":["{actionPrompt} lights in {systemZones|ZONE} to {0-100|PERCENTAGE} {percent |}","{actionPrompt} {systemZones|ZONE} lights to {0-100|PERCENTAGE} {percent |}"]
@@ -52,6 +51,6 @@ module.exports = function(app,callback){
     	}
     );
   }
-//Return intent meta info to index
+  //Return intent meta info to index
   callback(intentDictionary);
 };

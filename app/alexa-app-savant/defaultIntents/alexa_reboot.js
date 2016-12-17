@@ -33,6 +33,6 @@ module.exports = function(app,callback){
     	}
     );
   }
-//Return intent meta info to index
+  //Return intent meta info to index
   callback(intentDictionary);
 };

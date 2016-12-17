@@ -6,7 +6,7 @@ var matcher = require('../lib/zoneMatcher');
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
+  //Intent meta information
   var intentDictionary = {
     'intentName' : 'sleepArm',
     'intentVersion' : '1.0',

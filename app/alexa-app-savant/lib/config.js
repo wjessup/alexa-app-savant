@@ -15,5 +15,5 @@ racepointfolder = "/Users/RPM/Library/Application Support/RacePointMedia";
 savePath = racepointfolder+"/statusfiles/";
 configPath = racepointfolder+"/userConfig.rpmConfig";
   //config file locations
-  zoneInfo = configPath+"/zoneInfo.plist"
+  zoneInfo = configPath+"/zoneInfo.plist";
   serviceOrderPlist = configPath+"/serviceOrder.plist";

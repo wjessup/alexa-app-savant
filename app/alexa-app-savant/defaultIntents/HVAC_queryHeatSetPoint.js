@@ -19,7 +19,7 @@ module.exports = function(app,callback){
 //Intent
     app.intent('queryHeatSetPoint', {
     		"slots":{"currentTemp":"NUMBER"}
-    		,"utterances":["what is the current Heat set point"]
+    		,"utterances":["what is the current Heat set point", "what is the heat set to"]
     	},function(req,res) {
     		//query heat point state
     		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentHeatPoint_'+tstatScope[5], function(currentTemp) {

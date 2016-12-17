@@ -1,5 +1,5 @@
 //Intent includes
-var didYouMean = require('didYouMean');
+var matcher = require('../lib/zoneMatcher');
 var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
@@ -32,24 +32,22 @@ module.exports = function(app,callback){
           res.say(voiceMessage).send();
           return
         }
-        //Match request to zone list
-        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
+        ///Match request to zone then do something
+        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
+          if (err) {
+              voiceMessage = err;
+              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
+              res.say(voiceMessage).send();
+              return
+          }
+      		//Set Lighting
+    			savantLib.serviceRequest([cleanZone],"lighting","",[req.slot('PERCENTAGE')]);
 
-        //make sure cleanZone exists
-        if (typeof cleanZone == 'undefined' || cleanZone == null){
-          var voiceMessage = 'I didnt understand which zone you wanted, please try again.';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+          //inform
+          var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
-          return
-        }
-
-    		//Set Lighting
-  			savantLib.serviceRequest([cleanZone],"lighting","",[req.slot('PERCENTAGE')]);
-
-        //inform
-        var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
+        });
     	return false;
     	}
     );

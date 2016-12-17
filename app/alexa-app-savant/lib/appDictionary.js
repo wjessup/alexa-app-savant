@@ -15,8 +15,7 @@ module.exports = function(app){
 		"hvacModes":["Heat","Cool","AC","Off","On","auto"],
 		"actionPrompt":["Turn","Set","Switch","Power","Start"],
 		"disablePrompt":["disable","turn off", "stop"],
-		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","I want to"],
-		"services":["Plex","Roku","Tivo","Apple TV","Sonos","Video"],
+		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","switch"],
 		"rangePrompt":["High","Medium","Low"],
 		"increasePrompt":["raise","increase"],
 		"decreasePrompt":["lower","decrease"],
@@ -29,5 +28,32 @@ module.exports = function(app){
 		app.dictionary = obj;
 
 		appDictionaryArray = _.values(app.dictionary.systemZones);
+
+		console.log('Slot Type: ZONE');
+		console.log('');
+		console.log('Slot Value:');
+		//console.log(app.dictionary.systemZones);
+		for (var key in app.dictionary.systemZones){
+			console.log(app.dictionary.systemZones[key]);
+		};
+	});
+
+	console.log (serviceOrderPlist);
+	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
+		//console.log(systemServices);
+		obj.services = systemServices;
+		//console.log(obj);
+		app.dictionary = obj;
+
+		console.log('');
+		console.log('');
+
+		console.log('Slot Type: SERVICE');
+		console.log('');
+		console.log('Slot Value:');
+		//console.log(app.dictionary.services);
+		for (var key in app.dictionary.services){
+			console.log(app.dictionary.services[key]);
+			};
 	});
 };

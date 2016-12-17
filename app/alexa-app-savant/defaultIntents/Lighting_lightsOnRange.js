@@ -1,5 +1,5 @@
 //Intent includes
-var didYouMean = require('didYouMean');
+var matcher = require('../lib/zoneMatcher');
 var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
@@ -24,39 +24,40 @@ module.exports = function(app,callback){
     		,"utterances":["set {systemZones|ZONE} lights {to |} {rangePrompt|RANGE}"]
     	},function(req,res) {
     		console.log("Received range: "+ req.slot('RANGE'));
-        //Match request to zone list
-        var cleanZone = didYouMean(req.slot('ZONE'), appDictionaryArray);
+        //Remove the word the if it exists
+        editZone = req.slot('ZONE').replace(/the/ig,"");
 
-        //make sure cleanZone exists
-        if (typeof cleanZone == 'undefined' || cleanZone == null){
-          var voiceMessage = 'I didnt understand what zone wanted, please try again.';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+        //Match request to zone then do something
+        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
+          if (err) {
+              voiceMessage = err;
+              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
+              res.say(voiceMessage).send();
+              return
+          }
+          //set volume scale
+    			switch (req.slot('RANGE').toLowerCase()){
+    				case "high":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[100]);
+    				  break;
+    				case "medium":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[50]);
+    				  break;
+    				case "low":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[25]);
+    				  break;
+            default:
+              var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
+              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+              res.say(voiceMessage).send();
+        			return false;
+      			  break;
+    			}
+          //inform
+          var voiceMessage = 'Setting '+cleanZone+' lights to '+req.slot('RANGE');
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
-          return
-        }
-
-        //set volume scale
-  			switch (req.slot('RANGE').toLowerCase()){
-  				case "high":
-  					savantLib.serviceRequest([cleanZone],"lighting","",[100]);
-  				  break;
-  				case "medium":
-  					savantLib.serviceRequest([cleanZone],"lighting","",[50]);
-  				  break;
-  				case "low":
-  					savantLib.serviceRequest([cleanZone],"lighting","",[25]);
-  				  break;
-          default:
-            var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-      			return false;
-    			  break;
-  			}
-        //inform
-        var voiceMessage = 'Setting '+cleanZone+' lights to '+req.slot('RANGE');
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
+        });
     	return false;
     	}
     );

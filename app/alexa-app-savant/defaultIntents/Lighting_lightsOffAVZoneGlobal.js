@@ -27,7 +27,7 @@ module.exports = function(app,callback){
 
       //inform
       var voiceMessage = 'Turning off all zones';
-      console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (cleanZone undefined)");
+      console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
       res.say(voiceMessage).send();
     	return false;
     	}

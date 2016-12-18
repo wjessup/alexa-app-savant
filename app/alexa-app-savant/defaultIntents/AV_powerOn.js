@@ -18,8 +18,19 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('powerOn', {
-        "slots":{"ZONE":"ZONE"}
-        ,"utterances":["{actionPrompt} on {-|ZONE}"]
+        "slots":{"ZONE":"ZONE","LIGHTING":"LIGHTING","RANGE":"RANGE","PERCENTAGE":"PERCENTAGE"}
+        ,"utterances":[
+          "{actionPrompt} on {-|ZONE}",
+          "{actionPrompt} {-|ZONE}",
+          "{actionPrompt} on {-|ZONE} {-|LIGHTING}",
+          "{actionPrompt} {-|LIGHTING} in {-|ZONE}",
+          "{actionPrompt} {-|LIGHTING} on {-|ZONE} to {-|RANGE}",
+          "{actionPrompt} on {-|ZONE} {-|LIGHTING} to {-|RANGE}",
+          "{actionPrompt} on {-|LIGHTING} to {-|RANGE} in {-|ZONE}",
+          "{actionPrompt} {-|LIGHTING} on {-|ZONE} to {-|PERCENTAGE} percent",
+          "{actionPrompt} on {-|ZONE} {-|LIGHTING} to {-|PERCENTAGE} percent",
+          "{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE}"
+        ]
       },function(req,res) {
         //Match request to zone then do something
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
@@ -29,30 +40,81 @@ module.exports = function(app,callback){
               res.say(voiceMessage).send();
               return
           }
-          //get last Service, remove LF, put in array
-          savantLib.readState(cleanZone, function(LastActiveService) {
-            //remove lf from response
-            LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
+          //If not lightins turn on AV
+          if ((!req.slot('LIGHTING')) && (!req.slot('RANGE')) && (!req.slot('PERCENTAGE'))){
+            //get last Service
+            savantLib.readState(cleanZone+".LastActiveService", function(LastActiveService) {
+              console.log("LastActiveService: "+LastActiveService)
+              if (typeof LastActiveService == 'undefined' || LastActiveService == ''){
+                var voiceMessage = 'No previous service. Please say which service to turn on';
+                console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+                res.say(voiceMessage).send();
+                return
+              }
+              cleanZoneArray = LastActiveService.split("-");
+              //console.log("last service:  " +LastActiveService);
 
-            if (typeof LastActiveService == 'undefined' || LastActiveService == ''){
-              var voiceMessage = 'No previous service. Please say which service to turn on';
+              //turn on zone
+              savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"PowerOn"],"full");
+              savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
+
+              //message to send
+              var voiceMessage = 'Turning on '+cleanZoneArray[1]+ 'in '+req.slot('ZONE');
+              //inform
               console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
               res.say(voiceMessage).send();
-              return
+            });
+          }
+          //If no range found turn on lights
+          console.log(req.slot('RANGE'));
+          if (req.slot('LIGHTING') && req.slot('RANGE') && typeof(req.slot('RANGE'))=="string"){
+          //If range found parse range
+          switch (req.slot('RANGE').toLowerCase()){
+    				case "high":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[100]);
+    				  break;
+            case "hi":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[100]);
+    				  break;
+    				case "medium":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[50]);
+    				  break;
+    				case "low":
+    					savantLib.serviceRequest([cleanZone],"lighting","",[25]);
+    				  break;
+            default:
+              var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
+              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+              res.say(voiceMessage).send();
+        			return false;
+      			  break;
             }
-            cleanZoneArray = LastActiveService.split("-");
-            //console.log("last service:  " +LastActiveService);
+            //inform
+            var voiceMessage = 'Setting '+cleanZone+' lights to '+req.slot('RANGE');
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+    			}
 
-            //turn on zone
-            savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"PowerOn"],"full");
-            savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
-
+          if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && req.slot('PERCENTAGE')>0 && req.slot('PERCENTAGE')<101 ){
             //message to send
-            var voiceMessage = 'Turning on '+cleanZoneArray[1]+ 'in '+req.slot('ZONE');
+            var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
+            //Set Lighting
+      			savantLib.serviceRequest([cleanZone],"lighting","",[req.slot('PERCENTAGE')]);
             //inform
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
-          });
+          }
+
+          if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!req.slot('RANGE'))){
+            //message to send
+            var voiceMessage = 'Turning on '+cleanZone+' lights';
+            //set dim level
+            savantLib.serviceRequest([cleanZone],"lighting","",[100]);
+            //inform
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+
+          }
         });
         return false;
       }

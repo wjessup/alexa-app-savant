@@ -12,7 +12,7 @@ module.exports = function(app,callback){
     'intentName' : 'lightsOnRange',
     'intentVersion' : '1.0',
     'intentDescription' : 'Set lighting for AV zone with high med low presets',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
   //Intent Enable/Disable
@@ -20,9 +20,15 @@ module.exports = function(app,callback){
     //Intent
     app.intent('lightsOnRange', {
     		"slots":{"RANGE":"LITERAL","ZONE":"ZONE"}
-    		,"utterances":["{actionPrompt} {on |} {-|ZONE} lights {to |} {rangePrompt|RANGE}"]
+    		,"utterances":["{actionPrompt} on {-|ZONE} lights to {-|RANGE}"]
     	},function(req,res) {
     		console.log("Received range: "+ req.slot('RANGE'));
+        if (!req.slot('RANGE')){
+          var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+          return false;
+        }
         //Remove the word the if it exists
         editZone = req.slot('ZONE').replace(/the/ig,"");
 
@@ -35,6 +41,7 @@ module.exports = function(app,callback){
               return
           }
           //set volume scale
+
     			switch (req.slot('RANGE').toLowerCase()){
     				case "high":
     					savantLib.serviceRequest([cleanZone],"lighting","",[100]);

@@ -29,6 +29,13 @@ module.exports = function(app,callback){
               res.say(voiceMessage).send();
               return
           }
+          var timerNumber = Number(req.slot('TIMER'));
+          if (timerNumber< 0 ||timerNumber>121 || typeof (timerNumber) == 'undefined'){
+            var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+timerNumber+')');
+            res.say(voiceMessage).send();
+            return
+          }
           //message to send
           var voiceMessage = 'Sleep timer set for '+timerNumber+' minutes';
           //start timer

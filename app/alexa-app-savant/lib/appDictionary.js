@@ -16,9 +16,10 @@ module.exports = function(app){
 		"actionPrompt":["Turn","Set","Switch","Power","Start"],
 		"disablePrompt":["disable","turn off", "stop"],
 		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","switch"],
-		"rangePrompt":["High","Medium","Low"],
+		"rangePrompt":["High","Hi","Medium","Low"],
 		"increasePrompt":["raise","increase","turn up"],
 		"decreasePrompt":["lower","decrease","turn down"],
+		"lightingPrompt":["Lights","Light","lighting"]
 		};
 
 	zoneParse.getZones(zoneInfo, function (err, systemZones) {
@@ -28,32 +29,21 @@ module.exports = function(app){
 		app.dictionary = obj;
 
 		appDictionaryArray = _.values(app.dictionary.systemZones);
-
-		console.log('Slot Type: ZONE');
-		console.log('');
-		console.log('Slot Value:');
-		//console.log(app.dictionary.systemZones);
-		for (var key in app.dictionary.systemZones){
-			console.log(app.dictionary.systemZones[key]);
-		};
 	});
 
-	console.log (serviceOrderPlist);
 	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
 		//console.log(systemServices);
 		obj.services = systemServices;
 		//console.log(obj);
 		app.dictionary = obj;
-
-		console.log('');
-		console.log('');
-
-		console.log('Slot Type: SERVICE');
-		console.log('');
-		console.log('Slot Value:');
-		//console.log(app.dictionary.services);
-		for (var key in app.dictionary.services){
-			console.log(app.dictionary.services[key]);
-			};
 	});
+
+	var _dictionaryCheck = setInterval(function() {
+	    if (typeof app.dictionary.services != 'undefined' && typeof app.dictionary.systemZones != 'undefined') {
+	        clearInterval(_dictionaryCheck);
+	        var customSlot = require('./customSlotFile')(app);
+			}
+	}, 10); // interval set at 100 milliseconds
+
+
 };

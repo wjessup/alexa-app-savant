@@ -48,12 +48,12 @@ module.exports = function(app,callback){
         			return false;
       			  break;
     			}
+          //inform
+          var voiceMessage = 'Setting volume to '+req.slot('RANGE')+' in '+ cleanZone;
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
-        //inform
-        var voiceMessage = 'Setting volume to '+req.slot('RANGE')+' in '+ cleanZone;
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-    	return false;
+    	  return false;
     	}
     );
   }

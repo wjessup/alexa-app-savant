@@ -28,7 +28,7 @@ module.exports = function(app,callback){
           "{actionPrompt} on {-|ZONE} {-|LIGHTING} to {-|RANGE}",
           "{actionPrompt} on {-|LIGHTING} to {-|RANGE} in {-|ZONE}",
           "{actionPrompt} {-|LIGHTING} on {-|ZONE} to {-|PERCENTAGE} percent",
-          "{actionPrompt} on {-|ZONE} {-|LIGHTING} to {-|PERCENTAGE} percent",
+          "{actionPrompt} {-|ZONE} {-|LIGHTING} to {-|PERCENTAGE} percent",
           "{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE}"
         ]
       },function(req,res) {
@@ -95,9 +95,9 @@ module.exports = function(app,callback){
             res.say(voiceMessage).send();
     			}
 
-          if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && req.slot('PERCENTAGE')>0 && req.slot('PERCENTAGE')<101 ){
+          if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && req.slot('PERCENTAGE')>(-1) && req.slot('PERCENTAGE')<101 ){
             //message to send
-            var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
+            var voiceMessage = "Setting lights to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
             //Set Lighting
       			savantLib.serviceRequest([cleanZone],"lighting","",[req.slot('PERCENTAGE')]);
             //inform

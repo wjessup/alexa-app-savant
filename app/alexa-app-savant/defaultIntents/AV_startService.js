@@ -2,7 +2,7 @@
 var matcher = require('../lib/zoneMatcher');
 var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
-var didYouMean = require('didYouMean');
+var didYouMean = require('didyoumean');
 
 //Intent exports
 module.change_code = 1;

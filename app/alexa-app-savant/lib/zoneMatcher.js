@@ -1,4 +1,4 @@
-var didYouMean = require('didYouMean');
+var didYouMean = require('didyoumean');
 
 function zoneMatcher(zoneIn,callback){
   //Remove the word the if it exists

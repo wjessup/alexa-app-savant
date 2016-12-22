@@ -3,7 +3,10 @@
 An alexa-app app to control Savant systems
 
 ## Install
+Pro Host:
 cd ~/Downloads && curl --remote-name http://28seven.net/alexa-app-savant/mac_setup.sh && chmod a+x mac_setup.sh && sudo ./mac_setup.sh
+Smart Host:
+cd /home/RPM && curl --remote-name http://28seven.net/alexa-app-savant/smart_setup.sh && chmod a+x smart_setup.sh && sudo ./smart_setup.sh
 
 
 ## usage

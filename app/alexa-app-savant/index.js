@@ -58,8 +58,5 @@ require("fs").readdirSync(userIntentsPath).forEach(function(file) {
   }
 });
 
-//Dictionary of prompt phases to be used in utterances
-//app.dictionary = GLOBAL.appDictionaryJSON;
-
 
 module.exports = app;

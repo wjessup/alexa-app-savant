@@ -22,9 +22,9 @@ module.exports = function(app,callback){
       },function(req,res) {
         //query HVAC mode to compare. if it matches request fail
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5], function(currentMode) {
-          //console.log("The Current mode is: "+(currentMode).toLowerCase());
-          //console.log("The requested mode is: "+req.slot('modeToSet').toLowerCase());
-          if (((currentMode).toLowerCase()) == (req.slot('modeToSet').toLowerCase())) {
+          console.log("The Current mode is: "+(currentMode).toLowerCase());
+          console.log("The requested mode is: "+req.slot('modeToSet').toLowerCase());
+          if (((currentMode).toLowerCase()) === (req.slot('modeToSet').toLowerCase())) {
             var voiceMessage = 'The system is already in '+ currentMode +' Mode';
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
@@ -34,18 +34,22 @@ module.exports = function(app,callback){
           //Match request with servicerequest
           switch (req.slot('modeToSet').toLowerCase()){
             case "heat":
+              var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeHeat","ThermostatAddress",tstatScope[5]],"full");
               break;
             case "cool":
+              var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeCool","ThermostatAddress",tstatScope[5]],"full");
               break;
             case "off":
+              var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeOff","ThermostatAddress",tstatScope[5]],"full");
               break;
             case "auto":
+              var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeAuto","ThermostatAddress",tstatScope[5]],"full");
               break;
@@ -63,15 +67,11 @@ module.exports = function(app,callback){
               break;
             default:
               var voiceMessage = 'I didnt understand, please try again. Say Heat,Cool,Off,Auto,On, or Off';
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-              res.say(voiceMessage).send();
-              return false;
               break;
           }
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
         });
-        var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
         return false;
       }
     );

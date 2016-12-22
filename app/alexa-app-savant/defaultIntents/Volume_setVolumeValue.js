@@ -45,7 +45,8 @@ module.exports = function(app,callback){
     			savantLib.serviceRequest([cleanZone],"volume","",[volumeValue]);
           //inform
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+          res.say(voiceMessage).send()
+          return;
         });
     	return false;
     	}

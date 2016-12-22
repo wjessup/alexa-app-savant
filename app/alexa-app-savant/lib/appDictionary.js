@@ -17,8 +17,8 @@ module.exports = function(app){
 		"disablePrompt":["disable","turn off", "stop"],
 		"enablePrompt":["enable","turn on","start","I want to Listen to","I want to watch","switch"],
 		"rangePrompt":["High","Medium","Low"],
-		"increasePrompt":["raise","increase"],
-		"decreasePrompt":["lower","decrease"],
+		"increasePrompt":["raise","increase","turn up"],
+		"decreasePrompt":["lower","decrease","turn down"],
 		};
 
 	zoneParse.getZones(zoneInfo, function (err, systemZones) {

@@ -10,6 +10,12 @@ module.exports = function(app){
     logger.write(app.dictionary.systemZones[key]+'\r');
   };
   logger.write('\r');
+  logger.write('Custom Slot Type: ZONE_TWO \r');
+  logger.write('Custom Slot Values: \r');
+  for (var key in app.dictionary.systemZones){
+    logger.write(app.dictionary.systemZones[key]+'\r');
+  };
+  logger.write('\r');
   logger.write('Custom Slot Type: SERVICE\r');
   logger.write('Custom Slot Values:\r');
   for (var key in app.dictionary.services){

@@ -18,7 +18,7 @@ module.exports = function(app,callback){
 
 //Intent
     app.intent('reboot', {
-    		"slots":{"ZONE":"ZONE"}
+    		"slots":{}
     		,"utterances":["reboot","reload","reboot skill","reload skill","reboot intents","reload intents","load intents","add intents"]
     	},function(req,res) {
         var voiceMessage = "I'll be back";

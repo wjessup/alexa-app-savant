@@ -27,8 +27,8 @@ module.exports = function(app){
 		obj.systemZones = systemZones;
 		//console.log(obj);
 		app.dictionary = obj;
-
 		appDictionaryArray = _.values(app.dictionary.systemZones);
+		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
 	});
 
 	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){

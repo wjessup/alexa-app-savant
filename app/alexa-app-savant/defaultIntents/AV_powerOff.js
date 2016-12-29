@@ -1,7 +1,8 @@
 //Intent includes
 var matcher = require('../lib/zoneMatcher');
 var savantLib = require('../lib/savantLib');
-
+var _ = require('lodash');
+var cleanZones = [];
 //Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -18,35 +19,62 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     //Intent
     app.intent('powerOff', {
-    		"slots":{"ZONE":"ZONE","LIGHTING":"LIGHTING"}
-    		,"utterances":["{actionPrompt} off {-|ZONE}","{actionPrompt} {-|ZONE} off","{actionPrompt} off {-|ZONE} {-|LIGHTING}", "{actionPrompt} {-|LIGHTING} off in {-|ZONE}"]
+    		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING"}
+    		,"utterances":[
+          "{actionPrompt} off",
+          "{actionPrompt} off {-|ZONE}","{actionPrompt} {-|ZONE} off","{actionPrompt} {-|ZONE} and {-|ZONE_TWO} off",
+          "{actionPrompt} off {-|LIGHTING}",
+          "{actionPrompt} off {-|ZONE} {-|LIGHTING}","{actionPrompt} off {-|ZONE} and {-|ZONE_TWO} {-|LIGHTING}",
+          "{actionPrompt} {-|LIGHTING} off in {-|ZONE}","{actionPrompt} {-|LIGHTING} off in {-|ZONE} and {-|ZONE_TWO}"
+        ]
     	},function(req,res) {
-        //Match request to zone then do something
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
-          if (err) {
-              voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
-              res.say(voiceMessage).send();
-              return
+        //Make a zone list (Figure out if its single zone or process requested zones)
+        if (currentZone != false){
+          cleanZones[0] = currentZone
+        } else {
+          cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+            console.log (intentDictionary.intentName+' Intent: '+err+" Note: (Invalid Zone Match, cleanZones: "+cleanZones+")");
+            res.say(err).send();
+          });
+          if (cleanZones.length === 0){
+            return
           }
-          if (req.slot('LIGHTING')){
-            //message to send
-            var voiceMessage = 'Turning off '+cleanZone+'lights';
-            //set dim level
-            savantLib.serviceRequest([cleanZone],"lighting","",[0]);
-            //inform
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-          }else{
-            //message to send
-            var voiceMessage = 'Turning off '+cleanZone;
-            //Turn off zone
-  			    savantLib.serviceRequest([cleanZone,"PowerOff"],"zone");
-            //inform
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
+        }
+
+        //Do something with the zone list
+        if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
+          //set dim level
+          for (var key in cleanZones){
+            savantLib.serviceRequest([cleanZones[key]],"lighting","",[0]);
           }
-        });
+          //message to send
+          if (cleanZones.length>1){//add "and" if more then one zone was requested
+            var pos = (cleanZones.length)-1;
+            cleanZones.splice(pos,0,"and");
+          }
+          var voiceMessage = 'Turning off '+cleanZones;
+          //inform
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+
+        }else{ // Do AV action (Lighting was not heard)
+
+          //Turn off zone
+          console.log ("cleanZones3: "+cleanZones);
+          for (var key in cleanZones){
+            console.log("sending service request")
+            savantLib.serviceRequest([cleanZones[key],"PowerOff"],"zone");
+          }
+          //message to send
+          if (cleanZones.length>1){//add "and" if more then one zone was requested
+            var pos = (cleanZones.length)-1;
+            cleanZones.splice(pos,0,"and");
+          }
+          var voiceMessage = 'Turning off '+cleanZones;
+          //inform
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        }
   		  return false;
     	}
     );

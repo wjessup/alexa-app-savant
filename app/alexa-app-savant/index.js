@@ -3,6 +3,7 @@ var path = require('path');
 
 var config = require('./lib/config');
 var amazonIoT = require('./lib/amazon_IoT');
+var savantLib = require('./lib/savantLib');
 
 
 // Allow this module to be reloaded by hotswap when changed
@@ -58,5 +59,17 @@ require("fs").readdirSync(userIntentsPath).forEach(function(file) {
   }
 });
 
-
+//recall currentZone
+if (currentZone === false){
+  currentZone = savantLib.readState("userDefined.currentZone",function(currentZone) {
+		setcurrentZone(currentZone);
+	});
+}
+function setcurrentZone(zoneIn){
+	if (zoneIn === "" ||zoneIn === "false"){
+		zoneIn = false;
+	}
+	currentZone = zoneIn;
+	console.log('Recalling currentZone from Savant:'+currentZone);
+};
 module.exports = app;

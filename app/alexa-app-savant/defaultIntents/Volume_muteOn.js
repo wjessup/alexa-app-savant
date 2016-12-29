@@ -9,20 +9,21 @@ module.exports = function(app,callback){
 
   //Intent meta information
   var intentDictionary = {
-    'intentName' : 'lowerVolumeAlot',
+    'intentName' : 'muteOn',
     'intentVersion' : '1.0',
-    'intentDescription' : 'Lower volume for AV zone by a large preset ammount',
+    'intentDescription' : 'Send Mute On to requested zone',
     'intentEnabled' : 1
   };
 
   //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
     //Intent
-    app.intent('lowerVolumeAlot', {
+    app.intent('muteOn', {
     		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO"}
     		,"utterances":[
-          "{decreasePrompt} volume in {-|ZONE} a lot", "Make {-|ZONE} much lower","{-|ZONE} is too loud",
-          "{decreasePrompt} volume in {-|ZONE} and {-|ZONE_TWO} a lot", "Make {-|ZONE} and {-|ZONE_TWO} much lower","{-|ZONE} and {-|ZONE_TWO} {is|are} too loud"]
+          "{to |} {send |} mute {command |}{in |} {-|ZONE}","{-|ZONE} mute",
+          "{to |} {send |} mute {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} mute"
+        ]
     	},function(req,res) {
         //Make a zone list (Figure out if its single zone or process requested zones)
         if (currentZone != false){
@@ -38,27 +39,17 @@ module.exports = function(app,callback){
         }
 
         //Do something with the zone list
-        for (var key in cleanZones){ //lower volume in each requested zone
-        	savantLib.readState(cleanZones[key]+'.CurrentVolume', function(currentVolume) {
-            //adjust volume
-            newVolume = Number(currentVolume)-20
-            //set volume
-            savantLib.serviceRequest([cleanZones[key]],"volume","",[newVolume]);
-            //inform
-          });
+        for (var key in cleanZones){ //send pause command in each requested zone
+          savantLib.serviceRequest([cleanZones[key],"MuteOn"],"zone");
         }
         //message to send
-        if (cleanZones.length>1){//add "and" if more then one zone was requested
-          var pos = (cleanZones.length)-1;
-          cleanZones.splice(pos,0,"and");
-        }
-        var voiceMessage = 'Lowering volume alot in '+ cleanZones;
+        var voiceMessage = 'Mute';
         //inform
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
 
         return false;
-    	}
+      }
     );
   }
   //Return intent meta info to index

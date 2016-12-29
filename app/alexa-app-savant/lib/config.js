@@ -4,6 +4,9 @@ const os = require('os');
 //Skill Name
 skillName = "savant";
 
+//Single zone mode  Set to name of zone you would like to control all the time
+currentZone = false; // "Family Room"
+
 //Custom workflow location: customWorkflowScope = ["<<Zone Name>>","<<Host Name>>"];
 customWorkflowScope = ["Dining Room","Greentree"];
 

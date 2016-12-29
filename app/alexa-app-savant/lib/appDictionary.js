@@ -1,7 +1,8 @@
 var zoneParse = require('./zoneParse');
 var _ = require('lodash');
 
-GLOBAL.appDictionaryArray = [];
+appDictionaryArray = [];
+zoneServices = {};
 
 module.exports = function(app){
 	obj = {
@@ -22,6 +23,7 @@ module.exports = function(app){
 		"lightingPrompt":["Lights","Light","lighting"]
 		};
 
+
 	zoneParse.getZones(serviceOrderPlist, function (err, systemZones) {
 		//console.log("systemZones type of: "+typeof(systemZones));
 		//console.log("systemZones: "+systemZones);
@@ -32,6 +34,12 @@ module.exports = function(app){
 		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
 	});
 
+/*
+	zoneParse.getZoneServices(serviceOrderPlist, function (err, foundservices) {
+
+			zoneServices = foundservices;
+	});
+*/
 	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
 		//console.log(systemServices);
 		obj.services = systemServices;

@@ -1,26 +1,25 @@
 "use strict";
-var bplist = require('bplist-parser');
 var plist = require('simple-plist');
 var fs = require('fs');
 var _ = require('lodash');
 
 
+
 function getZones(plistFile, callback) {
-    bplist.parseFile(plistFile, function (err, obj) {
-        if (err) {
-            callback(err, undefined);
+  plist.readFile(plistFile, function(err,obj){
+    if (err) {
+        callback(err, err);
+    }
+    else {
+        obj = obj.ServiceOrderPerZone;
+        var ret = []
+
+        for (var key in obj){
+          ret.push(key);
         }
-        else {
-            obj = obj[0]
-            var ret = []
-            for (var key in obj){
-                if (obj[key].RPMZoneItemClass === 'RPMZoneItem'){
-                    ret.push(key);
-                }
-            }
-            callback(err, ret);
-        }
-    });
+        callback(err, ret);
+    }
+  });
 }
 
 function getZoneServices(plistFile, callback) {

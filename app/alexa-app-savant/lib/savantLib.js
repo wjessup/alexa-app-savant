@@ -66,5 +66,5 @@ return
 module.exports = {
 serviceRequest: serviceRequest,
 readState: readState,
-writeState: writeState,
+writeState: writeState
 }

@@ -22,8 +22,9 @@ module.exports = function(app){
 		"lightingPrompt":["Lights","Light","lighting"]
 		};
 
-	zoneParse.getZones(zoneInfo, function (err, systemZones) {
-		//console.log(systemZones);
+	zoneParse.getZones(serviceOrderPlist, function (err, systemZones) {
+		//console.log("systemZones type of: "+typeof(systemZones));
+		//console.log("systemZones: "+systemZones);
 		obj.systemZones = systemZones;
 		//console.log(obj);
 		app.dictionary = obj;

@@ -1,6 +1,4 @@
 //Intent includes
-var didYouMean = require('didYouMean');
-var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
 //Intent exports
@@ -12,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'powerOff_FirstFloor',
     'intentVersion' : '1.0',
     'intentDescription' : 'Power off multiple known zone',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
 //Intent Enable/Disable

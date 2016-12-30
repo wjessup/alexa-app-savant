@@ -1,6 +1,4 @@
 //Intent includes
-var didYouMean = require('didYouMean');
-var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
 //Intent exports
@@ -12,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'powerOn_FirstFloor',
     'intentVersion' : '1.0',
     'intentDescription' : 'Power on known zones with last used service',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
 //Intent Enable/Disable

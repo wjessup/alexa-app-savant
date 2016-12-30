@@ -56,7 +56,8 @@ module.exports = function(app,callback){
 
           //Match request to zone then do something
           for (var key in cleanZones){ //do each zone
-    				var zoneServiceAlias = []
+            console.log("starting loop for "+cleanZones[key]);
+            var zoneServiceAlias = []
             var zoneServiceProfileName = []
             var cleanZone = cleanZones[key];
     				for (var key in foundservices[cleanZone]){
@@ -86,7 +87,7 @@ module.exports = function(app,callback){
               console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
               var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceProfileName);
               console.log("ServiceName: "+ServiceName);
-              var ServiceArray = foundservices[cleanZones[key]].filter(function (el) {
+              var ServiceArray = foundservices[cleanZone].filter(function (el) {
           			return (el[1] === ServiceName);
       				})[0];
             } else if (ServiceName == 'null') {

@@ -34,10 +34,11 @@
     "alexa-app": "^2.3.4",
     "alexa-app-server": "^2.2.4",
     "body-parser": "^1.15.2",
-    "bplist-parser": "^0.1.1",
     "didyoumean": "^1.2.1",
-    "dnode": "^1.2.2",
     "lodash": "^4.17.2",
     "simple-plist": "^0.2.1"
+  },
+  "optionalDependencies": {
+    "dnode": "^1.2.2"
   }
 }

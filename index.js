@@ -13,7 +13,7 @@ AlexaAppServer.start( {
 	,preRequest: function(json,req,res) {
 		console.log("  ");
 		console.log("  ");
-		console.log("||||||||||||||||||||||||||| start "+JSON.stringify(json.request.intent.name)+" ||||||||||||||||||||||||||| ");
+		console.log("||||||||||||||||||||||||||| start ||||||||||||||||||||||||||| ");
 		console.log("Intent Request: "+ JSON.stringify(json.request.intent));
 		console.log("  ");
 		//console.log("prestuff:"+JSON.stringify(json));

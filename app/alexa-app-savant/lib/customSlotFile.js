@@ -4,11 +4,29 @@ var logger = fs.createWriteStream(appLocation+'/customSlotTypes.txt', {
 });
 
 module.exports = function(app){
+  logger.write('Initial Intent Schema: \r');
+  logger.write('{ \r');
+  logger.write('  "intents": [ \r');
+  logger.write('{ \r');
+  logger.write('  "intent": "TEMP", \r');
+  logger.write('  "slots": [] \r');
+  logger.write('} \r');
+  logger.write('] \r');
+  logger.write('} \r');
+
+  logger.write('\r');
+  logger.write('Initial Sample Utterances: \r');
+  logger.write('TEMP	TEMP\r');
+
+  logger.write('\r');
+  logger.write('Custom Slot Values: \r');
+  logger.write('\r');
   logger.write('Custom Slot Type: ZONE \r');
   logger.write('Custom Slot Values: \r');
   for (var key in app.dictionary.systemZones){
     logger.write(app.dictionary.systemZones[key]+'\r');
   };
+
   logger.write('\r');
   logger.write('Custom Slot Type: ZONE_TWO \r');
   logger.write('Custom Slot Values: \r');

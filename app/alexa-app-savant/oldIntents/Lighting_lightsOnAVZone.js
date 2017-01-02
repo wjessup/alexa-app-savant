@@ -11,7 +11,7 @@ module.exports = function(app,callback){
     'intentName' : 'lightsOnAVZone',
     'intentVersion' : '1.0',
     'intentDescription' : 'Turn on lights in a defined AV zone using Savants __RoomSetBrightness workflow',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
   //Intent Enable/Disable

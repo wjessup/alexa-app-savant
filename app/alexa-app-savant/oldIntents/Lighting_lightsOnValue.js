@@ -12,7 +12,7 @@ module.exports = function(app,callback){
     'intentName' : 'lightsOnValue',
     'intentVersion' : '1.0',
     'intentDescription' : 'Set lighting for AV zone to a percentage',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
   //Intent Enable/Disable

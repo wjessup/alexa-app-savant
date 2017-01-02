@@ -2,7 +2,7 @@ var alexa = require('alexa-app');
 var path = require('path');
 
 var config = require('./lib/config');
-//var amazonIoT = require('./lib/amazon_IoT');
+var amazonIoT = require('./lib/amazon_IoT'); //enable to use amazon IoT buttons with skill
 var savantLib = require('./lib/savantLib');
 
 

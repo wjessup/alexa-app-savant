@@ -12,7 +12,7 @@ module.exports = function(app,callback){
     'intentName' : 'lightsOnRange',
     'intentVersion' : '1.0',
     'intentDescription' : 'Set lighting for AV zone with high med low presets',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
   //Intent Enable/Disable

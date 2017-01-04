@@ -23,28 +23,31 @@ module.exports = function(app){
 		"lightingPrompt":["Lights","Light","lighting"]
 		};
 
+	zoneParse.getZoneOrganization(globalZoneOrganization, function (err, groupDictionary,groupNames){
+		app.dictionary.systemGroupNames = groupNames;
+		app.dictionary.systemGroups = groupDictionary;
+		//console.log("app.dictionary.systemGroupNames: "+app.dictionary.systemGroupNames);
+		//console.log("app.dictionary.systemGroups: "+ JSON.stringify(app.dictionary.systemGroups));
+	});
 
 	zoneParse.getZones(serviceOrderPlist, function (err, systemZones) {
-		//console.log("systemZones type of: "+typeof(systemZones));
-		//console.log("systemZones: "+systemZones);
-		obj.systemZones = systemZones;
-		//console.log(obj);
-		app.dictionary = obj;
+		app.dictionary.systemZones = systemZones;
 		appDictionaryArray = _.values(app.dictionary.systemZones);
 		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
+		//console.log("app.dictionary.systemZones: "+ JSON.stringify(app.dictionary.systemZones));
+		//console.log("appDictionaryArray: "+appDictionaryArray);
+		//console.log("appDictionaryArrayLowerCase: "+ appDictionaryArrayLowerCase);
 	});
 
-/*
+
 	zoneParse.getZoneServices(serviceOrderPlist, function (err, foundservices) {
-
-			zoneServices = foundservices;
+		console.log("foundservices "+foundservices);
+		console.log("foundservices "+JSON.stringify(foundservices));
 	});
-*/
+
 	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
-		//console.log(systemServices);
-		obj.services = systemServices;
-		//console.log(obj);
-		app.dictionary = obj;
+		app.dictionary.services = systemServices;
+		//console.log("app.dictionary.services: "+app.dictionary.services);
 	});
 
 	var _dictionaryCheck = setInterval(function() {

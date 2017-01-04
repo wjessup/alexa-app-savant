@@ -78,8 +78,34 @@ function getServiceNames(plistFile, callback) {
   });
 }
 
+function getZoneOrganization(plistFile, callback) {
+  plist.readFile(plistFile, function(err,obj){
+    if (err) {
+        callback(err, undefined);
+    }
+    else {
+        obj = obj.RPMZoneOrderList;
+        var retObj = {};
+        var retArray = [];
+        for (var key in obj){
+          var zoneGroupName = obj[key]["RPMGroupName"];
+          retArray.push(zoneGroupName);
+          var zoneGroupsObj = obj[key]["Children"];
+          var dic = {};
+          for (var key2 in zoneGroupsObj){
+            let value = zoneGroupsObj[key2];
+            dic[key2] = value["Identifier"];
+          }
+          retObj[zoneGroupName] = dic;
+        }
+        callback(err, retObj,retArray);
+    }
+  });
+}
+
 module.exports = {
 getZones: getZones,
 getZoneServices: getZoneServices,
-getServiceNames: getServiceNames
+getServiceNames: getServiceNames,
+getZoneOrganization: getZoneOrganization
 }

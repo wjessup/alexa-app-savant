@@ -25,6 +25,7 @@ switch (os.platform()){
     //config file locations
     zoneInfo = configPath+"/zoneInfo.plist";
     serviceOrderPlist = configPath+"/serviceOrder.plist";
+    globalZoneOrganization = configPath+"/globalZoneOrganization.plist";
     break;
   case "linux":
     appLocation = process.env['HOME'];
@@ -36,5 +37,6 @@ switch (os.platform()){
     //config file locations
     zoneInfo = configPath+"/zoneInfo.plist";
     serviceOrderPlist = configPath+"/serviceOrder.plist";
+    globalZoneOrganization = configPath+"/globalZoneOrganization.plist";
     break;
 }

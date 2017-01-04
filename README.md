@@ -17,10 +17,11 @@ Ready to get started? The alexa-app-savant app make things pretty easy but there
         * https://nodejs.org/en/
         * Install 6.9.2, or whichever version is labeled “ Recommended for Most Users"
     * Smart (In terminal on the host)
-        * sudo apt-get update
-        * sudo apt-get install curl
-        * curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-        * sudo apt-get install -y nodejs
+        * NOTE: Only run these commands on the Old style intel smart host.  There is no need for this on the Smart Host with Control
+            * sudo apt-get update
+            * sudo apt-get install curl
+            * curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+            * sudo apt-get install -y nodejs
 * **Network setup**
     * You will need to know your DNS or external ip address in the next version. take note of that now
     * Will need to forward port 443 to your host

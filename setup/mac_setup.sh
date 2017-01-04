@@ -16,12 +16,17 @@ sudo npm install pm2 -g
 #install launch agent to start on boot
 cp /alexa-app-savant/setup/com.alexaskill.plist ~/Library/LaunchAgents
 
-#Generate ssh key and cert, put in folder for server use
-openssl genrsa -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem 1024
-openssl req -new -x509 -key ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer -days 365
-#copy key and cert to desktop for later use
-cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ~/Desktop/
-cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer ~/Desktop/
+if [ -f ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ]; then
+  echo Certs already exist... skipping
+else
+  echo Could not find certs. Making them now...
+  #Generate ssh key and cert, put in folder for server use
+  openssl genrsa -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem 1024
+  openssl req -new -x509 -key ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer -days 365
+  #copy key and cert to desktop for later use
+  cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ~/Desktop/
+  cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer ~/Desktop/
+fi
 
 #cleanup
 rm -f ~/alexa-app-savant/server/.DS_Store

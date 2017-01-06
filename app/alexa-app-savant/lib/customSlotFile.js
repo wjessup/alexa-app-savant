@@ -1,60 +1,63 @@
 var fs = require('fs');
-var logger = fs.createWriteStream(appLocation+'/customSlotTypes.txt', {
-  //flags: 'a'
+var path = require("path");
+var logger = fs.createWriteStream(path.join(__dirname, '..', '..', '..','public_html','customSlotTypes.html'), {
+
 });
 
 module.exports = function(app){
-  logger.write('Initial Intent Schema: \r');
-  logger.write('{ \r');
-  logger.write('  "intents": [ \r');
-  logger.write('{ \r');
-  logger.write('  "intent": "TEMP", \r');
-  logger.write('  "slots": [] \r');
-  logger.write('} \r');
-  logger.write('] \r');
-  logger.write('} \r');
+  logger.write('<h2>Temporary Intents and Utterances:</h2>');
+  logger.write('<b>Initial Intent Schema:</b> <BR>');
+  logger.write('{ <br>');
+  logger.write('  "intents": [ <br>');
+  logger.write('{ <br>');
+  logger.write('  "intent": "TEMP", <br>');
+  logger.write('  "slots": [] <br>');
+  logger.write('} <br>');
+  logger.write('] <br>');
+  logger.write('} <br>');
 
-  logger.write('\r');
-  logger.write('Initial Sample Utterances: \r');
-  logger.write('TEMP	TEMP\r');
+  logger.write('<BR>');
+  logger.write('<b>Initial Sample Utterances:</b> <BR>');
+  logger.write('TEMP	TEMP<br>');
 
-  logger.write('\r');
-  logger.write('Custom Slot Values: \r');
-  logger.write('\r');
-  logger.write('Custom Slot Type: ZONE \r');
-  logger.write('Custom Slot Values: \r');
+  logger.write('<h2>Custom Slots:</h2>');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> ZONE <br>');
+  logger.write('<b>Custom Slot Values:</b> <br>');
   for (var key in app.dictionary.systemZones){
-    logger.write(app.dictionary.systemZones[key]+'\r');
+    logger.write(app.dictionary.systemZones[key]+'<br>');
   };
 
-  logger.write('\r');
-  logger.write('Custom Slot Type: ZONE_TWO \r');
-  logger.write('Custom Slot Values: \r');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> ZONE_TWO <BR>');
+  logger.write('<b>Custom Slot Values:</b> <br>');
   for (var key in app.dictionary.systemZones){
-    logger.write(app.dictionary.systemZones[key]+'\r');
+    logger.write(app.dictionary.systemZones[key]+'<br>');
   };
-  logger.write('\r');
-  logger.write('Custom Slot Type: SERVICE\r');
-  logger.write('Custom Slot Values:\r');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> SERVICE<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
   for (var key in app.dictionary.services){
-    logger.write(app.dictionary.services[key]+'\r');
+    logger.write(app.dictionary.services[key]+'<br>');
   };
-  logger.write('\r');
-  logger.write('Custom Slot Type: RANGE\r');
-  logger.write('Custom Slot Values:\r');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> RANGE<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
   for (var key in app.dictionary.rangePrompt){
-    logger.write(app.dictionary.rangePrompt[key]+'\r');
+    logger.write(app.dictionary.rangePrompt[key]+'<br>');
   };
-  logger.write('\r');
-  logger.write('Custom Slot Type: PERCENTAGE\r');
-  logger.write('Custom Slot Values:\r');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> PERCENTAGE<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
   for (var i = 1; i < 101; i++) {
-    logger.write(i.toString()+'\r');
+    logger.write(i.toString()+'<br>');
   };
-  logger.write('\r');
-  logger.write('Custom Slot Type: LIGHTING\r');
-  logger.write('Custom Slot Values:\r');
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> LIGHTING<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
   for (var key in app.dictionary.lightingPrompt){
-    logger.write(app.dictionary.lightingPrompt[key]+'\r');
+    logger.write(app.dictionary.lightingPrompt[key]+'<br>');
   };
+
+  console.log("Finished Writing customSlotTypes");
 };

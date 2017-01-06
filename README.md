@@ -73,8 +73,8 @@ When the script is complete you will want to check two things
           3. Invocation Name: "Savant"  (The word you say to start the request. "Alexa Tell Savant", Savant is the invocation name.)
       2. **Interaction Model**
           1. The skill uses "Custom Slot Types". Because of a quirk in the way the interaction model page works, we need to pre fill the intent and utterance boxes to be able to generate the interaction model.
-          2. All content for the Interaction model is generated for you and can be found in "customSlotTypes.txt' in the host's home folder.
-          3. Populate Interaction model ( do not include headers from customSlotTypes.txt):
+          2. All content for the Interaction model is generated for you and can be found at: https:// << Host IP >> /customSlotTypes.html.
+          3. Populate Interaction model (do not include headers from customSlotTypes):
               1. Copy "Initial Intent Schema"  to "Intent Schema"
               2. Copy "Initial Sample Utterances"  to "Sample Utterances"
               3. Make Custom Slots

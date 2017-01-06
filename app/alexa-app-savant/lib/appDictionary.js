@@ -22,6 +22,7 @@ module.exports = function(app){
 		"decreasePrompt":["lower","decrease","turn down"],
 		"lightingPrompt":["Lights","Light","lighting"]
 		};
+	app.dictionary = obj;
 
 	zoneParse.getZoneOrganization(globalZoneOrganization, function (err, groupDictionary,groupNames){
 		app.dictionary.systemGroupNames = groupNames;

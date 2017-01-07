@@ -70,6 +70,6 @@ function setcurrentZone(zoneIn){
 		zoneIn = false;
 	}
 	currentZone = zoneIn;
-	console.log('Recalling currentZone from Savant:'+currentZone);
+	console.log('Recalling currentZone from Savant: '+currentZone);
 };
 module.exports = app;

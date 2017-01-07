@@ -1,5 +1,5 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var action = require('../lib/actionLib');
 var matcher = require('../lib/zoneMatcher');
 
 //Intent exports
@@ -21,29 +21,33 @@ module.exports = function(app,callback){
         "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
         ,"utterances":["{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}","{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes"]
       },function(req,res) {
-        //Match request to zone then do something
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
-          if (err) {
-              voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
-              res.say(voiceMessage).send();
-              return
-          }
-          var timerNumber = Number(req.slot('TIMER'));
-          if (timerNumber< 0 ||timerNumber>121 || typeof (timerNumber) == 'undefined'){
-            var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+timerNumber+')');
-            res.say(voiceMessage).send();
-            return
-          }
-          //message to send
-          var voiceMessage = 'Sleep timer set for '+timerNumber+' minutes';
-          //start timer
-          savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepArm","zone",cleanZone,"minutes",timerNumber],"full");
-          //inform
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
           res.say(voiceMessage).send();
         });
+        if (cleanZones[0].length === 0){
+          return
+        }
+
+        //Validate requested time
+        var value = Number(req.slot('TIMER'));
+        if (value< 1 ||value>121 || typeof (value) == 'undefined'){
+          var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+timerNumber+')');
+          res.say(voiceMessage).send();
+          return
+        }
+
+        //start timer
+        action.sleepTimer(cleanZones[0],"arm",value);
+
+        //inform
+        var voiceMessage = 'Sleep timer set for '+value+' minutes in '+cleanZones[1];
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
         return false;
       }
     );

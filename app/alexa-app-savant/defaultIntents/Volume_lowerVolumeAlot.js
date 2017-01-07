@@ -1,6 +1,6 @@
 //Intent includes
 var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
+var action = require('../lib/actionLib');
 var cleanZones = [];
 
 //Intent exports
@@ -22,41 +22,27 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO"}
     		,"utterances":[
           "{decreasePrompt} volume in {-|ZONE} a lot", "Make {-|ZONE} much lower","{-|ZONE} is too loud",
-          "{decreasePrompt} volume in {-|ZONE} and {-|ZONE_TWO} a lot", "Make {-|ZONE} and {-|ZONE_TWO} much lower","{-|ZONE} and {-|ZONE_TWO} {is|are} too loud"]
+          "{decreasePrompt} volume in {-|ZONE} and {-|ZONE_TWO} a lot", "Make {-|ZONE} and {-|ZONE_TWO} much lower","{-|ZONE} and {-|ZONE_TWO} {is|are} too loud"
+        ]
     	},function(req,res) {
-        //Make a zone list (Figure out if its single zone or process requested zones)
-        if (currentZone != false){
-          cleanZones[0] = currentZone
-        } else {
-          cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-            console.log (intentDictionary.intentName+' Intent: '+err+" Note: (Invalid Zone Match, cleanZones: "+cleanZones+")");
-            res.say(err).send();
-          });
-          if (cleanZones.length === 0){
-            return
-          }
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          res.say(voiceMessage).send();
+        });
+        if (cleanZones[0].length === 0){
+          return
         }
 
-        //Do something with the zone list
-        for (var key in cleanZones){ //lower volume in each requested zone
-        	savantLib.readState(cleanZones[key]+'.CurrentVolume', function(currentVolume) {
-            //adjust volume
-            newVolume = Number(currentVolume)-20
-            //set volume
-            savantLib.serviceRequest([cleanZones[key]],"volume","",[newVolume]);
-            //inform
-          });
-        }
-        //message to send
-        if (cleanZones.length>1){//add "and" if more then one zone was requested
-          var pos = (cleanZones.length)-1;
-          cleanZones.splice(pos,0,"and");
-        }
-        var voiceMessage = 'Lowering volume alot in '+ cleanZones;
+        //increase volume by 40% in cleanZones
+        action.relativeVolume(cleanZones[0],-20);
+
         //inform
+        var voiceMessage = 'Lowering volume alot in '+ cleanZones[1];
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
-
         return false;
     	}
     );

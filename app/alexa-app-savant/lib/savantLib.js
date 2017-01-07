@@ -1,5 +1,3 @@
-module.change_code = 1;
-
 function serviceRequest(requestIn,typeIn,argumentIn,argumentValueIn){
 	console.log("serviceRequest sending:"+requestIn);
 
@@ -36,7 +34,7 @@ function readState(stateIn,callback){
     sendToSCLI("readstate \""+ stateIn + "\"",function(response){
     	console.log("Readstate response: "+response);
 			response = response.replace(/(\r\n|\n|\r)/gm,"");
-    	callback(response);
+    	callback(response,stateIn);
     });
 }
 

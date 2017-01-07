@@ -25,22 +25,20 @@ module.exports = function(app,callback){
           "{to |} {send |} mute {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} mute"
         ]
     	},function(req,res) {
-        //Make a zone list (Figure out if its single zone or process requested zones)
-        if (currentZone != false){
-          cleanZones[0] = currentZone
-        } else {
-          cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-            console.log (intentDictionary.intentName+' Intent: '+err+" Note: (Invalid Zone Match, cleanZones: "+cleanZones+")");
-            res.say(err).send();
-          });
-          if (cleanZones.length === 0){
-            return
-          }
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          res.say(voiceMessage).send();
+        });
+        if (cleanZones[0].length === 0){
+          return
         }
 
         //Do something with the zone list
-        for (var key in cleanZones){ //send pause command in each requested zone
-          savantLib.serviceRequest([cleanZones[key],"MuteOn"],"zone");
+        for (var key in cleanZones[0]){ //send pause command in each requested zone
+          savantLib.serviceRequest([cleanZones[0][key],"MuteOn"],"zone");
         }
         //message to send
         var voiceMessage = 'Mute';

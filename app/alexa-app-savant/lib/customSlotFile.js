@@ -27,12 +27,18 @@ module.exports = function(app){
   for (var key in app.dictionary.systemZones){
     logger.write(app.dictionary.systemZones[key]+'<br>');
   };
+  for (var key in app.dictionary.systemGroupNames){
+    logger.write(app.dictionary.systemGroupNames[key]+'<br>');
+  };
 
   logger.write('<BR>');
   logger.write('<b>Custom Slot Type:</b> ZONE_TWO <BR>');
   logger.write('<b>Custom Slot Values:</b> <br>');
   for (var key in app.dictionary.systemZones){
     logger.write(app.dictionary.systemZones[key]+'<br>');
+  };
+  for (var key in app.dictionary.systemGroupNames){
+    logger.write(app.dictionary.systemGroupNames[key]+'<br>');
   };
   logger.write('<BR>');
   logger.write('<b>Custom Slot Type:</b> SERVICE<br>');

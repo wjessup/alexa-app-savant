@@ -28,17 +28,15 @@ module.exports = function(app,callback){
           "{enablePrompt} {-|ZONE} and {-|ZONE_TWO} to {-|SERVICE}"
         ]
     	},function(req,res) {
-        //Make a zone list (Figure out if its single zone or process requested zones)
-        if (currentZone != false){
-          cleanZones[0] = currentZone
-        } else {
-          cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-            console.log (intentDictionary.intentName+' Intent: '+err+" Note: (Invalid Zone Match, cleanZones: "+cleanZones+")");
-            res.say(err).send();
-          });
-          if (cleanZones.length === 0){
-            return
-          }
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          res.say(voiceMessage).send();
+        });
+        if (cleanZones[0].length === 0){
+          return
         }
 
         //Do something with the zone list
@@ -55,11 +53,11 @@ module.exports = function(app,callback){
 
 
           //Match request to zone then do something
-          for (var key in cleanZones){ //do each zone
-            console.log("starting loop for "+cleanZones[key]);
+          for (var key in cleanZones[0]){ //do each zone
+            console.log("starting loop for "+cleanZones[0][key]);
             var zoneServiceAlias = []
             var zoneServiceProfileName = []
-            var cleanZone = cleanZones[key];
+            var cleanZone = cleanZones[0][key];
     				for (var key in foundservices[cleanZone]){
 				       zoneServiceAlias.push(foundservices[cleanZone][key][6]);
                zoneServiceProfileName.push(foundservices[cleanZone][key][1]);
@@ -112,11 +110,11 @@ module.exports = function(app,callback){
           }
 
           //message to send
-          if (cleanZones.length>1){//add "and" if more then one zone was requested
-            var pos = (cleanZones.length)-1;
-            cleanZones.splice(pos,0,"and");
+          if (cleanZones[0].length>1){//add "and" if more then one zone was requested
+            var pos = (cleanZones[0].length)-1;
+            cleanZones[0].splice(pos,0,"and");
           }
-          var voiceMessage = 'turning on '+ServiceName+' in '+ cleanZones;
+          var voiceMessage = 'turning on '+ServiceName+' in '+ cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });

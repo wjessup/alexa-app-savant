@@ -1,6 +1,6 @@
 //Intent includes
 var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
+var action = require('../lib/actionLib');
 
 //Intent exports
 module.change_code = 1;
@@ -21,34 +21,43 @@ module.exports = function(app,callback){
     		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"ZONE"}
     		,"utterances":["{actionPrompt} volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
     	},function(req,res) {
-    		//Make sure volume request is between 1-100
-    		if (req.slot('VOLUMEVALUE')> 0 ||req.slot('VOLUMEVALUE')<101){
-          console.log("Raw Volume request: "+req.slot('VOLUMEVALUE'))
-    		  var volumeValue = Math.round(req.slot('VOLUMEVALUE')/2);
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          res.say(voiceMessage).send();
+        });
+        if (cleanZones[0].length === 0){
+          return
+        }
+
+        //Make sure volume request is between 1-100
+        var value = Number(req.slot('VOLUMEVALUE'));
+        if (value> 0 ||value<101){
+          console.log("Raw Volume request: "+value)
+          var volumeValue = Math.round(value/2);
         }else {
           var voiceMessage = 'I didnt understand please try again. Say a number between 1 and 100';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
           return
         }
-        //Match request to zone then do something
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
-          if (err) {
-              voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
-              res.say(voiceMessage).send();
-              return
+
+        //Set Volume by percent in all cleanZones
+        action.setVolume(cleanZones[0],value, function (err){
+          if (err){
+            console.log (intentDictionary.intentName+' Intent: '+err+" Note: ()");
+            res.say(err).send();
+            return
           }
-          //message to send
-          var voiceMessage = "Setting volume to "+req.slot('VOLUMEVALUE')+" in "+ cleanZone;
-          //Set Volume
-    			savantLib.serviceRequest([cleanZone],"volume","",[volumeValue]);
-          //inform
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send()
-          return;
         });
-    	return false;
+
+        //inform
+        var voiceMessage = 'Setting volume to '+value+' percent in '+cleanZones[1];
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
+    	  return false;
     	}
     );
   }

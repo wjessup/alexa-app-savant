@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'turnOnSanta',
     'intentVersion' : '1.0',
     'intentDescription' : 'Launch custom workflow making santa fart',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
 //Intent Enable/Disable

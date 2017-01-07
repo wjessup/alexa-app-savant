@@ -1,6 +1,6 @@
 //Intent includes
 var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
+var action = require('../lib/actionLib');
 var _ = require('lodash');
 var cleanZones = [];
 //Intent exports
@@ -28,53 +28,30 @@ module.exports = function(app,callback){
           "{actionPrompt} {-|LIGHTING} off in {-|ZONE}","{actionPrompt} {-|LIGHTING} off in {-|ZONE} and {-|ZONE_TWO}"
         ]
     	},function(req,res) {
-        //Make a zone list (Figure out if its single zone or process requested zones)
-        if (currentZone != false){
-          cleanZones[0] = currentZone
-        } else {
-          cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-            console.log (intentDictionary.intentName+' Intent: '+err+" Note: (Invalid Zone Match, cleanZones: "+cleanZones+")");
-            res.say(err).send();
-          });
-          if (cleanZones.length === 0){
-            return
-          }
+        //Get clean zones, fail if we cant find a match
+        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
+          voiceMessage = err;
+          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          res.say(voiceMessage).send();
+        });
+        if (cleanZones[0].length === 0){
+          return
         }
 
-        //Do something with the zone list
+        //Do something with cleanZones
         if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
-          //set dim level
-          for (var key in cleanZones){
-            savantLib.serviceRequest([cleanZones[key]],"lighting","",[0]);
-          }
-          //message to send
-          if (cleanZones.length>1){//add "and" if more then one zone was requested
-            var pos = (cleanZones.length)-1;
-            cleanZones.splice(pos,0,"and");
-          }
-          var voiceMessage = 'Turning off '+cleanZones;
-          //inform
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+          action.setLighting(cleanZones[0],0);
+          var voiceMessage = 'Turning off lights in '+ cleanZones[1];
 
         }else{ // Do AV action (Lighting was not heard)
-
-          //Turn off zone
-          console.log ("cleanZones3: "+cleanZones);
-          for (var key in cleanZones){
-            console.log("sending service request")
-            savantLib.serviceRequest([cleanZones[key],"PowerOff"],"zone");
-          }
-          //message to send
-          if (cleanZones.length>1){//add "and" if more then one zone was requested
-            var pos = (cleanZones.length)-1;
-            cleanZones.splice(pos,0,"and");
-          }
-          var voiceMessage = 'Turning off '+cleanZones;
-          //inform
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+          action.powerOffAV(cleanZones[0]);
+          var voiceMessage = 'Turning off '+cleanZones[1];
         }
+
+        //Inform
+        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+        res.say(voiceMessage).send();
   		  return false;
     	}
     );

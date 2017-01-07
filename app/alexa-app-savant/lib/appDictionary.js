@@ -5,7 +5,7 @@ appDictionaryArray = [];
 zoneServices = {};
 
 module.exports = function(app){
-	obj = {
+	app.dictionary = {
 		"movementPrompt":["move","tell","send","ask"],
 		"speedPrompt":["high","medium","low","on","off"],
 		"applicationType":["channel","motor","shade","blind"],
@@ -21,14 +21,18 @@ module.exports = function(app){
 		"increasePrompt":["raise","increase","turn up"],
 		"decreasePrompt":["lower","decrease","turn down"],
 		"lightingPrompt":["Lights","Light","lighting"]
-		};
-	app.dictionary = obj;
+	};
 
 	zoneParse.getZoneOrganization(globalZoneOrganization, function (err, groupDictionary,groupNames){
 		app.dictionary.systemGroupNames = groupNames;
 		app.dictionary.systemGroups = groupDictionary;
+		appDictionaryGroups = groupDictionary;
+		appDictionaryGroupArray = _.values(app.dictionary.systemGroupNames);
+		appDictionaryGroupArrayLowerCase = _.map(appDictionaryGroupArray, function(item) { return _.toLower(item); });
 		//console.log("app.dictionary.systemGroupNames: "+app.dictionary.systemGroupNames);
 		//console.log("app.dictionary.systemGroups: "+ JSON.stringify(app.dictionary.systemGroups));
+		//console.log("appDictionaryGroupArray: "+appDictionaryGroupArray);
+		//console.log("appDictionaryGroupArrayLowerCase: "+appDictionaryGroupArrayLowerCase);
 	});
 
 	zoneParse.getZones(serviceOrderPlist, function (err, systemZones) {
@@ -42,8 +46,8 @@ module.exports = function(app){
 
 
 	zoneParse.getZoneServices(serviceOrderPlist, function (err, foundservices) {
-		console.log("foundservices "+foundservices);
-		console.log("foundservices "+JSON.stringify(foundservices));
+		//console.log("foundservices "+foundservices);
+		//console.log("foundservices "+JSON.stringify(foundservices));
 	});
 
 	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
@@ -56,7 +60,7 @@ module.exports = function(app){
 	        clearInterval(_dictionaryCheck);
 	        var customSlot = require('./customSlotFile')(app);
 			}
-	}, 10); // interval set at 100 milliseconds
+	}, 10);
 
 
 };

@@ -15,7 +15,7 @@ Ready to get started? The alexa-app-savant app make things pretty easy but there
 * **Download and install Node.JS on Savant Host**
     * Pro
         * https://nodejs.org/en/
-        * Install 6.9.2, or whichever version is labeled “ Recommended for Most Users"
+        * Install 6.9.2, or whichever version is labeled “ Recommended for Most Users", not 7
     * Smart (In terminal on the host)
         * NOTE: Only run these commands on the Old style intel smart host.  There is no need for this on the Smart Host with Control
             * sudo apt-get update

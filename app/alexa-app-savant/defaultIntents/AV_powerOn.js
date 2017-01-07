@@ -74,14 +74,8 @@ module.exports = function(app,callback){
             }
           });
 
-          //message to send
-          if (cleanZones[0].length>1){//say service name if only one zone
-            var voiceMessage = 'Turning on '+cleanZones;
-          }else {
-            var voiceMessage = 'Turning on '+cleanZoneArray[6]+ ' in '+cleanZones;
-          }
-
           //inform
+          var voiceMessage = 'Turning on '+cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         }

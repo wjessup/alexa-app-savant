@@ -87,7 +87,7 @@ function relativeVolume(cleanZones,value){
   }
 }
 
-function lastPowerOn(cleanzones){
+function lastPowerOn(cleanZones){
   for (var key in cleanZones){
     savantLib.readState(cleanZones[key]+".LastActiveService", function(LastActiveService) {
       console.log("LastActiveService: "+LastActiveService)

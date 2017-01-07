@@ -45,7 +45,7 @@ module.exports = function(app,callback){
         }
 
         //Set Volume by percent in all cleanZones
-        action.setVolume(cleanZones[0],value, function (err){
+        action.setVolume(cleanZones[0],volumeValue, function (err){
           if (err){
             console.log (intentDictionary.intentName+' Intent: '+err+" Note: ()");
             res.say(err).send();

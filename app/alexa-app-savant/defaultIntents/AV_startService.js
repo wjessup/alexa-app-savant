@@ -40,84 +40,72 @@ module.exports = function(app,callback){
         }
 
         //Do something with the zone list
-    		zoneParse.getZoneServices(serviceOrderPlist, function (err, foundservices) { //get services in all zones
-          if (typeof foundservices == 'undefined'){ //Make sure foundservices exists
-            var voiceMessage = 'I had a problem reading from the savant system';
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (empty response from getZoneService)");
+    		foundservices = appDictionaryZoneServices;
+        //console.log("Found the following Services: ");
+        //console.log(foundservices);
+
+
+        //Match request to zone then do something
+        for (var key in cleanZones[0]){ //do each zone
+          console.log("starting loop for "+cleanZones[0][key]);
+          var zoneServiceAlias = []
+          var zoneServiceProfileName = []
+          var cleanZone = cleanZones[0][key];
+  				for (var key in foundservices[cleanZone]){
+  		       zoneServiceAlias.push(foundservices[cleanZone][key][6]);
+             zoneServiceProfileName.push(foundservices[cleanZone][key][1]);
+  			  }
+
+
+          //validate service name against request.  First check if service alias matchs request
+  				var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceAlias);
+          //console.log("ServiceName: "+ServiceName);
+          //console.log('Looking for: '+req.slot('SERVICE'));
+  				//console.log('Looking in zoneServiceAlias: '+zoneServiceAlias);
+
+
+          //get service array if we found a match
+          if (ServiceName !== 'null'){
+            //match requested service to service list
+            //console.log(foundservices[cleanZone]);
+    				var ServiceArray = foundservices[cleanZone].filter(function (el) {
+        			return (el[6] === ServiceName);
+    				})[0];
+          }
+
+          // if we have not yet found a match look in profile names
+          if (typeof ServiceArray == 'undefined') {
+            console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
+            var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceProfileName);
+            console.log("ServiceName: "+ServiceName);
+            var ServiceArray = foundservices[cleanZone].filter(function (el) {
+        			return (el[1] === ServiceName);
+    				})[0];
+          } else if (ServiceName == 'null') {
+            //we did not find a match in alias or profile names
+            var voiceMessage = 'I didnt understand what service you wanted, please try again.';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceName undefined)");
             res.say(voiceMessage).send();
             return
           }
 
-          //console.log("Found the following Services: ");
-          //console.log(foundservices);
+          //console.log(ServiceArray);
+  				if (typeof ServiceArray == 'undefined'){
+            var voiceMessage = 'I didnt understand what service you wanted, please try again.';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceArray undefined)");
+            res.say(voiceMessage).send();
+            return
+  				}
 
+          //Turn on serviceRequest
+  				savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"PowerOn"],"full");
+          savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"Play"],"full");
 
-          //Match request to zone then do something
-          for (var key in cleanZones[0]){ //do each zone
-            console.log("starting loop for "+cleanZones[0][key]);
-            var zoneServiceAlias = []
-            var zoneServiceProfileName = []
-            var cleanZone = cleanZones[0][key];
-    				for (var key in foundservices[cleanZone]){
-				       zoneServiceAlias.push(foundservices[cleanZone][key][6]);
-               zoneServiceProfileName.push(foundservices[cleanZone][key][1]);
-  				  }
-
-
-            //validate service name against request.  First check if service alias matchs request
-    				var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceAlias);
-            //console.log("ServiceName: "+ServiceName);
-            //console.log('Looking for: '+req.slot('SERVICE'));
-    				//console.log('Looking in zoneServiceAlias: '+zoneServiceAlias);
-
-
-            //get service array if we found a match
-            if (ServiceName !== 'null'){
-              //match requested service to service list
-              //console.log(foundservices[cleanZone]);
-      				var ServiceArray = foundservices[cleanZone].filter(function (el) {
-          			return (el[6] === ServiceName);
-      				})[0];
-            }
-
-            // if we have not yet found a match look in profile names
-            if (typeof ServiceArray == 'undefined') {
-              console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
-              var ServiceName = didYouMean(req.slot('SERVICE'), zoneServiceProfileName);
-              console.log("ServiceName: "+ServiceName);
-              var ServiceArray = foundservices[cleanZone].filter(function (el) {
-          			return (el[1] === ServiceName);
-      				})[0];
-            } else if (ServiceName == 'null') {
-              //we did not find a match in alias or profile names
-              var voiceMessage = 'I didnt understand what service you wanted, please try again.';
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceName undefined)");
-              res.say(voiceMessage).send();
-              return
-            }
-
-            //console.log(ServiceArray);
-    				if (typeof ServiceArray == 'undefined'){
-              var voiceMessage = 'I didnt understand what service you wanted, please try again.';
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (ServiceArray undefined)");
-              res.say(voiceMessage).send();
-              return
-    				}
-
-            //Turn on serviceRequest
-  					savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"PowerOn"],"full");
-            savantLib.serviceRequest([ServiceArray[0],ServiceArray[1],ServiceArray[2],ServiceArray[3],ServiceArray[4],"Play"],"full");
-          }
-
-          //message to send
-          if (cleanZones[0].length>1){//add "and" if more then one zone was requested
-            var pos = (cleanZones[0].length)-1;
-            cleanZones[0].splice(pos,0,"and");
-          }
+        }
           var voiceMessage = 'turning on '+ServiceName+' in '+ cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
-        });
+
     	return false;
       });
 

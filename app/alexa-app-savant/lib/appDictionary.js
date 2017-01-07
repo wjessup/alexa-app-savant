@@ -23,10 +23,12 @@ module.exports = function(app){
 		"lightingPrompt":["Lights","Light","lighting"]
 	};
 
-	zoneParse.getZoneOrganization(globalZoneOrganization, function (err, groupDictionary,groupNames){
-		app.dictionary.systemGroupNames = groupNames;
-		app.dictionary.systemGroups = groupDictionary;
-		appDictionaryGroups = groupDictionary;
+	zoneParse.getZoneOrganization(globalZoneOrganization)
+	.then(function(groupDictionary) {
+		console.log("groupNames: "+groupDictionary[1]);
+		app.dictionary.systemGroupNames = groupDictionary[1];
+		app.dictionary.systemGroups = groupDictionary[0];
+		appDictionaryGroups = groupDictionary[0];
 		appDictionaryGroupArray = _.values(app.dictionary.systemGroupNames);
 		appDictionaryGroupArrayLowerCase = _.map(appDictionaryGroupArray, function(item) { return _.toLower(item); });
 		//console.log("app.dictionary.systemGroupNames: "+app.dictionary.systemGroupNames);
@@ -35,7 +37,8 @@ module.exports = function(app){
 		//console.log("appDictionaryGroupArrayLowerCase: "+appDictionaryGroupArrayLowerCase);
 	});
 
-	zoneParse.getZones(serviceOrderPlist, function (err, systemZones) {
+	zoneParse.getZones(serviceOrderPlist)
+	.then(function(systemZones) {
 		app.dictionary.systemZones = systemZones;
 		appDictionaryArray = _.values(app.dictionary.systemZones);
 		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
@@ -45,15 +48,19 @@ module.exports = function(app){
 	});
 
 
-	zoneParse.getZoneServices(serviceOrderPlist, function (err, foundservices) {
+	zoneParse.getZoneServices(serviceOrderPlist)
+	.then(function(foundservices) {
+		appDictionaryZoneServices = foundservices;
 		//console.log("foundservices "+foundservices);
 		//console.log("foundservices "+JSON.stringify(foundservices));
 	});
 
-	zoneParse.getServiceNames(serviceOrderPlist, function (err, systemServices){
-		app.dictionary.services = systemServices;
+  zoneParse.getServiceNames(serviceOrderPlist)
+  .then(function(systemServices) {
+    app.dictionary.services = systemServices;
 		//console.log("app.dictionary.services: "+app.dictionary.services);
-	});
+  });
+
 
 	var _dictionaryCheck = setInterval(function() {
 	    if (typeof app.dictionary.services != 'undefined' && typeof app.dictionary.systemZones != 'undefined') {

@@ -34,18 +34,15 @@ module.exports = function(app,callback){
 
         //Validate requested time
         var value = Number(req.slot('TIMER'));
-        if (value< 1 ||value>121 || typeof (value) == 'undefined'){
+        if (value> 0 && value<121){
+          //start timer
+          action.sleepTimer(cleanZones[0],"arm",value);
+
+          //inform
+          var voiceMessage = 'Sleep timer set for '+value+' minutes in '+cleanZones[1];
+        }else{
           var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+' Note: (timer: '+timerNumber+')');
-          res.say(voiceMessage).send();
-          return
         }
-
-        //start timer
-        action.sleepTimer(cleanZones[0],"arm",value);
-
-        //inform
-        var voiceMessage = 'Sleep timer set for '+value+' minutes in '+cleanZones[1];
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
         return false;

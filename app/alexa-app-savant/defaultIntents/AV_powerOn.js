@@ -1,13 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var action = require('../lib/actionLib');
-var cleanZones = [];
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'powerOn',
     'intentVersion' : '1.0',
@@ -15,9 +12,7 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('powerOn', {
         "slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING","RANGE":"RANGE","PERCENTAGE":"PERCENTAGE"}
         ,"utterances":[
@@ -45,109 +40,51 @@ module.exports = function(app,callback){
           "{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE}",
           "{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE} and {-|ZONE_TWO} "
         ]
-      },function(req,res) {
-        //console.log(req.slot('RANGE'));
+      }, function(req,res) {
+        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        .then(function(cleanZones) {
+          //If not a lighting request turn on last used AV source
+          if ((!req.slot('LIGHTING')) && (!req.slot('RANGE')) && (!req.slot('PERCENTAGE'))){
+            console.log(intentDictionary.intentName+' Intent: '+'not a lighting request turn on last used AV source');
+            action.lastPowerOn(cleanZones);//Get last service and turn on in all cleanZones
+            var voiceMessage = 'Turning on '+cleanZones[1];
+          }
 
-        //Get clean zones, fail if we cant find a match
-        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-          voiceMessage = err;
-          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+          //If a lighting request with range, turn on lights with requested range
+          if (req.slot('LIGHTING') && req.slot('RANGE') && typeof(req.slot('RANGE'))=="string"){
+            console.log(intentDictionary.intentName+' Intent: '+'a lighting request with range, turn on lights with requested range');
+            action.setLighting(cleanZones,req.slot('RANGE'));//set lights to range in all cleanZones
+            var voiceMessage = 'Setting lights to '+req.slot('RANGE')+' in '+cleanZones[1];
+  			  }
+
+          //if a lighting request with a percentage, turn on lights with requested percentage
+          if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && req.slot('PERCENTAGE')>(-1) && req.slot('PERCENTAGE')<101 ){
+            console.log(intentDictionary.intentName+' Intent: '+'a lighting request with a percentage, turn on lights with requested percentage');
+            var value = Number(req.slot('PERCENTAGE'));
+            action.setLighting(cleanZones,value);//set lights to percentage in all cleanZones
+            var voiceMessage = "Setting lights to "+req.slot('PERCENTAGE')+" percent in "+ cleanZones[1];
+          }
+
+          //if a lighting request without a percentage or range, turn on light to preset value
+          if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!req.slot('RANGE'))){
+            console.log(intentDictionary.intentName+' Intent: '+'a lighting request without a percentage or range, turn on light to preset value');
+            var value = Number(req.slot('PERCENTAGE'));
+            action.setLighting(cleanZones,100);//set lights to 100% in all cleanZones
+            var voiceMessage = 'Turning on lights in'+cleanZones[1];
+          }
+          return voiceMessage
+        })
+        .then(function(voiceMessage) {//Inform
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        })
+        .fail(function(voiceMessage) {//Zone could not be found
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
-        if (cleanZones[0].length === 0){
-          return
-        }
-
-        //
-        //If not a lighting request turn on last used AV source
-        if ((!req.slot('LIGHTING')) && (!req.slot('RANGE')) && (!req.slot('PERCENTAGE'))){
-          console.log(intentDictionary.intentName+' Intent: '+'not a lighting request turn on last used AV source');
-
-          //Get last service and turn on in all cleanZones
-          action.lastPowerOn(cleanZones[0], function(err){
-            if (err){
-              var voiceMessage = 'No previous service. Please say which service to turn on';
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-              res.say(voiceMessage).send();
-              return
-            }
-          });
-
-          //inform
-          var voiceMessage = 'Turning on '+cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        }
-
-
-        //If a lighting request with range, turn on lights with requested range
-        if (req.slot('LIGHTING') && req.slot('RANGE') && typeof(req.slot('RANGE'))=="string"){
-          console.log(intentDictionary.intentName+' Intent: '+'a lighting request with range, turn on lights with requested range');
-
-          //set lights to range in all cleanZones
-          action.setLighting(cleanZones[0],req.slot('RANGE'), function (err){
-            if (err){
-              console.log (intentDictionary.intentName+' Intent: '+err+" Note: ()");
-              res.say(err).send();
-              return
-            }
-          });
-
-          //inform
-          var voiceMessage = 'Setting lights to '+req.slot('RANGE')+' in '+cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-			  }
-
-
-        //if a lighting request with a percentage, turn on lights with requested percentage
-        if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && req.slot('PERCENTAGE')>(-1) && req.slot('PERCENTAGE')<101 ){
-          console.log(intentDictionary.intentName+' Intent: '+'a lighting request with a percentage, turn on lights with requested percentage');
-
-          //set lights to percentage in all cleanZones
-          var value = Number(req.slot('PERCENTAGE'));
-          action.setLighting(cleanZones[0],value, function (err){
-            if (err){
-              console.log (intentDictionary.intentName+' Intent: '+err+" Note: ()");
-              res.say(err).send();
-              return
-            }
-          });
-
-          //inform
-          var voiceMessage = "Setting lights to "+req.slot('PERCENTAGE')+" percent in "+ cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        }
-
-        //
-        //if a lighting request without a percentage or range, turn on light to preset value
-        //
-        if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!req.slot('RANGE'))){
-          console.log(intentDictionary.intentName+' Intent: '+'a lighting request without a percentage or range, turn on light to preset value');
-
-          //set lights to 100% in all cleanZones
-          var value = Number(req.slot('PERCENTAGE'));
-          action.setLighting(cleanZones[0],100, function (err){
-            if (err){
-              console.log (intentDictionary.intentName+' Intent: '+err+" Note: ()");
-              res.say(err).send();
-              return
-            }
-          });
-
-          var voiceMessage = 'Turning on lights in'+cleanZones[1];
-          //inform
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-
-        }
-
       return false;
       }
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

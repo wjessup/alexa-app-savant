@@ -1,12 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var action = require('../lib/actionLib');
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'raiseVolume',
     'intentVersion' : '1.0',
@@ -14,35 +12,28 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('raiseVolume', {
     		"slots":{"ZONE":"ZONE"}
     		,"utterances":["{increasePrompt} volume in {-|ZONE}", "Make {-|ZONE} louder"]
-    	},function(req,res) {
-        //Get clean zones, fail if we cant find a match
-        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-          voiceMessage = err;
-          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+    	}, function(req,res) {
+        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        .then(function(cleanZones) {
+          action.relativeVolume(cleanZones,6)//increase volume by 12% in cleanZones
+          return cleanZones
+        })
+        .then(function(cleanZones) {//Inform
+          var voiceMessage = 'Increasing volume in '+ cleanZones[1];
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        })
+        .fail(function(voiceMessage) {//Zone could not be found
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
-        if (cleanZones[0].length === 0){
-          return
-        }
-
-        //increase volume by 40% in cleanZones
-        action.relativeVolume(cleanZones[0],6);
-
-        //inform
-        var voiceMessage = 'Increasing volume in '+ cleanZones[1];
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-      	return false;
+      return false;
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

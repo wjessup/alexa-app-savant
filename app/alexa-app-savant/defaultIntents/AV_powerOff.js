@@ -1,13 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var action = require('../lib/actionLib');
-var _ = require('lodash');
-var cleanZones = [];
-//Intent exports
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
+
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'powerOff',
     'intentVersion' : '1.0',
@@ -15,9 +12,7 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('powerOff', {
     		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING"}
     		,"utterances":[
@@ -28,34 +23,28 @@ module.exports = function(app,callback){
           "{actionPrompt} {-|LIGHTING} off in {-|ZONE}","{actionPrompt} {-|LIGHTING} off in {-|ZONE} and {-|ZONE_TWO}"
         ]
     	},function(req,res) {
-        //Get clean zones, fail if we cant find a match
-        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-          voiceMessage = err;
-          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        .then(function(cleanZones) {
+          if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
+            action.setLighting(cleanZones[0],0);
+            return ('Turning off lights in '+ cleanZones[1])
+
+          }else{ // Do AV action (Lighting was not heard)
+            action.powerOffAV(cleanZones[0]);
+            return ('Turning off '+cleanZones[1]);
+          }
+        })
+        .then(function(voiceMessage) {//Inform
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        })
+        .fail(function(voiceMessage) {//Zone could not be found or Percent was out of range
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
-        if (cleanZones[0].length === 0){
-          return
-        }
-
-        //Do something with cleanZones
-        if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
-          action.setLighting(cleanZones[0],0);
-          var voiceMessage = 'Turning off lights in '+ cleanZones[1];
-
-        }else{ // Do AV action (Lighting was not heard)
-          action.powerOffAV(cleanZones[0]);
-          var voiceMessage = 'Turning off '+cleanZones[1];
-        }
-
-        //Inform
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-  		  return false;
+      return false;
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

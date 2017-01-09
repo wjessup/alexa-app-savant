@@ -1,13 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
-var cleanZones = [];
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'pauseZone',
     'intentVersion' : '1.0',
@@ -15,42 +12,37 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('pauseZone', {
-    		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO"}
+    		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","SERVICE":"SERVICE"}
     		,"utterances":[
           "{to |} {send |} pause {command |}",
           "{to |} {send |} pause {command |}{in |} {-|ZONE}","{-|ZONE} pause",
-          "{to |} {send |} pause {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} pause"
+          "{to |} {send |} pause {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} pause",
+          "{to |} pause {-|SERVICE}",
         ]
-    	},function(req,res) {
-        //Get clean zones, fail if we cant find a match
-        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-          voiceMessage = err;
-          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+    	}, function(req,res) {
+        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        .then(function(cleanZones) {
+          if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
+            action.pauseCommand(cleanZones)//Send pause command to all cleanZones
+            return cleanZones
+          }else{
+            
+          }
+        })
+        .then(function(cleanZones) {//Inform
+          var voiceMessage = 'Pause';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        })
+        .fail(function(voiceMessage) {//Zone could not be found
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
-        if (cleanZones[0].length === 0){
-          return
-        }
-
-        //Do something with the zone list
-        for (var key in cleanZones[0]){ //send pause command in each requested zone
-          savantLib.serviceRequest([cleanZones[0][key],"Pause"],"zone");
-        }
-        //message to send
-        var voiceMessage = 'Pause';
-        //inform
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-
-        return false;
+      return false;
       }
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

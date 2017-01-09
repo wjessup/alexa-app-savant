@@ -1,12 +1,10 @@
-//Intent includes
-var action = require('../lib/actionLib');
-var matcher = require('../lib/zoneMatcher');
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'sleepIncrement',
     'intentVersion' : '1.0',
@@ -14,41 +12,28 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('sleepIncrement', {
         "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
         ,"utterances":["add {1-120|TIMER} minutes to {sleep |} timer in {-|ZONE}"]
-      },function(req,res) {
-        //Get clean zones, fail if we cant find a match
-        var cleanZones = matcher.zonesMatcher(req.slot('ZONE'),req.slot('ZONE_TWO'), function (err,cleanZones){
-          voiceMessage = err;
-          voiceMessageNote = "(Invalid Zone Match, cleanZones: "+cleanZones+")";
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ("+voiceMessageNote+")");
+      }, function(req,res) {
+        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        .then(function(cleanZones) {
+          action.sleepTimer(cleanZones,req.slot('TIMER'),"increment")//Add time to timer by requested ammount in cleanZones
+          return cleanZones
+        })
+        .then(function(cleanZones) {//Inform
+          var voiceMessage = 'Adding '+req.slot('TIMER')+' more minutes in '+cleanZones[1];
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        })
+        .fail(function(voiceMessage) {//Zone could not be found or Percent was out of range
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
-        if (cleanZones[0].length === 0){
-          return
-        }
-
-        //Validate requested time
-        var value = Number(req.slot('TIMER'));
-        if (value> 0 && value<121){
-          //start timer
-          action.sleepTimer(cleanZones[0],"increment",value);
-
-          //inform
-          var voiceMessage = 'Adding '+value+' more minutes in '+cleanZones[1];
-        }else{
-          var voiceMessage = 'I didnt hear how long. Say a time between 1 and 120 minutes';
-        }
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-        return false;
+      return false;
       }
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

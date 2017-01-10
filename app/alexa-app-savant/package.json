@@ -36,7 +36,8 @@
     "body-parser": "^1.15.2",
     "didyoumean": "^1.2.1",
     "lodash": "^4.17.2",
-    "simple-plist": "^0.2.1"
+    "simple-plist": "^0.2.1",
+    "q": "^1.4.1"
   },
   "optionalDependencies": {
     "dnode": "^1.2.2"

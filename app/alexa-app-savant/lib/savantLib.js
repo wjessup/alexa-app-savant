@@ -37,6 +37,17 @@ function readState(stateIn,callback){
     	callback(response,stateIn);
     });
 }
+function readMultipleState(stateIn,callback){
+  console.log("Looking for state: \""+ stateIn + "\"");
+  sendToSCLI("readstate \""+ stateIn + "\"",function(response){
+  	console.log("Readstate response: "+response);
+		response = response.split(/\n/);
+		response = response.filter(function(x){//remove emmpty
+      return (x !== (undefined || ''));
+    });
+  	callback(response,stateIn);
+  });
+}
 
 function writeState(stateIn,valueIn){
 	requestString=("writestate \""+ stateIn + "\" \"" + valueIn + "\"");
@@ -64,5 +75,6 @@ return
 module.exports = {
 serviceRequest: serviceRequest,
 readState: readState,
+readMultipleState: readMultipleState,
 writeState: writeState
 }

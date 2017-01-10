@@ -17,9 +17,9 @@ function setLighting(cleanZones,value){
   switch (typeof(value)){
     case "number":
       if (value> 0 ||value<101){
-        for (var key in cleanZones){
-          console.log("sending service request: "+cleanZones[key]);
-          savantLib.serviceRequest([cleanZones[key]],"lighting","",[value]);
+        for (var key in cleanZones[0]){
+          console.log("sending service request: "+cleanZones[0][key]);
+          savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[value]);
         }
       }else {
         var err = 'I didnt understand please try again. Say High,Medium,or Low';
@@ -28,19 +28,19 @@ function setLighting(cleanZones,value){
       }
       break;
     case "string":
-      for (var key in cleanZones){
+      for (var key in cleanZones[0]){
         switch (_.toLower(value)){
           case "high":
-            savantLib.serviceRequest([cleanZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[100]);
             break;
           case "hi":
-            savantLib.serviceRequest([cleanZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[100]);
             break;
           case "medium":
-            savantLib.serviceRequest([cleanZones[key]],"lighting","",[50]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[50]);
             break;
           case "low":
-            savantLib.serviceRequest([cleanZones[key]],"lighting","",[25]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[25]);
             break;
           default:
             var err = 'I didnt understand please try again. Say High,Medium,or Low';
@@ -183,23 +183,19 @@ function sleepTimer(cleanZones,value,action){
   return defer.promise
 }
 
-function playCommand(cleanZones){
+function serviceCommand(cleanZones,value,action){ //value is serviceRequest to send, must match savant
   var defer = q.defer();
-  //Send play command to all zones in cleanZones
-  for (var key in cleanZones[0]){
-    console.log("sending service request: "+cleanZones[key]);
-    savantLib.serviceRequest([cleanZones[0][key],"Play"],"zone");
-  }
-  defer.resolve(cleanZones);
-  return defer.promise
-}
-
-function pauseCommand(cleanZones){
-  var defer = q.defer();
-  //Send play command to all zones in cleanZones
-  for (var key in cleanZones[0]){
-    console.log("sending service request: "+cleanZones[key]);
-    savantLib.serviceRequest([cleanZones[0][key],"Pause"],"zone");
+  switch (action){
+    case "allzones"://Send command to all zones in cleanZones, typically not wanted
+      for (var key in cleanZones[0]){
+        console.log("sending service request: "+cleanZones[key]);
+        savantLib.serviceRequest([cleanZones[0][key],value],"zone");
+      }
+      break;
+    default://Send command to only first zone in cleanZones, stopping any duplicate actions
+      console.log("sending service request: "+cleanZones[key]);
+      savantLib.serviceRequest([cleanZones[0][0],value],"zone");
+      break;
   }
   defer.resolve(cleanZones);
   return defer.promise
@@ -207,18 +203,19 @@ function pauseCommand(cleanZones){
 
 function muteCommand(cleanZones,action){
   var defer = q.defer();
-  //Send mute command to all zones in cleanZones
   switch (action){
-    case "on":
-    for (var key in cleanZones[0]){
-      console.log("sending service request: "+cleanZones[key]);
-      savantLib.serviceRequest([cleanZones[0][key],"MuteOn"],"zone");
-    }
-    case "off":
-    for (var key in cleanZones[0]){
-      console.log("sending service request: "+cleanZones[key]);
-      savantLib.serviceRequest([cleanZones[0][key],"MuteOff"],"zone");
-    }
+    case "on"://Send mute command to all zones in cleanZones
+      for (var key in cleanZones[0]){
+        console.log("sending service request: "+cleanZones[key]);
+        savantLib.serviceRequest([cleanZones[0][key],"MuteOn"],"zone");
+      }
+      break;
+    case "off"://Send unmute command to all zones in cleanZones
+      for (var key in cleanZones[0]){
+        console.log("sending service request: "+cleanZones[key]);
+        savantLib.serviceRequest([cleanZones[0][key],"MuteOff"],"zone");
+      }
+      break;
   }
   defer.resolve(cleanZones);
   return defer.promise
@@ -233,6 +230,6 @@ relativeVolume: relativeVolume,
 lastPowerOn: lastPowerOn,
 bulkPowerOn: bulkPowerOn,
 sleepTimer: sleepTimer,
-playCommand: playCommand,
-pauseCommand: pauseCommand
+serviceCommand: serviceCommand,
+muteCommand: muteCommand
 }

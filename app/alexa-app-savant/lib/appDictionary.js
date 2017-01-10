@@ -20,7 +20,8 @@ module.exports = function(app){
 		"rangePrompt":["High","Hi","Medium","Low"],
 		"increasePrompt":["raise","increase","turn up"],
 		"decreasePrompt":["lower","decrease","turn down"],
-		"lightingPrompt":["Lights","Light","lighting"]
+		"lightingPrompt":["Lights","Light","lighting"],
+		"serviceCommands":["Play","Pause","Up","Down","Left","Right","ok","enter","Select"]
 	};
 
 	zoneParse.getZoneOrganization(globalZoneOrganization)
@@ -58,6 +59,7 @@ module.exports = function(app){
   zoneParse.getServiceNames(serviceOrderPlist)
   .then(function(systemServices) {
     app.dictionary.services = systemServices;
+		appDictionaryServiceNameArray = _.values(app.dictionary.services);
 		//console.log("app.dictionary.services: "+app.dictionary.services);
   });
 

@@ -1,6 +1,6 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib'),
+  action = require('../lib/actionLib');
 
 module.change_code = 1;
 module.exports = function(app,callback){

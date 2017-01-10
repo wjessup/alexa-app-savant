@@ -26,11 +26,11 @@ module.exports = function(app,callback){
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
-            action.setLighting(cleanZones[0],0);
+            action.setLighting(cleanZones,0);
             return ('Turning off lights in '+ cleanZones[1])
 
           }else{ // Do AV action (Lighting was not heard)
-            action.powerOffAV(cleanZones[0]);
+            action.powerOffAV(cleanZones);
             return ('Turning off '+cleanZones[1]);
           }
         })

@@ -1,12 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
-
-//Intent exports
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
+  
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
   var intentDictionary = {
     'intentName' : 'primaryZoneDeclare',
     'intentVersion' : '1.0',
@@ -14,13 +12,10 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
     app.intent('primaryZoneDeclare', {
     		"slots":{"ZONE":"ZONE"}
-    		,"utterances":["I am in {-|ZONE}","set zone to {-|ZONE}"]
+    		,"utterances":["I am in {the |}{-|ZONE}","set {primry |} {location|zone} to {-|ZONE}"]
     	},function(req,res) {
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
           if (err) {
@@ -39,6 +34,5 @@ module.exports = function(app,callback){
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

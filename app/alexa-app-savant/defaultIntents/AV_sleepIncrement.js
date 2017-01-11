@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {
     'intentName' : 'sleepIncrement',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Start a sleep timer with a variable ammount',
     'intentEnabled' : 1
   };
@@ -19,8 +19,8 @@ module.exports = function(app,callback){
       }, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
-          action.sleepTimer(cleanZones,req.slot('TIMER'),"increment")//Add time to timer by requested ammount in cleanZones
-          return cleanZones
+          return action.sleepTimer(cleanZones,req.slot('TIMER'),"increment")//Add time to timer by requested ammount in cleanZones
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Adding '+req.slot('TIMER')+' more minutes in '+cleanZones[1];

@@ -1,12 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
   var intentDictionary = {
     'intentName' : 'primaryZoneClear',
     'intentVersion' : '1.0',
@@ -14,14 +12,11 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
     app.intent('primaryZoneClear', {
     		"slots":{}
     		,"utterances":["{clear|remove} {primary |} zone"]
-    	},function(req,res) {
+    	}, function(req,res) {
         //clear curent zone var
         currentZone = false;
         savantLib.writeState("userDefined.currentZone","false");
@@ -33,6 +28,5 @@ module.exports = function(app,callback){
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

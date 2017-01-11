@@ -6,10 +6,10 @@ const
 
 function commandMatcher(requestedCommand){
   var defer = q.defer();
-
+  console.log('looking for: '+requestedCommand)
   switch (requestedCommand.toLowerCase()){
     case "up":
-      serviceCommand = "OSDCursorUP"
+      serviceCommand = "OSDCursorUp"
       break;
     case "down":
       serviceCommand = "OSDCursorDown"
@@ -32,8 +32,17 @@ function commandMatcher(requestedCommand){
     case "play":
       serviceCommand = "Play"
       break;
-    case "Pause":
+    case "pause":
       serviceCommand = "Pause"
+      break;
+    case "exit":
+      serviceCommand = "Exit"
+      break;
+    case "back":
+      serviceCommand = "Exit"
+      break;
+    case "return":
+      serviceCommand = "Exit"
       break;
     default:
       var err = "I did not understand what command you wanted, Please try again"

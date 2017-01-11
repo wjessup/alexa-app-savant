@@ -1,12 +1,10 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var savantLib = require('../lib/savantLib');
+const
+  matcher = require('../lib/zoneMatcher'),
+  action = require('../lib/actionLib');
 
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
     'intentName' : 'powerOffGlobal',
     'intentVersion' : '1.0',
@@ -14,13 +12,11 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-  //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-    //Intent
     app.intent('powerOffGlobal', {
     		"slots":{}
     		,"utterances":["{actionPrompt} everything off", "{actionPrompt} off all zones", "{actionPrompt} off everything"]
-    	},function(req,res) {
+    	}, function(req,res) {
         //message to send
         var voiceMessage = 'Turning off all zones';
         //Turn off zone
@@ -32,6 +28,5 @@ module.exports = function(app,callback){
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

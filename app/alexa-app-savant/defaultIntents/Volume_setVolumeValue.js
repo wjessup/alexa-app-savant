@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {//Intent meta information
     'intentName' : 'setVolumeValue',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Set volume for AV zone in percentage',
     'intentEnabled' : 1
   };
@@ -19,8 +19,8 @@ module.exports = function(app,callback){
     	}, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
-          action.setVolume(cleanZones, Number(req.slot('VOLUMEVALUE')))//Set volume to requested value in all cleanZones
-          return cleanZones
+          return action.setVolume(cleanZones,req.slot('VOLUMEVALUE'),'percent')//Set volume to requested value in all cleanZones
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Setting volume to ' + req.slot('VOLUMEVALUE') + ' in ' + cleanZones[1];

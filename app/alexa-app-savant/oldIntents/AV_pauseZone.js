@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'pauseZone',
     'intentVersion' : '1.0',
     'intentDescription' : 'Send pause to requested zone',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
   if (intentDictionary.intentEnabled === 1){

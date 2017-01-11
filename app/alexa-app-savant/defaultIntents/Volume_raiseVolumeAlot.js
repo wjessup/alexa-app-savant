@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {//Intent meta information
     'intentName' : 'raiseVolumeAlot',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Increase volume for AV zone by a large preset ammount',
     'intentEnabled' : 1
   };
@@ -19,8 +19,8 @@ module.exports = function(app,callback){
     	}, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
-          action.relativeVolume(cleanZones,20)//increase volume by 40% in cleanZones
-          return cleanZones
+          return action.relativeVolume(cleanZones,20)//increase volume by 40% in cleanZones
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Increasing volume alot in '+ cleanZones[1];

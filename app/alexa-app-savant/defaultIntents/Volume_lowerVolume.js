@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {
     'intentName' : 'lowerVolume',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Lower volume for AV zone by a preset ammount',
     'intentEnabled' : 1
   };
@@ -22,8 +22,8 @@ module.exports = function(app,callback){
     	}, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
-          action.relativeVolume(cleanZones,-6)//Decrease volume by 12% in cleanZones
-          return cleanZones
+          return action.relativeVolume(cleanZones,-6)//Decrease volume by 12% in cleanZones
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Lowering volume in '+ cleanZones[1];

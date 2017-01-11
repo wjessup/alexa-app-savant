@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {//Intent meta information
     'intentName' : 'setVolumeRange',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Set volume for AV zone with high med low presets',
     'intentEnabled' : 1
   };
@@ -20,8 +20,8 @@ module.exports = function(app,callback){
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           if (typeof(req.slot('RANGE')) != "undefined"){
-            action.setVolume(cleanZones, req.slot('RANGE'))//Set volume to requested range in all cleanZones
-            return cleanZones
+            return action.setVolume(cleanZones, req.slot('RANGE'),'range')//Set volume to requested range in all cleanZones
+            .thenResolve(cleanZones);
           }else {
             var err = 'I didnt understand please try again. Say High,Medium,or Low';
             throw err

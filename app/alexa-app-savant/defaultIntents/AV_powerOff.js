@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {
     'intentName' : 'powerOff',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Power off requested zone AV or lighting (lights in a defined AV zone using Savants __RoomSetBrightness workflow)',
     'intentEnabled' : 1
   };
@@ -26,12 +26,12 @@ module.exports = function(app,callback){
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
-            action.setLighting(cleanZones,0);
-            return ('Turning off lights in '+ cleanZones[1])
+            return action.setLighting(cleanZones,0,"percent")
+            .thenResolve('Turning off lights in '+ cleanZones[1]);
 
           }else{ // Do AV action (Lighting was not heard)
-            action.powerOffAV(cleanZones);
-            return ('Turning off '+cleanZones[1]);
+            return action.powerOffAV(cleanZones)
+            .thenResolve('Turning off '+cleanZones[1]);
           }
         })
         .then(function(voiceMessage) {//Inform

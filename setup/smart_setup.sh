@@ -31,9 +31,6 @@ npm install --save
 #install pm2 to keep script alive
 sudo npm install pm2 -g
 
-#install launch agent to start on boot
-#cp /alexa-app-savant/setup/com.alexaskill.plist /home/RPM/Library/LaunchAgents
-
 #Generate ssh key and cert, put in folder for server use
 if [ -f /home/RPM/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ]; then
   echo Certs already exist... skipping
@@ -52,6 +49,11 @@ sed -i -e "s|'sslcert/'|__dirname+'/sslcert/'|g" /home/RPM/alexa-app-savant/node
 #start server
 pm2 start /home/RPM/alexa-app-savant/index.js -l /home/RPM/alexaLog.log
 
+
 #redirect port 1414
 sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 1414
 sudo iptables-save > ~/iptables
+
+# start pm2 on boot and save config
+sudo pm2 startup
+sudo pm2 save

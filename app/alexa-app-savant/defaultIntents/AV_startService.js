@@ -8,7 +8,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {
     'intentName' : 'startService',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Turn on any service in any AV zone',
     'intentEnabled' : 1,
   };
@@ -33,8 +33,8 @@ module.exports = function(app,callback){
         .then(function(result) {//send power command to all found service arrays
           var cleanZones = result[1];
           var servicesArray = result[0];
-          action.bulkPowerOn(servicesArray)
-          return cleanZones
+          return action.bulkPowerOn(servicesArray)
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Turning on ' + req.slot('SERVICE') + ' in ' + cleanZones[1];

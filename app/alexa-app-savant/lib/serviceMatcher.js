@@ -4,11 +4,12 @@ const
   action = require('../lib/actionLib'),
   q = require('q');
 
-var serviceObj = [];
+
 
 function serviceMatcher(cleanZones,serviceIn){
   var defer = q.defer();
   var ret = {}
+  var serviceObj = [];
   systemServices =  appDictionaryZoneServices;
   for (var key in cleanZones[0]){ //do each zone
     console.log("starting loop for "+cleanZones[0][key]);

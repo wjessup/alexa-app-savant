@@ -1,11 +1,6 @@
-//Intent includes
-
-
-//Intent exports
 module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
   var intentDictionary = {
     'intentName' : 'reboot',
     'intentVersion' : '1.0',
@@ -13,13 +8,10 @@ module.exports = function(app,callback){
     'intentEnabled' : 1
   };
 
-//Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-
-//Intent
     app.intent('reboot', {
     		"slots":{}
-    		,"utterances":["reboot","reload","reboot skill","reload skill","reboot intents","reload intents","load intents","add intents"]
+    		,"utterances":["load intents"]
     	},function(req,res) {
         var voiceMessage = "I'll be back";
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (pm2 restart all --update-env)");
@@ -33,6 +25,5 @@ module.exports = function(app,callback){
     	}
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

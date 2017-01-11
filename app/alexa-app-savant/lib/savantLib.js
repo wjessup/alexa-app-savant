@@ -64,6 +64,12 @@ function sendToSCLI (consoleString,callback){
 	var child = require('child_process');
 	var ps = child.exec(fullcommand, (error, stdout, stderr) =>{
 		console.log('SCLI Response: '+ stdout);
+		if (error){
+			console.log('error: '+ error);
+			console.log('error.code: '+ error.code);
+			console.log('error.signal: '+ error.signal);
+			console.log('stderr: '+stderr);
+		}
 		if (typeof callback !== 'undefined'){
 			callback (stdout);
 		};

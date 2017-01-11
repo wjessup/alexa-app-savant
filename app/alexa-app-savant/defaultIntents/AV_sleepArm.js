@@ -7,7 +7,7 @@ module.exports = function(app,callback){
 
   var intentDictionary = {
     'intentName' : 'sleepArm',
-    'intentVersion' : '1.0',
+    'intentVersion' : '2.0',
     'intentDescription' : 'Start a sleep timer with a variable ammount',
     'intentEnabled' : 1
   };
@@ -19,8 +19,8 @@ module.exports = function(app,callback){
       }, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
-          action.sleepTimer(cleanZones,req.slot('TIMER'),"arm")//start timer by requested ammount in cleanZones
-          return cleanZones
+          return action.sleepTimer(cleanZones,req.slot('TIMER'),"arm")//start timer by requested ammount in cleanZones
+          .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Starting timer for '+req.slot('TIMER')+' minutes in '+cleanZones[1];

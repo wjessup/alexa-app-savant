@@ -14,7 +14,7 @@ npm install --save
 sudo npm install pm2 -g
 
 #install launch agent to start on boot
-cp /alexa-app-savant/setup/com.alexaskill.plist ~/Library/LaunchAgents
+cp ~/alexa-app-savant/setup/com.alexaskill.plist ~/Library/LaunchAgents
 
 if [ -f ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ]; then
   echo Certs already exist... skipping
@@ -38,4 +38,13 @@ sed -i .bak -e "s|'sslcert/'|__dirname+'/sslcert/'|g" ~/alexa-app-savant/node_mo
 pm2 start ~/alexa-app-savant/index.js -l ~/Desktop/alexaLog.log
 
 #redirect port 1414
+#older osx
 sudo ipfw add 1 forward 127.0.0.1,1414 ip from any to any 443 in
+#newer osx
+echo "
+rdr pass inet proto tcp from any to any port 443 -> 127.0.0.1 port 1414
+" | sudo pfctl -ef -
+
+# start pm2 on boot and save config
+sudo pm2 startup
+sudo pm2 save

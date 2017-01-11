@@ -37,10 +37,15 @@ function zonesMatcher(rawZone1,rawZone2){
   console.log("Looking for: "+rawZone1+" and " +rawZone2);
 
   //sanitize input
-  var lowerrawZone1 = rawZone1.replace(/1st/ig,"first");
-  var lowerrawZone2 = rawZone2.replace(/1st/ig,"first");
-  lowerrawZone1 = _.toLower(lowerrawZone1);
-  lowerrawZone2 = _.toLower(lowerrawZone2);
+  var lowerrawZone1 = _.toLower(rawZone1);
+  var lowerrawZone2 = _.toLower(rawZone2);
+  var hasFirst = appDictionaryGroupArrayLowerCase.filter(function (item) {
+    return item.indexOf('1st') >= 0;
+  });
+  if (hasFirst){
+    lowerrawZone1 = lowerrawZone1.replace(/1st/ig,"first");
+    lowerrawZone2 = lowerrawZone2.replace(/1st/ig,"first");
+  }
 
   //find Group match from either slot, then concat
   var matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });

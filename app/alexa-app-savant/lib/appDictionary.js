@@ -21,8 +21,8 @@ module.exports = function(app){
 		"increasePrompt":["raise","increase","turn up"],
 		"decreasePrompt":["lower","decrease","turn down"],
 		"lightingPrompt":["Lights","Light","lighting"],
-		"thingPrompt":["TV","speakers","video","audio"],
-		"serviceCommands":["Play","Pause","Up","Down","Left","Right","ok","enter","Select","Back","Exit","Return"]
+		"thingPrompt":["tv","speakers","video","audio","music"],
+		"serviceCommands":["Play","Pause","Up","Down","Left","Right","ok","enter","Select","Back","Exit","Return","off","power off","on","power on"]
 	};
 
 	zoneParse.getZoneOrganization(globalZoneOrganization)

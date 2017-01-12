@@ -11,7 +11,7 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     app.intent('reboot', {
     		"slots":{}
-    		,"utterances":["load intents"]
+    		,"utterances":["load intents","reboot","restart"]
     	},function(req,res) {
         var voiceMessage = "I'll be back";
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (pm2 restart all --update-env)");

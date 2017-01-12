@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'queryFletchButton',
     'intentVersion' : '1.0',
     'intentDescription' : 'Query state of amazon IOT button',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
 //Intent Enable/Disable

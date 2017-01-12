@@ -44,6 +44,18 @@ function commandMatcher(requestedCommand){
     case "return":
       serviceCommand = "Exit"
       break;
+    case "turn off":
+      serviceCommand = "PowerOff"
+      break;
+    case "off":
+      serviceCommand = "PowerOff"
+      break;
+    case "turn on":
+      serviceCommand = "PowerOn"
+      break;
+    case "on":
+      serviceCommand = "PowerOn"
+      break;
     default:
       var err = "I did not understand what command you wanted, Please try again"
       defer.reject(err);

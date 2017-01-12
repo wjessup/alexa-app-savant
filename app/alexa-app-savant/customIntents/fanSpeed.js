@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'fanSpeed',
     'intentVersion' : '1.0',
     'intentDescription' : 'Control fan with presets high/med/low as well as on/off',
-    'intentEnabled' : 1
+    'intentEnabled' : 0
   };
 
 //Intent Enable/Disable

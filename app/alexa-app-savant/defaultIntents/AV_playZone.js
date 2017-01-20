@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'playZone',
     'intentVersion' : '1.0',
     'intentDescription' : 'Send play to requested zone',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
   if (intentDictionary.intentEnabled === 1){

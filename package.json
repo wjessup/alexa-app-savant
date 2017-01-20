@@ -1,6 +1,6 @@
 {
   "name": "alexa-app-savant",
-  "version": "0.0.52",
+  "version": "0.0.53",
   "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
   "repository": {

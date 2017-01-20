@@ -134,6 +134,9 @@ installLinux(){
   runloop=false
 }
 installPlatform(){
+  if [ -d ~/alexa-app-savant ]; then
+    backupPlatform
+  fi
   if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Installing on Pro Host...."
     installMac
@@ -403,6 +406,7 @@ do
             echo ""
             echo "!!! WARNING !!!"
             echo "alexa-app-savant is already installed!"
+            echo "You should probably use 'Update'."
             echo "If you continue with install user files may not be preserved."
             echo ""
             read -p "Are you sure you want to continue install? " yn

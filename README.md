@@ -29,16 +29,13 @@ Ready to get started? The alexa-app-savant app make things pretty easy but there
             * https://localtunnel.github.io/www/
 
 ## Install on Host
-#### Pro Host Install
-cd ~/Downloads && curl --remote-name http://28seven.net/alexa-app-savant/mac_setup.sh && chmod a+x mac_setup.sh && sudo ./mac_setup.sh
-
-#### Smart Host Install
-cd /home/RPM && curl --remote-name http://28seven.net/alexa-app-savant/smart_setup.sh && chmod a+x smart_setup.sh && sudo ./smart_setup.sh
+#### Install script
+cd ~/ && curl --remote-name http://28seven.net/alexa-app-savant/setup.sh && chmod a+x setup.sh && ./setup.sh
 
 #### Information
-Install of the app is all done with the small script above, just run it in the terminal on the host(copy/paste into terminal and push enter). Make sure you run setup script for your type of host
+Install of the app is all done with the small script above, just run it in the terminal on the host(copy/paste into terminal and push enter). When the menu appears enter option 1 to install the skill.
 
-The install on the host is completely automated. A lot of stuff is about to happen. Just a quick peak behind the scenes. (you can see the script [here](https://gitlab.com/twentyeight7/alexa-app-savant/blob/master/setup/mac_setup.sh)).
+The install on the host is completely automated. A lot of stuff is about to happen. Just a quick peak behind the scenes. (you can see the script [here](https://gitlab.com/twentyeight7/alexa-app-savant/blob/master/setup/setup.sh)).
 
   1. Make install directory ’/alexa-app-savant’
   2. Download alexa-savant and watchdog service from [npm](https://www.npmjs.com/package/alexa-app-savant)

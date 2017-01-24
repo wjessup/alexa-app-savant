@@ -1,3 +1,6 @@
+const
+  eventAnalytics = require('../lib/eventAnalytics');
+
 module.change_code = 1;
 module.exports = function(app,callback){
 
@@ -13,6 +16,7 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["load intents","reboot","restart"]
     	},function(req,res) {
+        eventAnalytics.send(intentDictionary.intentName,undefined,"alexa");
         var voiceMessage = "I'll be back";
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (pm2 restart all --update-env)");
         res.say(voiceMessage).send();

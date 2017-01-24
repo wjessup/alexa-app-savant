@@ -1,7 +1,9 @@
 const
   matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib');
-  serviceMatcher = require('../lib/serviceMatcher');
+  serviceMatcher = require('../lib/serviceMatcher'),
+  eventAnalytics = require('../lib/eventAnalytics');
+
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -30,6 +32,7 @@ module.exports = function(app,callback){
             return cleanZones
           })
           .then(function(cleanZones) {//Inform
+            eventAnalytics.send(intentDictionary.intentName,cleanZones,req.slot('SERVICE'),"Play");
             var voiceMessage = 'Play';
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
@@ -46,6 +49,7 @@ module.exports = function(app,callback){
           return cleanZones
         })
         .then(function(cleanZones) {//Inform
+          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","Play");
           var voiceMessage = 'Play';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

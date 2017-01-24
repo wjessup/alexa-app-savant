@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'turnOnMickey',
     'intentVersion' : '1.0',
     'intentDescription' : 'Launch custom workflow starting music in kitchen',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
 //Intent Enable/Disable

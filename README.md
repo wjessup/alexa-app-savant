@@ -124,6 +124,14 @@ When the script is complete you will want to check two things
           1. Make sure that port 443 is forwarded to the savant host static or reserved IP. you should be able to resolve your skill's secure page
             1. connect to https:// << WAN DNS >> /alexa/savant
 
+## Configuration file
+there is a configuration file in ~/alexa-app-savant/app/alexa-app-savant/userFiles.  This file will adjustment of:
+  1. Skill Name
+  2. Enable single zone mode by default.
+  3. Set customWorkflowScope to match your blueprint config (for use with savantLib.serviceRequest(["<<workflow>>"],"custom");).
+  4. Set Thermostat scope. required for HVAC operation.
+  5. Opt-out from anonymous data sharing.
+  6. Direct alexa-app-savant to custom placed Savant components.
 
 ## Utterance Usage
 See all these in action [here](http://www.28seven.net/christopherclark/2016/12/20/alexa-app-savant-feature-set/)
@@ -256,3 +264,6 @@ See all these in action [here](http://www.28seven.net/christopherclark/2016/12/2
     * You say: alexa ask Savant set heat to 75 degrees
     * alexa Responds: “Setting AC to 75 degrees"
     * Expectation:  thermostat cool set point will change to requested value
+
+## Privacy
+alexa-app-savant collects anonymous usage information.  This information is used to better track how the skill is used and what errors occur during usage.  Information is paired with a randomly generated UUID which can not be linked back to a particular person or system. Users have the ability to opt-out of all information sharing, see configuration section.

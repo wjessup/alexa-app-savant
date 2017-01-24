@@ -1,5 +1,6 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -22,6 +23,7 @@ module.exports = function(app,callback){
     	},function(req,res) {
     		//query HVAc mode state
     		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5], function(currentMode) {
+          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatMode_",undefined,undefined,undefined,undefined,undefined,currentMode);
           var voiceMessage = 'The system is currently set to '+ currentMode;
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

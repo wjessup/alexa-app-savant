@@ -1,6 +1,7 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib');
+  action = require('../lib/actionLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -17,6 +18,7 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["{clear|remove} {primary |} zone"]
     	}, function(req,res) {
+        eventAnalytics.send(intentDictionary.intentName,undefined,"alexa");
         //clear curent zone var
         currentZone = false;
         savantLib.writeState("userDefined.currentZone","false");

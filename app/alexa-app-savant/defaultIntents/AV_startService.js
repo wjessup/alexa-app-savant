@@ -1,7 +1,8 @@
 const
   matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
-  serviceMatcher = require('../lib/serviceMatcher');
+  serviceMatcher = require('../lib/serviceMatcher'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -37,6 +38,7 @@ module.exports = function(app,callback){
           .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
+          eventAnalytics.send(intentDictionary.intentName,cleanZones,req.slot('SERVICE'),"PowerOn");
           var voiceMessage = 'Turning on ' + req.slot('SERVICE') + ' in ' + cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

@@ -1,5 +1,6 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -37,21 +38,26 @@ module.exports = function(app,callback){
               var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeHeat","ThermostatAddress",tstatScope[5]],"full");
+              eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetHVACModeHeat",undefined,undefined,undefined,undefined,undefined,req.slot('modeToSet'));
+
               break;
             case "cool":
               var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeCool","ThermostatAddress",tstatScope[5]],"full");
+              eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetHVACModeCool",undefined,undefined,undefined,undefined,undefined,req.slot('modeToSet'));
               break;
             case "off":
               var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeOff","ThermostatAddress",tstatScope[5]],"full");
+              eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetHVACModeOff",undefined,undefined,undefined,undefined,undefined,req.slot('modeToSet'));
               break;
             case "auto":
               var voiceMessage = 'Setting system mode to '+ req.slot('modeToSet');
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
               savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeAuto","ThermostatAddress",tstatScope[5]],"full");
+              eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetHVACModeAuto",undefined,undefined,undefined,undefined,undefined,req.slot('modeToSet'));
               break;
             case "on":
               //get current temperature state, decide what to do based on current temperature
@@ -69,6 +75,7 @@ module.exports = function(app,callback){
               var voiceMessage = 'I didnt understand, please try again. Say Heat,Cool,Off,Auto,On, or Off';
               break;
           }
+
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });

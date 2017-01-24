@@ -1,5 +1,6 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -22,6 +23,7 @@ module.exports = function(app,callback){
     	},function(req,res) {
     		//query heat point state
     		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentHeatPoint_'+tstatScope[5], function(currentTemp) {
+          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatCurrentHeatPoint_",undefined,undefined,undefined,undefined,currentTemp);
           var voiceMessage = 'The Heat is currently set to '+ currentTemp +' degrees';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

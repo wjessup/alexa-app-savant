@@ -1,5 +1,6 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -15,20 +16,21 @@ module.exports = function(app,callback){
 
   //Intent Enable/Disable
   if (intentDictionary.intentEnabled === 1){
-  //Intent
-  app.intent('queryCurrentTemperature', {
-      "slots":{"currentTemp":"NUMBER"}
-      ,"utterances":["what is the current temperature"]
-    },function(req,res) {
-      //Get Current Temp state
-      savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentTemperature_'+tstatScope[5], function(currentTemp) {
-        var voiceMessage = 'It is currently '+ currentTemp +' degrees inside';
-        console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-      });
-      return false;
-    }
-  );
+    //Intent
+    app.intent('queryCurrentTemperature', {
+        "slots":{"currentTemp":"NUMBER"}
+        ,"utterances":["what is the current temperature"]
+      },function(req,res) {
+        //Get Current Temp state
+        savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentTemperature_'+tstatScope[5], function(currentTemp) {
+          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatCurrentTemperature_",undefined,undefined,undefined,undefined,currentTemp);
+          var voiceMessage = 'It is currently '+ currentTemp +' degrees inside';
+          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          res.say(voiceMessage).send();
+        });
+        return false;
+      }
+    );
   }
   //Return intent meta info to index
   callback(intentDictionary);

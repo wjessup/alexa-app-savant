@@ -1,5 +1,6 @@
 //Intent includes
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -44,6 +45,7 @@ module.exports = function(app,callback){
           savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","ThermostatAddress",tstatScope[5],"CoolPointTemperature",req.slot('tempToSet')],"full");
 
           //inform
+          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetCoolPointTemperature",undefined,undefined,undefined,undefined,req.slot('tempToSet'));
           var voiceMessage = 'Setting AC to'+ req.slot('tempToSet');
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

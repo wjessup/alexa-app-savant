@@ -1,6 +1,7 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib');
+  action = require('../lib/actionLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -23,6 +24,7 @@ module.exports = function(app,callback){
           .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
+          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","dis_sleepArm",undefined,undefined,undefined,req.slot('TIMER'));
           var voiceMessage = 'Starting timer for '+req.slot('TIMER')+' minutes in '+cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

@@ -1,6 +1,8 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib');
+  action = require('../lib/actionLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
+
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -25,6 +27,7 @@ module.exports = function(app,callback){
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
     		return false;
+        eventAnalytics.send(intentDictionary.intentName,undefined,"Zone","PowerOff");
     	}
     );
   }

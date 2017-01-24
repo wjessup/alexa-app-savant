@@ -1,6 +1,8 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib');
+  action = require('../lib/actionLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
+
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -26,10 +28,11 @@ module.exports = function(app,callback){
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
+            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","__RoomSetBrightness",undefined,undefined,req.slot('LIGHTING'),undefined);
             return action.setLighting(cleanZones,0,"percent")
             .thenResolve('Turning off lights in '+ cleanZones[1]);
-
           }else{ // Do AV action (Lighting was not heard)
+            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","PowerOff");
             return action.powerOffAV(cleanZones)
             .thenResolve('Turning off '+cleanZones[1]);
           }

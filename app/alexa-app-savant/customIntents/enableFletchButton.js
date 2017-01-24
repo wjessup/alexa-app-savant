@@ -10,7 +10,7 @@ module.exports = function(app,callback){
     'intentName' : 'enableFletchButton',
     'intentVersion' : '1.0',
     'intentDescription' : 'Enable state of amazon IOT button',
-    'intentEnabled' : 0
+    'intentEnabled' : 1
   };
 
 //Intent Enable/Disable

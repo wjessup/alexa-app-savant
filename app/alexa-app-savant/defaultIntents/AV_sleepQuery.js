@@ -1,7 +1,8 @@
 const
   matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib');
-  savantLib = require('../lib/savantLib');
+  savantLib = require('../lib/savantLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
 module.change_code = 1;
 module.exports = function(app,callback){
@@ -43,6 +44,10 @@ module.exports = function(app,callback){
               }
               var voiceMessage = (zone[0] +'timer has about '+ timeLeft +' minutes left');
             }
+            var cleanZones = [];
+            cleanZones[0] =[cleanZone];
+            cleanZones[1] =[cleanZone];
+            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","SleepTimerRemainingTime",undefined,undefined,undefined,timeLeft);
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
       		});

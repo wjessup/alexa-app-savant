@@ -1,7 +1,9 @@
 const
   matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib');
-  
+  action = require('../lib/actionLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
+
+
 module.change_code = 1;
 module.exports = function(app,callback){
 
@@ -24,6 +26,10 @@ module.exports = function(app,callback){
               res.say(voiceMessage).send();
               return
           }
+          var cleanZones = [];
+          cleanZones[0] =[cleanZone];
+          cleanZones[1] =[cleanZone];
+          eventAnalytics.send(intentDictionary.intentName,cleanZones,"alexa");
           currentZone = cleanZone;
           savantLib.writeState("userDefined.currentZone",currentZone);
           var voiceMessage = "Setting location to "+currentZone;

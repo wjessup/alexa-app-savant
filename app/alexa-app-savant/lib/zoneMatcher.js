@@ -51,11 +51,17 @@ function zonesMatcher(rawZone1,rawZone2){
   var matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
   var matchedGroups2 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
   var matchedGroups = matchedGroups1.concat(matchedGroups2);
+  matchedGroups = matchedGroups.filter(function(x){//remove empty
+    return (x !== (undefined || ''));
+  });
   console.log("matchedGroups: "+matchedGroups);
   //find zone matches from either slot, then concat
   var matchedZones1 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
   var matchedZones2 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
   var matchedZones = matchedZones1.concat(matchedZones2);
+  matchedZones = matchedZones.filter(function(x){//remove empty
+    return (x !== (undefined || ''));
+  });
   console.log("matchedZones: "+matchedZones);
 
   // match Zones to savant case

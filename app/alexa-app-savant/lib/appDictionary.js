@@ -27,7 +27,7 @@ module.exports = function(app){
 
 	zoneParse.getZoneOrganization(globalZoneOrganization)
 	.then(function(groupDictionary) {
-		console.log("groupNames: "+groupDictionary[1]);
+		//console.log("groupNames: "+groupDictionary[1]);
 		app.dictionary.systemGroupNames = groupDictionary[1];
 		app.dictionary.systemGroups = groupDictionary[0];
 		appDictionaryGroups = groupDictionary[0];

@@ -5,6 +5,12 @@
 #*****************
 
 
+rebootService() {
+  sudo pm2 start all
+}
+stopService() {
+  sudo pm2 stop all
+}
 
 installMac() {
   # Make directory and download skill, move files in correct location
@@ -208,19 +214,20 @@ backupPlatform(){
 
 updateMac() {
   if [ -d ~/alexa-app-savant ]; then
-    backupMac
+    backupPlatform
     cd ~/alexa-app-savant
     echo "Getting update from NPM..."
     sudo npm update
     echo "Moving files into place..."
     cp -a ~/alexa-app-savant/node_modules/alexa-app-savant/. ~/alexa-app-savant
     restorePlatform
+    echo "Stopping service..."
+    stopService
     runloop=false
   else
     echo "Can not find alexa-app-savant in home folder, quitting."
     exit
   fi
-
 }
 updateLinux() {
   updateMac
@@ -237,12 +244,16 @@ restoreMac() {
     fi
     latestBackup='alexa-app-savant-Backup/'$(ls | sort -n -t _ -k 2 | tail -1)''
   fi
+  echo "Stopping service..."
+  stopService
   echo "Restoring user userIntents..."
   cp -R ~/$latestBackup/userIntents ~/alexa-app-savant/app/alexa-app-savant
   echo "Restoring user userFiles..."
   cp -R ~/$latestBackup/userFiles ~/alexa-app-savant/app/alexa-app-savant
   echo "Restoring user sslcerts..."
   cp -R ~/$latestBackup/sslcert ~/alexa-app-savant/node_modules/alexa-app-server
+  echo "Starting service..."
+  rebootService
   runloop=false
 }
 restoreLinux() {
@@ -331,6 +342,8 @@ certMac() {
   echo "Copying new certificate to Desktop..."
   cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ~/Desktop/
   cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer ~/Desktop/
+  echo "Rebooting service..."
+  rebootService
   echo ""
   echo "!!! NOTE !!!"
   echo "New certficate created. Copy entire contents of ~/cert.cer into amazon configuration page"
@@ -354,6 +367,8 @@ certLinux() {
   echo "Copying new certificate to home directory..."
   cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ~/
   cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer ~/
+  echo "Rebooting service..."
+  rebootService
   echo ""
   echo "!!! NOTE !!!"
   echo "New certficate created. Copy entire contents of ~/cert.cer into amazon configuration page"
@@ -367,6 +382,27 @@ certPlatform(){
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "Making a new certificate Smart Host...."
     certLinux
+  fi
+}
+
+viewLogsMac(){
+  echo "Not yet implemented on Pro Host."
+  echo "done."
+  exit
+}
+viewLogsLinux(){
+  echo "Push ctrl+c to exit...."
+  latestLog=$(ls -t ~/alexaLog* | head -1)
+  tail -f $latestLog
+}
+viewLogsPlatform(){
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Opening live logs on Pro Host...."
+    viewLogsMac
+
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "Opening live logs on Smart Host...."
+    viewLogsLinux
   fi
 }
 #*****************
@@ -394,7 +430,7 @@ echo "                                "
 
 
 echo "Please choose action: "
-options=("Install" "Update" "Backup" "Restore" "New Certificate" "Uninstall" "Quit")
+options=("Install" "Update" "Backup" "Restore" "New Certificate" "View Logs" "Uninstall" "Quit")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -442,6 +478,9 @@ do
             certPlatform
             echo "Done."
             exit
+            ;;
+        "View Logs")
+            viewLogsPlatform
             ;;
         "Restore")
             if [ -d ~/alexa-app-savant ]; then

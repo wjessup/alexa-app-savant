@@ -1,7 +1,8 @@
 //Intent includes
 var matcher = require('../lib/zoneMatcher');
 var zoneParse = require('../lib/zoneParse');
-var savantLib = require('../lib/savantLib');
+var savantLib = require('../lib/savantLib'),
+eventAnalytics = require('../lib/eventAnalytics');
 
 //Intent exports
 module.change_code = 1;
@@ -26,7 +27,8 @@ module.exports = function(app,callback){
       savantLib.serviceRequest("","lighting","",[0]);
 
       //inform
-      var voiceMessage = 'Turning off all zones';
+      eventAnalytics.send(intentDictionary.intentName,undefined,"Zone","__RoomSetBrightness",undefined,undefined,"0",undefined);
+      var voiceMessage = 'Turning off lights in all zones';
       console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
       res.say(voiceMessage).send();
     	return false;

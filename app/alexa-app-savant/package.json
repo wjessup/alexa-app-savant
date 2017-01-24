@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
+  "homepage": "https://gitlab.com/twentyeight7/alexa-app-savant",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/twentyeight7/alexa-app-savant.git"
+    "url": "git+https://gitlab.com/twentyeight7/alexa-app-savant.git"
   },
   "bugs": {
     "url": "https://tree.taiga.io/project/twentyeight7-alexa-app-savant/issues",
-    "email" : "Christopher.Clark@28seven.com"
+    "email": "Christopher.Clark@28seven.com"
   },
   "keywords": [
     "alexa",
@@ -19,11 +20,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-  "nodejitsu",
-  "example",
-  "browsenpm"
-  ],
   "author": {
   "name": "Christopher Clark",
   "email" : "Christopher.Clark@28seven.com",

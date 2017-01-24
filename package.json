@@ -1,11 +1,12 @@
 {
   "name": "alexa-app-savant",
-  "version": "0.0.54",
+  "version": "0.0.55",
   "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
+  "homepage": "https://gitlab.com/twentyeight7/alexa-app-savant",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/twentyeight7/alexa-app-savant.git"
+    "url": "git+https://gitlab.com/twentyeight7/alexa-app-savant.git"
   },
   "bugs": {
     "url": "https://tree.taiga.io/project/twentyeight7-alexa-app-savant/issues",

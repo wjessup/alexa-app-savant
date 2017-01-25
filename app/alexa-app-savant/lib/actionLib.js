@@ -33,21 +33,22 @@ function setLighting(cleanZones,value,action){
       break;
     case "range":
       for (var key in cleanZones[0]){
+        var requestedZone = cleanZones[0][key];
         switch (_.toLower(value)){
           case "high":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[100]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
             defer.resolve();
             break;
           case "hi":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[100]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
             defer.resolve();
             break;
           case "medium":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[50]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["medium"]]);
             defer.resolve();
             break;
           case "low":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[25]);
+            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["low"]]);
             defer.resolve();
             break;
           default:
@@ -85,21 +86,22 @@ function setVolume(cleanZones,value,action){
       break;
     case "range":
       for (var key in cleanZones[0]){
+        var requestedZone = cleanZones[0][key];
         switch (_.toLower(value)){
           case "high":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[34]);
+            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
             defer.resolve();
             break;
           case "hi":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[34]);
+            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
             defer.resolve();
             break;
           case "medium":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[25]);
+            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["medium"]]);
             defer.resolve();
             break;
           case "low":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[15]);
+            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["low"]]);
             defer.resolve();
             break;
           default:

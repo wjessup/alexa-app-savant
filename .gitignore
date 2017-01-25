@@ -3,3 +3,4 @@ node_modules
 /sslcert/private-key.pem
 /public_html/customSlotTypes.html
 /app/alexa-app-savant/userFiles/userInfo.plist
+/app/alexa-app-savant/userFiles/userPresets.plist

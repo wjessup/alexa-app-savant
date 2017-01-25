@@ -68,7 +68,8 @@ module.exports = function(app){
 	var _dictionaryCheck = setInterval(function() {
 	    if (typeof app.dictionary.services != 'undefined' && typeof app.dictionary.systemZones != 'undefined') {
 	        clearInterval(_dictionaryCheck);
-	        var customSlot = require('./customSlotFile')(app);
+	        require('./customSlotFile')(app);
+					require('./userPresets')(app);
 			}
 	}, 10);
 

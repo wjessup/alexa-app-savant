@@ -29,7 +29,7 @@ module.exports = function(app,callback){
           return stringLib.cleanRange(req.slot('RANGE'))
           .then(function (requestedRange) {
             savantLib.readState(requestedZone+'.CurrentVolume', function(currentVolume) {
-              userPresets.volume[requestedZone][requestedrange] = currentVolume;
+              userPresets.volume[requestedZone][requestedRange] = currentVolume;
               var userPresetsFile = path.resolve(__dirname,'../userFiles/userPresets.plist');
               if (fs.existsSync(userPresetsFile)) {
                 console.log("Writing user preset");

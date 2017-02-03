@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.alexaskillIPFW</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>ipfw</string>
+		<string>add</string>
+		<string>1</string>
+		<string>forward</string>
+		<string>127.0.0.1,1414</string>
+		<string>ip</string>
+		<string>from</string>
+		<string>any</string>
+		<string>to</string>
+		<string>any</string>
+		<string>443</string>
+		<string>in</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>

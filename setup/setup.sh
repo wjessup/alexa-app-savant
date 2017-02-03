@@ -4,6 +4,25 @@
 #****** Functions
 #*****************
 
+startServiceMac() {
+  pm2 start ~/alexa-app-savant/index.js -l ~/Desktop/alexaLog.log
+}
+startServiceLinux() {
+  pm2 start /home/RPM/alexa-app-savant/index.js -l /home/RPM/alexaLog.log
+}
+startServicePlarform() {
+  if [ -d ~/alexa-app-savant ]; then
+    backupPlatform
+  fi
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Starting on Pro Host...."
+    startServiceMac
+
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "Starting on Smart Host...."
+    startServiceLinux
+  fi
+}
 
 rebootService() {
   sudo pm2 start all
@@ -13,27 +32,42 @@ stopService() {
 }
 
 installMac() {
-  # Make directory and download skill, move files in correct location
+  echo "Making install directory..."
   mkdir ~/alexa-app-savant
   cd ~/alexa-app-savant
+  echo "Downloading skill..."
+  cd ~/alexa-app-savant
   sudo npm install alexa-app-savant --save
+  echo "Moving skill files..."
   cp -a ~/alexa-app-savant/node_modules/alexa-app-savant/. ~/alexa-app-savant
+  echo "Making sslcert and userIntents folders..."
   mkdir ~/alexa-app-savant/node_modules/alexa-app-server/sslcert
   mkdir ~/alexa-app-savant/app/alexa-app-savant/userIntents/
 
+  echo "Downloading skill dependencies..."
   cd ~/alexa-app-savant/app/alexa-app-savant
   sudo npm install --save
 
-  #install pm2 to keep script alive
+  echo "Installing watchdog service..."
   sudo npm install pm2 -g
 
-  #install launch agent to start on boot
-  cp ~/alexa-app-savant/setup/com.alexaskill.plist ~/Library/LaunchAgents
+  echo "Configuring skill LaunchAgents..."
+  sudo cp ~/alexa-app-savant/setup/LaunchAgents/com.alexaskill.plist ~/Library/LaunchAgents
+  sudo chown RPM ~/Library/LaunchAgents/com.alexaskill.plist
+  sudo chmod 644 ~/Library/LaunchAgents/com.alexaskill.plist
+  sudo chmod +x ~/Library/LaunchAgents/com.alexaskill.plist
+  echo "Configuring PF LaunchAgents..."
+  sudo cp ~/alexa-app-savant/setup/LaunchAgents/com.alexaskillPF.plist /Library/LaunchDaemons
+  sudo chown root /Library/LaunchDaemons/com.alexaskillPF.plist
+  sudo chmod 644 /Library/LaunchDaemons/com.alexaskillPF.plist
+  sudo chmod +x /Library/LaunchDaemons/com.alexaskillPF.plist
+  sudo chmod +x ~/alexa-app-savant/setup/LaunchAgents/macStartupPortPF.sh
 
+  echo "Making ssl certificate..."
   if [ -f ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem ]; then
-    echo Certs already exist... skipping
+    echo "    Skipping, certificate already exist... "
   else
-    echo Could not find certs. Making them now...
+    echo "    Could not find certificate. Making them now..."
     #Generate ssh key and cert, put in folder for server use
     openssl genrsa -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem 1024
     openssl req -new -x509 -key ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/private-key.pem -out ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer -days 365
@@ -42,32 +76,29 @@ installMac() {
     cp ~/alexa-app-savant/node_modules/alexa-app-server/sslcert/cert.cer ~/Desktop/
   fi
 
-  #cleanup
+  echo "Cleaning up..."
   rm -f ~/alexa-app-savant/server/.DS_Store
 
-  #modify server index.js with key location
+  echo "Changing SSL certificate location in alexa-app-server..."
   sed -i .bak -e "s|'sslcert/'|__dirname+'/sslcert/'|g" ~/alexa-app-savant/node_modules/alexa-app-server/index.js
 
-  #start server
+  echo "Starting skill..."
   pm2 start ~/alexa-app-savant/index.js -l ~/Desktop/alexaLog.log
 
-  #redirect port 1414
-  #older osx
-  sudo ipfw add 1 forward 127.0.0.1,1414 ip from any to any 443 in
+  echo "Redirecting SSL port 1414 > 443..."
+  #older osx sudo ipfw add 1 forward 127.0.0.1,1414 ip from any to any 443 in
   #newer osx
-  echo "
-  rdr pass inet proto tcp from any to any port 443 -> 127.0.0.1 port 1414
-  " | sudo pfctl -ef -
+  echo "rdr pass inet proto tcp from any to any port 443 -> 127.0.0.1 port 1414" | sudo pfctl -ef -
 
   # start pm2 on boot and save config
-  sudo pm2 startup
-  sudo pm2 save
+  #sudo pm2 startup
+  #sudo pm2 save
 
   ip="$(ipconfig getifaddr en0)"
   echo "-------------------------------------------------------------------------------"
   echo ""
   echo "Install complete."
-  echo "In your brower go to http://$ip:4141/alexa/savant to check if service is running"
+  echo "In your browser go to http://$ip:4141/alexa/savant to check if service is running"
   echo ""
   runloop=false
 }
@@ -135,7 +166,7 @@ installLinux(){
   echo "-------------------------------------------------------------------------------"
   echo ""
   echo "Install complete."
-  echo "In your brower go to http://$ip:4141/alexa/savant to see if service is running"
+  echo "In your browser go to http://$ip:4141/alexa/savant to see if service is running"
   echo ""
   runloop=false
 }
@@ -216,13 +247,14 @@ updateMac() {
   if [ -d ~/alexa-app-savant ]; then
     backupPlatform
     cd ~/alexa-app-savant
-    echo "Getting update from NPM..."
+    echo "Getting updates..."
     sudo npm update
     echo "Moving files into place..."
     cp -a ~/alexa-app-savant/node_modules/alexa-app-savant/. ~/alexa-app-savant
+    echo "Looking for new dependencies..."
+    sudo npm install --save
+    echo "Restoring user files..."
     restorePlatform
-    echo "Stopping service..."
-    stopService
     runloop=false
   else
     echo "Can not find alexa-app-savant in home folder, quitting."
@@ -283,6 +315,7 @@ uninstallMac() {
   sudo rm ~/Desktop/cert.cer
   echo "Removing LaunchAgents..."
   sudo rm ~/Library/LaunchAgents/com.alexaskill.plist
+  sudo rm /Library/LaunchDaemons/com.alexaskillPF.plist
   sudo rm ~/Library/LaunchAgents/PM2.plist
   echo "Removing watchdog config..."
   sudo rm -rf ~/.pm2

@@ -50,10 +50,10 @@ function send(intent,zones,service,command,range,percent,lighting,timer,temp,mod
       }).send();
     }
     if (zones) {
-      for (key in zones[0]){
+      for (var key in zones[0]){
         userAction.event({
           ec: "Zone Name",
-          ea: zones[key],
+          ea: zones[0][key],
           el: intent
         }).send();
       }
@@ -127,6 +127,21 @@ function send(intent,zones,service,command,range,percent,lighting,timer,temp,mod
         ec: "Timer",
         ea: timer,
         ev: timer,
+        el: intent
+      }).send();
+    }
+    if (temp) {
+      userAction.event({
+        ec: "HVAC Temperature",
+        ea: temp,
+        ev: temp,
+        el: intent
+      }).send();
+    }
+    if (mode) {
+      userAction.event({
+        ec: "HVAC Mode",
+        ea: mode,
         el: intent
       }).send();
     }

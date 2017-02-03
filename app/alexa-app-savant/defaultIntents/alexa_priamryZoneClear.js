@@ -16,7 +16,7 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     app.intent('primaryZoneClear', {
     		"slots":{}
-    		,"utterances":["{clear|remove} {primary |} zone"]
+    		,"utterances":["{clear|remove} {primary|current} zone"]
     	}, function(req,res) {
         eventAnalytics.send(intentDictionary.intentName,undefined,"alexa");
         //clear curent zone var

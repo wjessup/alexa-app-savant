@@ -16,7 +16,7 @@ module.exports = function(app,callback){
   if (intentDictionary.intentEnabled === 1){
     app.intent('setVolumeValue', {
     		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"ZONE"}
-    		,"utterances":["{actionPrompt} volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}","{actionPrompt} {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
+    		,"utterances":["set volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}","set {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
     	}, function(req,res) {
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {

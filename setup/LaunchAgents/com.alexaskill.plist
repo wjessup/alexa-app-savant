@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/usr/local/bin/:$PATH</string>
+	</dict>
+	<key>Label</key>
+	<string>com.alexaskill</string>
+	<key>Program</key>
+	<string>/usr/local/bin/pm2</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/bin/pm2</string>
+		<string>start</string>
+		<string>/Users/RPM/alexa-app-savant/index.js</string>
+		<string>-l</string>
+		<string>/Users/RPM/Desktop/alexaLog.log</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/RPM/alexa-app-savant/setup/LaunchAgents/SKILLstderr</string>
+	<key>StandardOutPath</key>
+	<string>/Users/RPM/alexa-app-savant/setup/LaunchAgents/SKILLstdout</string>
+	<key>WorkingDirectory</key>
+	<string>/Users/RPM/alexa-app-savant/</string>
+</dict>
+</plist>

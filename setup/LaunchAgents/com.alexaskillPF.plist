@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.alexaskillPF</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>/Users/RPM/alexa-app-savant/setup/LaunchAgents/macStartupPortPF.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/RPM/alexa-app-savant/setup/LaunchAgents/PFstderr</string>
+	<key>StandardOutPath</key>
+	<string>/Users/RPM/alexa-app-savant/setup/LaunchAgents/PFstdout</string>
+</dict>
+</plist>

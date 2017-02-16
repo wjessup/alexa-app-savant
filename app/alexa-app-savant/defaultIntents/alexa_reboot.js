@@ -16,10 +16,11 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["load intents","reboot","restart"]
     	},function(req,res) {
-        eventAnalytics.send(intentDictionary.intentName,undefined,"alexa");
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         var voiceMessage = "I'll be back";
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (pm2 restart all --update-env)");
         res.say(voiceMessage).send();
+        a.sendAlexa(["reboot",""]);
 
       	var child = require('child_process');
       	var ps = child.exec("pm2 restart all --update-env", (error, stdout, stderr) =>{

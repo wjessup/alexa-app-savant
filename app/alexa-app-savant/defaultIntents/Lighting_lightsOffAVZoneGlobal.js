@@ -23,14 +23,15 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["{actionPrompt} off all lights","{actionPrompt} off lights in all zones"]
     	},function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.intentName);
       //set dim level
       savantLib.serviceRequest("","lighting","",[0]);
 
       //inform
-      eventAnalytics.send(intentDictionary.intentName,undefined,"Zone","__RoomSetBrightness",undefined,undefined,"0",undefined);
       var voiceMessage = 'Turning off lights in all zones';
       console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
       res.say(voiceMessage).send();
+      a.sendLighting(["All","Off",req.slot('LIGHTING')]);
     	return false;
     	}
     );

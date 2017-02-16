@@ -1,5 +1,6 @@
 var zoneParse = require('./zoneParse');
 var _ = require('lodash');
+var eventAnalytics = require('./eventAnalytics');
 
 appDictionaryArray = [];
 zoneServices = {};
@@ -70,6 +71,7 @@ module.exports = function(app){
 	        clearInterval(_dictionaryCheck);
 	        require('./customSlotFile')(app);
 					require('./userPresets')(app);
+					eventAnalytics.systemAnalytics();
 			}
 	}, 10);
 

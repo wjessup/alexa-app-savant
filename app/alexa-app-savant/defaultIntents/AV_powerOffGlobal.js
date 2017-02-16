@@ -19,15 +19,13 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["{actionPrompt} everything off", "{actionPrompt} off all zones", "{actionPrompt} off everything"]
     	}, function(req,res) {
-        //message to send
-        var voiceMessage = 'Turning off all zones';
-        //Turn off zone
-  			savantLib.serviceRequest(["","PowerOff"],"zone");
-        //inform
+        var a = new eventAnalytics.event(intentDictionary.intentName);
+        var voiceMessage = 'Turning off all zones';//message to send
+  			savantLib.serviceRequest(["","PowerOff"],"zone");//Turn off zone
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-        res.say(voiceMessage).send();
-    		return false;
-        eventAnalytics.send(intentDictionary.intentName,undefined,"Zone","PowerOff");
+        res.say(voiceMessage).send();//inform
+        a.sendAV(["All","Zone","PowerOff"]);
+        return false;
     	}
     );
   }

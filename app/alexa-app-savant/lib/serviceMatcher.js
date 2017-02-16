@@ -2,11 +2,13 @@ const
   savantLib = require('../lib/savantLib'),
   didYouMean = require('didyoumean'),
   action = require('../lib/actionLib'),
+  eventAnalytics = require('./eventAnalytics'),
   q = require('q');
 
 
 
 function serviceMatcher(cleanZones,serviceIn){
+  var a = new eventAnalytics.event();
   var defer = q.defer();
   var ret = {}
   var serviceObj = [];
@@ -49,6 +51,7 @@ function serviceMatcher(cleanZones,serviceIn){
     } else if (ServiceName == 'null') {
       //we did not find a match in alias or profile names
       var err = 'I didnt understand what service you wanted, please try again.';
+      a.sendError("serviceMatcher Fail: "+serviceIn);
       defer.reject(err);
       return defer.promise;
     }
@@ -56,6 +59,7 @@ function serviceMatcher(cleanZones,serviceIn){
     //console.log(ServiceArray);
     if (typeof ServiceArray == 'undefined'){
       var err = 'I didnt understand what service you wanted, please try again.';
+      a.sendError("serviceMatcher ServiceArray Error: "+serviceIn);
       defer.reject(err);
       return defer.promise;
     }
@@ -70,12 +74,14 @@ function serviceMatcher(cleanZones,serviceIn){
   var ret = [serviceObj,cleanZones]
   console.log("[serviceObj,cleanZones]: "+ret)
   defer.resolve(ret);
+  a.sendTime(["Matching","serviceMatcher"]);
   return ret
 }
 
-function activeServiceNameMatcher(request){
+function activeServiceNameMatcher(serviceIn){
+  var a = new eventAnalytics.event();
   var defer = q.defer();
-  var serviceName = didYouMean(request,appDictionaryServiceNameArray);
+  var serviceName = didYouMean(serviceIn,appDictionaryServiceNameArray);
   var zoneStates = [];
   var request = '';
   var activeServicesArray = [];
@@ -102,12 +108,16 @@ function activeServiceNameMatcher(request){
     if (typeof(serviceName) === 'object') {
       //we did not find a match in alias or profile names
       var err = 'I didnt understand what service you wanted, please try again.';
+      a.sendError("activeServiceNameMatcher Fail: "+serviceIn);
       defer.reject(err);
+      return defer.promise;
     }
 
     if (typeof(serviceArray[0]) === 'undefined'){//check if we matched the request to a active service
       var err = serviceName +' is not active anywhere';
+      a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
       defer.reject(err);
+      return defer.promise;
     }else{
       var cleanZones= [[],[]];
       for (var key in serviceArray){
@@ -118,7 +128,8 @@ function activeServiceNameMatcher(request){
       defer.resolve(cleanZones);
     }
   });
-return defer.promise;
+  a.sendTime(["Matching","activeServiceNameMatcher"]);
+  return defer.promise;
 }
 module.exports = {
   serviceMatcher:serviceMatcher,

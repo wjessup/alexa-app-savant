@@ -21,6 +21,7 @@ module.exports = function(app,callback){
           "{decreasePrompt} volume in {-|ZONE} and {-|ZONE_TWO}", "Make {-|ZONE} and {-|ZONE_TWO} lower"
         ]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           for (var key in cleanZones[0]){
@@ -32,20 +33,22 @@ module.exports = function(app,callback){
                   var originalZone = stateIn.split(".");//parse original zone
                   var newVolume = Number(currentVolume)-6;//adjust volume
                   savantLib.serviceRequest([originalZone[0]],"volume","",[newVolume]);//set volume
+
                 });
                 console.log("setting two way volume in "+originalZone[0] )
+                a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"Two Way, -6","type":"adjust"}]);
               }else{
                 for (var i = 0; i < 10; i++){
                   savantLib.serviceRequest([originalZone[key],"VolumeDown"],"zone");
                 }
                 console.log("setting one way Volume in "+originalZone[0] )
+                a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"One Way, -10","type":"adjust"}]);
               }
             });
           }
           return cleanZones
         })
         .then(function(cleanZones) {//Inform
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","SetVolume");
           var voiceMessage = 'Lowering volume in '+ cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();

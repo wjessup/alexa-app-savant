@@ -8,7 +8,7 @@ module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'AV_sleepQuery',
+    'intentName' : 'sleepQuery',
     'intentVersion' : '1.0',
     'intentDescription' : 'get SleepTimerRemainingTime from zone sleep timer',
     'intentEnabled' : 1
@@ -19,6 +19,7 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"ZONE"}
     		,"utterances":["how much time is left in {-|ZONE}","how much longer in {-|ZONE}","how much time is left on the sleep timer in {-|ZONE}"]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
           if (err) {
               var voiceMessage = err;
@@ -34,22 +35,20 @@ module.exports = function(app,callback){
             var zone = stateIn.split(".");
             if (RemainingTime === ""){
               var voiceMessage = (zone[0] +'timer is not set');
+              a.sendError("AV_sleepQuery Timer not set in: "+ zone[0]);
             } else{
               var minsec = RemainingTime.split(":")
               var timeLeft = minsec[0];
               timeLeft = timeLeft.replace(/^[0\.]+/, "");
               console.log("timeLeft type :"+typeof(timeLeft));
               if (minsec[1]>30){
-                timeLeft = timeLeft+1
+                timeLeft = Number(timeLeft)+1
               }
-              var voiceMessage = (zone[0] +'timer has about '+ timeLeft +' minutes left');
+              var voiceMessage = (zone[0] +' timer has about '+ timeLeft +' minutes left');
             }
-            var cleanZones = [];
-            cleanZones[0] =[cleanZone];
-            cleanZones[1] =[cleanZone];
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","SleepTimerRemainingTime",undefined,undefined,undefined,timeLeft);
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
+            a.sendSleep([cleanZone,"SleepTimerRemainingTime",timeLeft]);
       		});
         });
     		return false;

@@ -25,14 +25,15 @@ module.exports = function(app,callback){
           "{actionPrompt} {-|LIGHTING} off in {-|ZONE}","{actionPrompt} {-|LIGHTING} off in {-|ZONE} and {-|ZONE_TWO}"
         ]
     	},function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           if (req.slot('LIGHTING')){ //if lighting lights or light was heard, run lighting worklow
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","__RoomSetBrightness",undefined,undefined,req.slot('LIGHTING'),undefined);
+            a.sendLighting([cleanZones,"Off",req.slot('LIGHTING')]);
             return action.setLighting(cleanZones,0,"percent")
             .thenResolve('Turning off lights in '+ cleanZones[1]);
           }else{ // Do AV action (Lighting was not heard)
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","PowerOff");
+            a.sendAV([cleanZones,"Zone","PowerOff"]);
             return action.powerOffAV(cleanZones)
             .thenResolve('Turning off '+cleanZones[1]);
           }

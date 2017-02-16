@@ -2,12 +2,14 @@ var didYouMean = require('didyoumean');
 var stringLib = require('../lib/stringLib');
 var _ = require('lodash');
 var q = require('q');
+var eventAnalytics = require('./eventAnalytics');
 var matchedKeyGroups=[];
 var cleanZones = [];
 
 
 
 function zoneMatcher(zoneIn,callback){
+  var a = new eventAnalytics.event();
   //Remove the word the if it exists
   var editZone = zoneIn.replace(/the/ig,"");
   //Match request to zone list
@@ -17,14 +19,17 @@ function zoneMatcher(zoneIn,callback){
   if (typeof cleanZone == 'undefined' || cleanZone == null){
     //return error
     var err = 'I didnt understand which zone you wanted, please try again.';
+    a.sendError("zoneMatcher Fail: "+zoneIn);
     callback(err, undefined);
   }else{
     //return cleanZone
+    a.sendTime(["Matching","zoneMatcher"]);
     callback(undefined, cleanZone);
   }
 }
 
 function zonesMatcher(rawZone1,rawZone2){
+  var a = new eventAnalytics.event();
   var defer = q.defer();
   // Set raw input to '' if empty
   if (!rawZone1){
@@ -81,6 +86,7 @@ function zonesMatcher(rawZone1,rawZone2){
     //fail off if we didnt get a match
       console.log("no zones found");
       var err = 'I didnt understand which zone you wanted, please try again.';
+      a.sendError("zonesMatcher Fail: "+rawZone1+" , "+rawZone2);
       defer.reject(err);
   }else if(currentZone != false && matchedGroups.length === 0 & matchedZones.length === 0){
     //cleanzone[0] = zones to take action in
@@ -109,6 +115,7 @@ function zonesMatcher(rawZone1,rawZone2){
     console.log("---------");
     defer.resolve(cleanZones);
   }
+  a.sendTime(["Matching","zonesMatcher"]);
   return defer.promise;
 }
 

@@ -21,12 +21,13 @@ module.exports = function(app,callback){
         "slots":{"currentTemp":"NUMBER"}
         ,"utterances":["what is the current temperature"]
       },function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         //Get Current Temp state
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentTemperature_'+tstatScope[5], function(currentTemp) {
-          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatCurrentTemperature_",undefined,undefined,undefined,undefined,currentTemp);
           var voiceMessage = 'It is currently '+ currentTemp +' degrees inside';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendHVAC(["ThermostatCurrentTemperature_",currentTemp]);
         });
         return false;
       }

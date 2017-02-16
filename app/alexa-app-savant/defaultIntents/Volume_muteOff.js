@@ -22,6 +22,7 @@ module.exports = function(app,callback){
           "{to |} unmute {-|SERVICE}","{-|SERVICE} {to |} unmute"
         ]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
           serviceMatcher.activeServiceNameMatcher(req.slot('SERVICE'))
           .then(function(cleanZones){
@@ -29,10 +30,10 @@ module.exports = function(app,callback){
             return cleanZones
           })
           .then(function(cleanZones) {//Inform
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,req.slot('SERVICE'),"MuteOff");
             var voiceMessage = 'Unmute';
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
+            a.sendAV([cleanZones,req.slot('SERVICE'),"MuteOff"]);
           })
           .fail(function(voiceMessage) {//service could not be found
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
@@ -46,10 +47,10 @@ module.exports = function(app,callback){
           return cleanZones
         })
         .then(function(cleanZones) {//Inform
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","MuteOff");
           var voiceMessage = 'Unmute';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendAV([cleanZones,"Zone","MuteOff"]);
         })
         .fail(function(voiceMessage) {//Zone could not be found
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");

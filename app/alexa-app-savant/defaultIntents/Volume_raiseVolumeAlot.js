@@ -14,6 +14,7 @@ module.exports = function(app,callback){
   };
 
   if (intentDictionary.intentEnabled === 1){
+    var a = new eventAnalytics.event(intentDictionary.intentName);
     app.intent('raiseVolumeAlot', {
     		"slots":{"ZONE":"ZONE"}
     		,"utterances":["{increasePrompt} volume in {-|ZONE} a lot", "Make {-|ZONE} much louder"]
@@ -24,10 +25,10 @@ module.exports = function(app,callback){
           .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","SetVolume");
           var voiceMessage = 'Increasing volume alot in '+ cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"Two Way, 20","type":"adjust"}]);
         })
         .fail(function(voiceMessage) {//Zone could not be found
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");

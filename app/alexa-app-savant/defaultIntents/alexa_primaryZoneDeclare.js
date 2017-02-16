@@ -19,6 +19,7 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"ZONE"}
     		,"utterances":["I am in {the |}{-|ZONE}","set {primry |} {location|zone} to {-|ZONE}"]
     	},function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
           if (err) {
               var voiceMessage = err;
@@ -26,15 +27,12 @@ module.exports = function(app,callback){
               res.say(voiceMessage).send();
               return
           }
-          var cleanZones = [];
-          cleanZones[0] =[cleanZone];
-          cleanZones[1] =[cleanZone];
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,"alexa");
           currentZone = cleanZone;
           savantLib.writeState("userDefined.currentZone",currentZone);
           var voiceMessage = "Setting location to "+currentZone;
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendAlexa(["primaryZoneDeclare",currentZone]);
         });
     		return false;
     	}

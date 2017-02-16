@@ -23,6 +23,7 @@ module.exports = function(app,callback){
     		"slots":{"ZONE":"ZONE","RANGE":"RANGE"}
     		,"utterances":["save current volume to {preset |} {-|RANGE} in {-|ZONE}"]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zonesMatcher(req.slot('ZONE'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           var requestedZone = cleanZones[0][0];
@@ -35,7 +36,7 @@ module.exports = function(app,callback){
                 console.log("Writing user preset");
                 plist.writeFileSync(userPresetsFile, userPresets);
               }
-              eventAnalytics.send(intentDictionary.intentName,cleanZones,"alexa","setVolumePreset",requestedRange,currentVolume);
+              a.sendAlexa(["setVolumePreset",requestedRange,currentVolume]);
             });
           })
           .thenResolve(cleanZones);

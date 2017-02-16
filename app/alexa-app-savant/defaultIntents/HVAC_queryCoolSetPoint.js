@@ -21,12 +21,13 @@ module.exports = function(app,callback){
         "slots":{"currentTemp":"NUMBER"}
         ,"utterances":["what is the current Cool set point"]
       },function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         //query cool point state
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentCoolPoint_'+tstatScope[5], function(currentTemp) {
-          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatCurrentCoolPoint_",undefined,undefined,undefined,undefined,currentTemp);
           var voiceMessage = 'The AC is currently set to '+ currentTemp +' degrees';
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendHVAC(["ThermostatCurrentCoolPoint_",currentTemp]);
         });
         return false;
       }

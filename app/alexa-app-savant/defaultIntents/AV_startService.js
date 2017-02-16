@@ -26,6 +26,7 @@ module.exports = function(app,callback){
           "{enablePrompt} {-|ZONE} and {-|ZONE_TWO} to {-|SERVICE}"
         ]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {//get services for requested zones and return service array for requested service
           var matchedServices = serviceMatcher.serviceMatcher(cleanZones,req.slot('SERVICE'));
@@ -38,10 +39,10 @@ module.exports = function(app,callback){
           .thenResolve(cleanZones);
         })
         .then(function(cleanZones) {//Inform
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,req.slot('SERVICE'),"PowerOn");
           var voiceMessage = 'Turning on ' + req.slot('SERVICE') + ' in ' + cleanZones[1];
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendAV([cleanZones,req.slot('SERVICE'),"PowerOn"]);
         })
         .fail(function(voiceMessage) {//Zone could not be found
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");

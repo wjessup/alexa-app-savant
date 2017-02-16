@@ -42,11 +42,12 @@ module.exports = function(app,callback){
           "{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE} and {-|ZONE_TWO} "
         ]
       }, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           //If not a lighting request turn on last used AV source
           if ((!req.slot('LIGHTING')) && (!req.slot('RANGE')) && (!req.slot('PERCENTAGE'))){
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","PowerOn");
+            a.sendAV([cleanZones,"Zone","PowerOn"]);
             console.log(intentDictionary.intentName+' Intent: '+'not a lighting request turn on last used AV source');
             return action.lastPowerOn(cleanZones)//Get last service and turn on in all cleanZones
             .thenResolve('Turning on '+cleanZones[1]);
@@ -54,7 +55,7 @@ module.exports = function(app,callback){
 
           //If a lighting request with range, turn on lights with requested range
           if (req.slot('LIGHTING') && req.slot('RANGE') && typeof(req.slot('RANGE'))=="string"){
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","__RoomSetBrightness",req.slot('RANGE'),req.slot('LIGHTING'));
+            a.sendLighting([cleanZones,req.slot('RANGE'),req.slot('LIGHTING')]);
             console.log(intentDictionary.intentName+' Intent: '+'a lighting request with range, turn on lights with requested range');
             return action.setLighting(cleanZones,req.slot('RANGE'),"range")//set lights to range in all cleanZones
             .thenResolve('Setting lights to '+req.slot('RANGE')+' in '+cleanZones[1]);
@@ -62,7 +63,7 @@ module.exports = function(app,callback){
 
           //if a lighting request with a percentage, turn on lights with requested percentage
           if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && (!req.slot('RANGE'))){
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","__RoomSetBrightness",undefined,req.slot('PERCENTAGE'),req.slot('LIGHTING'));
+            a.sendLighting([cleanZones,req.slot('PERCENTAGE'),req.slot('LIGHTING')]);
             console.log(intentDictionary.intentName+' Intent: '+'a lighting request with a percentage, turn on lights with requested percentage');
             return action.setLighting(cleanZones,req.slot('PERCENTAGE'),"percent")//set lights to percentage in all cleanZones
             .thenResolve("Setting lights to "+req.slot('PERCENTAGE')+" percent in "+ cleanZones[1]);
@@ -70,7 +71,7 @@ module.exports = function(app,callback){
 
           //if a lighting request without a percentage or range, turn on light to preset value
           if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!req.slot('RANGE'))){
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","__RoomSetBrightness",undefined,"100",req.slot('LIGHTING'));
+            a.sendLighting([cleanZones,"On",req.slot('LIGHTING')]);
             console.log(intentDictionary.intentName+' Intent: '+'a lighting request without a percentage or range, turn on light to preset value');
             return action.setLighting(cleanZones,100,"percent")//set lights to 100% in all cleanZones
             .thenResolve('Turning on lights in '+cleanZones[1]);

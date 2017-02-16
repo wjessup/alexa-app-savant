@@ -18,14 +18,16 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["{clear|remove} {primary|current} zone"]
     	}, function(req,res) {
-        eventAnalytics.send(intentDictionary.intentName,undefined,"alexa");
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         //clear curent zone var
+        var previousCurrentZone = currentZone;
         currentZone = false;
         savantLib.writeState("userDefined.currentZone","false");
         //inform
         var voiceMessage = "Clearing current zone";
         console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
         res.say(voiceMessage).send();
+        a.sendAlexa(["primaryZoneClear",previousCurrentZone]);
     		return false;
     	}
     );

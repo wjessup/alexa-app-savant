@@ -21,12 +21,13 @@ module.exports = function(app,callback){
     		"slots":{}
     		,"utterances":["what mode is the {hvacSystemPrompt} in","is the {hvacSystemPrompt} on","is the {hvacSystemPrompt} off"]
     	},function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
     		//query HVAc mode state
     		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5], function(currentMode) {
-          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","ThermostatMode_",undefined,undefined,undefined,undefined,undefined,currentMode);
           var voiceMessage = 'The system is currently set to '+ currentMode;
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendHVAC(["ThermostatMode_",currentMode]);
     		});
     		return false;
     	}

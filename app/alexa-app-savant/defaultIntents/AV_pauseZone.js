@@ -25,6 +25,7 @@ module.exports = function(app,callback){
           "{to |} pause {-|SERVICE}"
         ]
     	}, function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
           serviceMatcher.activeServiceNameMatcher(req.slot('SERVICE'))
           .then(function(cleanZones){
@@ -32,32 +33,32 @@ module.exports = function(app,callback){
             return cleanZones
           })
           .then(function(cleanZones) {//Inform
-            eventAnalytics.send(intentDictionary.intentName,cleanZones,req.slot('SERVICE'),"Pause");
             var voiceMessage = 'Pause';
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
+            a.sendAV([cleanZones,req.slot('SERVICE'),"Pause"]);
           })
           .fail(function(voiceMessage) {//service could not be found
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
           });
-          return false
+        }else{
+          matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+          .then(function(cleanZones) {
+            action.serviceCommand(cleanZones,"Pause")//Send pause command to all cleanZones
+            return cleanZones
+          })
+          .then(function(cleanZones) {//Inform
+            var voiceMessage = 'Pause';
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+            a.sendAV([cleanZones,"Zone","Pause"]);
+          })
+          .fail(function(voiceMessage) {//Zone could not be found
+            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            res.say(voiceMessage).send();
+          });
         }
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          action.serviceCommand(cleanZones,"Pause")//Send pause command to all cleanZones
-          return cleanZones
-        })
-        .then(function(cleanZones) {//Inform
-          eventAnalytics.send(intentDictionary.intentName,cleanZones,"Zone","Pause");
-          var voiceMessage = 'Pause';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        });
       return false;
       }
     );

@@ -21,6 +21,7 @@ module.exports = function(app,callback){
         "slots":{"tempToSet":"NUMBER"}
         ,"utterances":["{actionPrompt} {AC|A.C.|cooling} to {60-90|tempToSet} {degrees |}"]
       },function(req,res) {
+        var a = new eventAnalytics.event(intentDictionary.intentName);
         //check requested temp
         if (req.slot('tempToSet')< 59 ||req.slot('tempToSet')>91){
           var voiceMessage = 'I didnt understand please try again. Say a number between 60 and 90';
@@ -33,6 +34,7 @@ module.exports = function(app,callback){
         savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentCoolPoint_'+tstatScope[5], function(currentSetPoint) {
           //console.log("The Current Set point is: "+currentSetPoint);
           //console.log("The requested Set point is: "+req.slot('tempToSet'));
+          a.sendHVAC(["ThermostatCurrentCoolPoint_",currentSetPoint]);
           if (currentSetPoint == req.slot('tempToSet') ){
             var voiceMessage = 'The AC is already set to'+ currentSetPoint;
             console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
@@ -45,10 +47,10 @@ module.exports = function(app,callback){
           savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetCoolPointTemperature","ThermostatAddress",tstatScope[5],"CoolPointTemperature",req.slot('tempToSet')],"full");
 
           //inform
-          eventAnalytics.send(intentDictionary.intentName,undefined,"HVAC","SetCoolPointTemperature",undefined,undefined,undefined,undefined,req.slot('tempToSet'));
           var voiceMessage = 'Setting AC to'+ req.slot('tempToSet');
           console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
+          a.sendHVAC(["SetCoolPointTemperature",req.slot('tempToSet')]);
         });
         return false;
       }

@@ -1,3 +1,6 @@
+const
+	eventAnalytics = require('../lib/eventAnalytics');
+
 function serviceRequest(requestIn,typeIn,argumentIn,argumentValueIn){
 	console.log("serviceRequest sending:"+requestIn);
 
@@ -30,21 +33,25 @@ function serviceRequest(requestIn,typeIn,argumentIn,argumentValueIn){
 }
 
 function readState(stateIn,callback){
-    console.log("Looking for state: \""+ stateIn + "\"");
-    sendToSCLI("readstate \""+ stateIn + "\"",function(response){
-    	console.log("Readstate response: "+response);
-			response = response.replace(/(\r\n|\n|\r)/gm,"");
-    	callback(response,stateIn);
-    });
+	var a = new eventAnalytics.event();
+	console.log("Looking for state: \""+ stateIn + "\"");
+  sendToSCLI("readstate \""+ stateIn + "\"",function(response){
+  	console.log("Readstate response: "+response);
+		response = response.replace(/(\r\n|\n|\r)/gm,"");
+		a.sendTime(["readState",stateIn]);
+  	callback(response,stateIn);
+  });
 }
 function readMultipleState(stateIn,callback){
-  console.log("Looking for state: \""+ stateIn + "\"");
+	var a = new eventAnalytics.event();
+	console.log("Looking for state: \""+ stateIn + "\"");
   sendToSCLI("readstate \""+ stateIn + "\"",function(response){
   	console.log("Readstate response: "+response);
 		response = response.split(/\n/);
 		response = response.filter(function(x){//remove emmpty
       return (x !== (undefined || ''));
     });
+		a.sendTime(["readMultipleState",stateIn]);
   	callback(response,stateIn);
   });
 }
@@ -58,6 +65,7 @@ return
 
 
 function sendToSCLI (consoleString,callback){
+	var a = new eventAnalytics.event();
 	fullcommand = sclibridgePath +" "+ consoleString
 	console.log("Running:  "+ fullcommand);
 
@@ -71,6 +79,7 @@ function sendToSCLI (consoleString,callback){
 			console.log('stderr: '+stderr);
 		}
 		if (typeof callback !== 'undefined'){
+			a.sendTime(["sendToSCLI",consoleString.substr(0,consoleString.indexOf(' '))]);
 			callback (stdout);
 		};
 	});

@@ -200,7 +200,7 @@ class event {
 }
 
 function startUA(){
-  userAction = ua('UA-43924133-7', userInfo.uuid).debug();
+  userAction = ua('UA-43924133-7', userInfo.uuid)//.debug();
 }
 /*
 function OLDsend(intent,zones,service,command,range,percent,lighting,timer,temp,mode){

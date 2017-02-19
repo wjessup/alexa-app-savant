@@ -14,65 +14,45 @@ function serviceMatcher(cleanZones,serviceIn){
   var serviceObj = [];
   systemServices =  appDictionaryZoneServices;
   for (var key in cleanZones[0]){ //do each zone
-    console.log("starting loop for "+cleanZones[0][key]);
+    console.log("Trying to match service "+serviceIn+" in "+cleanZones[0][key]);
     var zoneServiceAlias = []
     var zoneServiceProfileName = []
     var cleanZone = cleanZones[0][key];
-    for (var key in systemServices[cleanZone]){
-       zoneServiceAlias.push(systemServices[cleanZone][key][6]);
-       zoneServiceProfileName.push(systemServices[cleanZone][key][1]);
+
+    for (var key2 in systemServices[cleanZone]){
+      zoneServiceAlias.push(systemServices[cleanZone][key2][6]);
+      zoneServiceProfileName.push(systemServices[cleanZone][key2][1]);
     }
-
-    //validate service name against request.  First check if service alias matchs request
-    var ServiceName = didYouMean(serviceIn, zoneServiceAlias);
-    //console.log("ServiceName: "+ServiceName);
-    //console.log('Looking for: '+req.slot('SERVICE'));
-    //console.log('Looking in zoneServiceAlias: '+zoneServiceAlias);
-
-    //get service array if we found a match
-    if (ServiceName !== 'null'){
-      //match requested service to service list
-      //console.log(systemServices[cleanZone]);
-      //console.log("ServiceName: "+ServiceName);
-      var ServiceArray = systemServices[cleanZone].filter(function (el) {
+    //console.log('Looking for: '+serviceIn+' in zoneServiceAlias: '+zoneServiceAlias);
+    var ServiceName = didYouMean(serviceIn, zoneServiceAlias);//validate request against service alias.
+    if (ServiceName != null) {
+      //console.log("zoneServiceAlias ServiceName: "+ServiceName);
+      var ServiceArray = systemServices[cleanZone].filter(function (el) {//match requested service to ServiceAlias list
         return (el[6] === ServiceName);
       })[0];
-    }
-
-    // if we have not yet found a match look in profile names
-    if (typeof ServiceArray == 'undefined') {
-      //console.log('Looking in zoneServiceProfileName: '+zoneServiceProfileName);
+    } else{// no match, look in profile names
+      //console.log('Could not match to a service alias looking for: '+serviceIn+' in zoneServiceProfileName: '+zoneServiceProfileName);
       var ServiceName = didYouMean(serviceIn, zoneServiceProfileName);
-      //console.log("ServiceName: "+ServiceName);
-
-      var ServiceArray = systemServices[cleanZone].filter(function (el) {
-        return (el[1] === ServiceName);
-      })[0];
-    } else if (ServiceName == 'null') {
-      //we did not find a match in alias or profile names
-      var err = 'I didnt understand what service you wanted, please try again.';
-      a.sendError("serviceMatcher Fail: "+serviceIn);
-      defer.reject(err);
-      return defer.promise;
+      if (ServiceName != null) {
+        //console.log("zoneServiceProfileName ServiceName: "+ServiceName);
+        var ServiceArray = systemServices[cleanZone].filter(function (el) {//match requested service to profileName list
+          return (el[1] === ServiceName);
+        })[0];
+      }
     }
-
     //console.log(ServiceArray);
-    if (typeof ServiceArray == 'undefined'){
-      var err = 'I didnt understand what service you wanted, please try again.';
-      a.sendError("serviceMatcher ServiceArray Error: "+serviceIn);
-      defer.reject(err);
+    if (typeof ServiceArray === 'undefined') {//we did not find a match in alias or profile names
+      a.sendError("serviceMatcher Fail: "+serviceIn);
+      defer.reject('I didnt understand what service you wanted, please try again.');
       return defer.promise;
     }
     if (ServiceArray != ""){
-      serviceObj[key] = ServiceArray;
+      serviceObj.push(ServiceArray);
     }
-
   }
-  //defer.resolve ([ret,cleanZones]);
-  //return defer.promise;
-
   var ret = [serviceObj,cleanZones]
-  console.log("[serviceObj,cleanZones]: "+ret)
+  //console.log("serviceObj: "+ret[0])
+  //console.log("cleanZones: "+ret[1])
   defer.resolve(ret);
   a.sendTime(["Matching","serviceMatcher"]);
   return ret

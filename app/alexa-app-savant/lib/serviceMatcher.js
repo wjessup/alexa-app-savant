@@ -63,7 +63,6 @@ function activeServiceNameMatcher(serviceIn){
     for (var key in activeServices){//break services into array
       activeServicesArray.push(activeServices[key].split("-"));
     }
-    var cleanZones= [[],[]];
     for (var key in activeServicesArray){
       var zone = activeServicesArray[key][0];
       var zoneServices = systemServices[zone];
@@ -76,12 +75,15 @@ function activeServiceNameMatcher(serviceIn){
           (zoneServices[key2]["Source Component"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1])
         ){
           console.log('Found requested active service in : '+zoneServices[key2]["Zone"]);
+          if (!cleanZones){
+            var cleanZones= [[],[]];
+          }
           cleanZones[0].push(zone);
           cleanZones[1].push(zone);
         }
       }
     }
-    if (cleanZones[0] === ''){//we did not match an active service
+    if (!cleanZones){//we did not match an active service
       a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
       defer.reject(serviceName +' is not active anywhere');
       return defer.promise;

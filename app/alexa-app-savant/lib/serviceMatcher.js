@@ -14,15 +14,10 @@ function serviceMatcher(cleanZones,serviceIn){
     var cleanZone = cleanZones[0][key];
     var zoneServices = systemServices[cleanZone];
     console.log("Trying to match service "+serviceIn+" in "+cleanZone);
-    //build list of alias and source components for zone
-    var zoneServiceAlias = _.map(zoneServices, "Alias");
-    var zoneServiceComponent = _.map(zoneServices, "Source Component");
-    //match request in to a alias or soruce component
-    var matchedServiceAlias = didYouMean(serviceIn, zoneServiceAlias);
-    var matchedServiceComponent = didYouMean(serviceIn, zoneServiceComponent);
     //get index of service array for matched service
-    var foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", matchedServiceAlias]);
-    var foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", matchedServiceComponent]);
+    //map(create array of all zone alises), Didyoumean(compare request against array),  findkey(match request to zone returning an index if matched)
+    var foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", didYouMean(serviceIn, _.map(zoneServices, "Alias"))]);
+    var foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", didYouMean(serviceIn, _.map(zoneServices, "Source Component"))]);
     // get service array if an index was found
     if (foundServiceAliasIndex){ var foundService = zoneServices[foundServiceAliasIndex] }
     if (foundServiceComponentIndex){ var foundService = zoneServices[foundServiceComponentIndex] }

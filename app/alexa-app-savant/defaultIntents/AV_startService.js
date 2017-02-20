@@ -32,11 +32,9 @@ module.exports = function(app,callback){
           var matchedServices = serviceMatcher.serviceMatcher(cleanZones,req.slot('SERVICE'));
           return matchedServices
         })
-        .then(function(result) {//send power command to all found service arrays
-          var cleanZones = result[1];
-          var servicesArray = result[0];
-          return action.bulkPowerOn(servicesArray)
-          .thenResolve(cleanZones);
+        .then(function(ret) {//send power command to all found service arrays
+          return action.bulkPowerOn(ret.serviceArray)
+          .thenResolve(ret.cleanZones);
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Turning on ' + req.slot('SERVICE') + ' in ' + cleanZones[1];

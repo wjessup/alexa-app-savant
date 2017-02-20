@@ -25,8 +25,11 @@ function getZoneServices(plistFile, callback) {
   .then(function(obj) {
     obj = obj.ServiceOrderPerZone;
     var ret = {}
+
     for (var key in obj){
       var dic = []
+      var serviceObj = {};
+      var i = 0
       for (var key2 in obj[key]){
         let value = obj[key][key2]; // map references is time consuming so let’s do it only once
         let type = _.get(value, 'Service Type');
@@ -35,12 +38,19 @@ function getZoneServices(plistFile, callback) {
           "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE","nonService","SVC_ENV_SECURITYCAMERA"
         ];
         if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
-          dic.push([key,obj[key][key2]["Source Component"],obj[key][key2]["Source Logical Component"],obj[key][key2]["Service Variant ID"],obj[key][key2]["Service Type"],obj[key][key2]["Service Type"],obj[key][key2]["Alias"]]);
+          serviceObj[i] = {};
+          serviceObj[i]["Zone"] = key;
+          serviceObj[i]["Source Component"] =  obj[key][key2]["Source Component"];
+          serviceObj[i]["Source Logical Component"] = obj[key][key2]["Source Logical Component"];
+          serviceObj[i]["Service Variant ID"] = obj[key][key2]["Service Variant ID"];
+          serviceObj[i]["Service Type"] = obj[key][key2]["Service Type"];
+          serviceObj[i]["Alias"] = obj[key][key2]["Alias"];
+          i++;
         }
       }
-      ret[key] = dic;
+      ret[key] = serviceObj;
     }
-    return ret;
+    return ret
   })
 }
 
@@ -95,36 +105,3 @@ getZoneServices: getZoneServices,
 getServiceNames: getServiceNames,
 getZoneOrganization: getZoneOrganization
 }
-
-
-
-
-
-/*  var deferred = q.defer();
-  plist.readFile(plistFile, function(err, obj){
-    if (err) {
-      deferred.reject(err);
-    }
-    else {
-        obj = obj.ServiceOrderPerZone;
-        var ret = []
-        for (var key in obj){
-          for (var key2 in obj[key]){
-            let value = obj[key][key2]; // map references is time consuming so let’s do it only once
-            let type = _.get(value, 'Service Type');
-            let disabledTypes = ["SVC_GEN_GENERIC","SVC_ENV_LIGHTING","SVC_ENV_HVAC",
-              "SVC_ENV_SHADE","SVC_SETTINGS_STEREO","SVC_SETTINGS_SURROUNDSOUND",
-              "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE","nonService","SVC_ENV_SECURITYCAMERA"
-            ];
-            if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
-              ret.push(value["Source Component"]);
-              ret.push(value["Alias"]);
-            }
-          }
-        }
-        ret= _.uniq(ret, 'id');
-        deferred.resolve(ret);
-    }
-  });
-  return deferred.promise;
-  */

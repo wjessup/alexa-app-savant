@@ -3,108 +3,94 @@ const
   didYouMean = require('didyoumean'),
   action = require('../lib/actionLib'),
   eventAnalytics = require('./eventAnalytics'),
+  _ = require('lodash'),
   q = require('q');
-
-
 
 function serviceMatcher(cleanZones,serviceIn){
   var a = new eventAnalytics.event();
   var defer = q.defer();
-  var ret = {}
-  var serviceObj = [];
-  systemServices =  appDictionaryZoneServices;
+  var serviceArray = [];
   for (var key in cleanZones[0]){ //do each zone
-    console.log("Trying to match service "+serviceIn+" in "+cleanZones[0][key]);
-    var zoneServiceAlias = []
-    var zoneServiceProfileName = []
     var cleanZone = cleanZones[0][key];
-
-    for (var key2 in systemServices[cleanZone]){
-      zoneServiceAlias.push(systemServices[cleanZone][key2][6]);
-      zoneServiceProfileName.push(systemServices[cleanZone][key2][1]);
-    }
-    //console.log('Looking for: '+serviceIn+' in zoneServiceAlias: '+zoneServiceAlias);
-    var ServiceName = didYouMean(serviceIn, zoneServiceAlias);//validate request against service alias.
-    if (ServiceName != null) {
-      //console.log("zoneServiceAlias ServiceName: "+ServiceName);
-      var ServiceArray = systemServices[cleanZone].filter(function (el) {//match requested service to ServiceAlias list
-        return (el[6] === ServiceName);
-      })[0];
-    } else{// no match, look in profile names
-      //console.log('Could not match to a service alias looking for: '+serviceIn+' in zoneServiceProfileName: '+zoneServiceProfileName);
-      var ServiceName = didYouMean(serviceIn, zoneServiceProfileName);
-      if (ServiceName != null) {
-        //console.log("zoneServiceProfileName ServiceName: "+ServiceName);
-        var ServiceArray = systemServices[cleanZone].filter(function (el) {//match requested service to profileName list
-          return (el[1] === ServiceName);
-        })[0];
-      }
-    }
-    //console.log(ServiceArray);
-    if (typeof ServiceArray === 'undefined') {//we did not find a match in alias or profile names
+    var zoneServices = systemServices[cleanZone];
+    console.log("Trying to match service "+serviceIn+" in "+cleanZone);
+    //build list of alias and source components for zone
+    var zoneServiceAlias = _.map(zoneServices, "Alias");
+    var zoneServiceComponent = _.map(zoneServices, "Source Component");
+    //match request in to a alias or soruce component
+    var matchedServiceAlias = didYouMean(serviceIn, zoneServiceAlias);
+    var matchedServiceComponent = didYouMean(serviceIn, zoneServiceComponent);
+    //get index of service array for matched service
+    var foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", matchedServiceAlias]);
+    var foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", matchedServiceComponent]);
+    // get service array if an index was found
+    if (foundServiceAliasIndex){ var foundService = zoneServices[foundServiceAliasIndex] }
+    if (foundServiceComponentIndex){ var foundService = zoneServices[foundServiceComponentIndex] }
+    //if we found a service save array into serviceObj
+    if (foundService){
+      serviceArray.push([foundService["Zone"],foundService["Source Component"],foundService["Source Logical Component"],foundService["Service Variant ID"],foundService["Service Type"],foundService["Alias"]]);
+    } else {
       a.sendError("serviceMatcher Fail: "+serviceIn);
       defer.reject('I didnt understand what service you wanted, please try again.');
       return defer.promise;
     }
-    if (ServiceArray != ""){
-      serviceObj.push(ServiceArray);
-    }
   }
-  var ret = [serviceObj,cleanZones]
-  //console.log("serviceObj: "+ret[0])
-  //console.log("cleanZones: "+ret[1])
+  var ret = {"serviceArray":serviceArray,"cleanZones":cleanZones}
+  //console.log("ret.serviceArray: "+ret.serviceArray)
+  //console.log("ret.cleanZones: "+ret.cleanZones)
   defer.resolve(ret);
   a.sendTime(["Matching","serviceMatcher"]);
-  return ret
+  return defer.promise
 }
 
 function activeServiceNameMatcher(serviceIn){
   var a = new eventAnalytics.event();
   var defer = q.defer();
-  var serviceName = didYouMean(serviceIn,appDictionaryServiceNameArray);
-  var zoneStates = [];
-  var request = '';
+  var stateRequest = '';
   var activeServicesArray = [];
-  console.log('Trying to match request: '+serviceName);
-  for (var key in appDictionaryArray){
-    request = request.concat('"'+appDictionaryArray[key]+'.ActiveService'+'" ')
+
+  var serviceName = didYouMean(serviceIn,appDictionaryServiceNameArray);
+  if (serviceName === null) {//we did not find a match in alias or profile names
+    a.sendError("activeServiceNameMatcher Fail: "+serviceIn);
+    defer.reject('I didnt understand what service you wanted, please try again.');
+    return defer.promise;
   }
-  request = request.substring(1);
-  request = request.substring(0,request.length-2);
-  savantLib.readMultipleState(request, function (activeServices,stateIn){
+
+  console.log('Trying to match request: '+serviceName);
+  for (var key in appDictionaryArray){//build ActiveService states
+    stateRequest = stateRequest.concat('"'+appDictionaryArray[key]+'.ActiveService'+'" ')
+  }
+  stateRequest = stateRequest.substring(1);
+  stateRequest = stateRequest.substring(0,stateRequest.length-2);
+
+  savantLib.readMultipleState(stateRequest, function (activeServices,stateIn){//get ActiveServies
     //console.log('activeServices: '+activeServices);
     for (var key in activeServices){//break services into array
       activeServicesArray.push(activeServices[key].split("-"));
     }
-    var serviceArray = activeServicesArray.filter(function (el) {//compare requested service with active service names, return service array
-      return (el[6] === serviceName);
-    });
-    if (typeof ServiceArray == 'undefined') {// if we have not yet found a match look in profile names,return service array
-      var serviceArray = activeServicesArray.filter(function (el) {
-        return (el[1] === serviceName);
-      });
-    }
-
-    if (typeof(serviceName) === 'object') {
-      //we did not find a match in alias or profile names
-      var err = 'I didnt understand what service you wanted, please try again.';
-      a.sendError("activeServiceNameMatcher Fail: "+serviceIn);
-      defer.reject(err);
-      return defer.promise;
-    }
-
-    if (typeof(serviceArray[0]) === 'undefined'){//check if we matched the request to a active service
-      var err = serviceName +' is not active anywhere';
-      a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
-      defer.reject(err);
-      return defer.promise;
-    }else{
-      var cleanZones= [[],[]];
-      for (var key in serviceArray){
-        console.log('Found service in : '+serviceArray[key][0]);
-        cleanZones[0].push(serviceArray[key][0]);
-        cleanZones[1].push(serviceArray[key][0]);
+    var cleanZones= [[],[]];
+    for (var key in activeServicesArray){
+      var zone = activeServicesArray[key][0];
+      var zoneServices = systemServices[zone];
+      for (var key2 in zoneServices){
+        //console.log("zoneServices[key2][Alias]: "+zoneServices[key2]["Alias"])
+        //console.log("zoneServices[key2][Source Component]: "+zoneServices[key2]["Source Component"])
+        //console.log("serviceName: "+serviceName);
+        if (
+          (zoneServices[key2]["Alias"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1]) ||
+          (zoneServices[key2]["Source Component"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1])
+        ){
+          console.log('Found requested active service in : '+zoneServices[key2]["Zone"]);
+          cleanZones[0].push(zone);
+          cleanZones[1].push(zone);
+        }
       }
+    }
+    if (cleanZones[0] === ''){//we did not match an active service
+      a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
+      defer.reject(serviceName +' is not active anywhere');
+      return defer.promise;
+    }else{// we matched an active service, return cleanZones
       defer.resolve(cleanZones);
     }
   });

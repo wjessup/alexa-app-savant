@@ -53,9 +53,8 @@ module.exports = function(app){
 
 	zoneParse.getZoneServices(serviceOrderPlist)
 	.then(function(foundservices) {
-		appDictionaryZoneServices = foundservices;
-		//console.log("foundservices "+foundservices);
-		//console.log("foundservices "+JSON.stringify(foundservices));
+		systemServices = foundservices;
+		//console.log("systemServices: "+JSON.stringify(systemServices));
 	});
 
   zoneParse.getServiceNames(serviceOrderPlist)

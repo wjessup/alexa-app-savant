@@ -7,14 +7,14 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'queryFletchButton',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Query state of amazon IOT button',
-    'intentEnabled' : 1
+    'name' : 'queryFletchButton',
+    'version' : '1.0',
+    'description' : 'Query state of amazon IOT button',
+    'enabled' : 1
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('queryFletchButton', {
@@ -24,10 +24,10 @@ module.exports = function(app,callback){
     		//Check and inform user of status of IoT Button
     		savantLib.readState("userDefined.fletchButton" ,function(fletchButton) {
     			if (fletchButton==1){
-    				console.log('queryFletchButton Intent: Fletchers Button is enabled');
+    				log.error('queryFletchButton Intent: Fletchers Button is enabled');
     				res.say('Fletchers Button is enabled').send();
     			}else {
-    				console.log('queryFletchButton Intent: Fletchers Button is currently disabled');
+    				log.error('queryFletchButton Intent: Fletchers Button is currently disabled');
     				res.say('Fletchers Button is currently disabled').send();
     			};
     		});

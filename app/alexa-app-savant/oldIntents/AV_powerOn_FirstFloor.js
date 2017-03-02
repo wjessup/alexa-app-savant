@@ -7,14 +7,14 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'powerOn_FirstFloor',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Power on known zones with last used service',
-    'intentEnabled' : 0
+    'name' : 'powerOn_FirstFloor',
+    'version' : '1.0',
+    'description' : 'Power on known zones with last used service',
+    'enabled' : 0
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('powerOn_FirstFloor', {
@@ -24,21 +24,21 @@ module.exports = function(app,callback){
           cleanState = 'Family Room.LastActiveService';
           //get last Service
           savantLib.readState(cleanState, function(LastActiveService) {
-            console.log('LastActiveService: '+LastActiveService);
+            log.error('LastActiveService: '+LastActiveService);
 
             if (LastActiveService){
-              //console.log("last service:  " +LastActiveService);
+              //log.error("last service:  " +LastActiveService);
               LastActiveService = LastActiveService.replace(/(\r\n|\n|\r)/gm,"");
               cleanStateArray = LastActiveService.split("-");
-              //console.log("last service:  " +cleanStateArray);
+              //log.error("last service:  " +cleanStateArray);
 
-              console.log('Power On Intent: Turning on '+cleanStateArray[1]+ 'in Family Room and Kitchen');
+              log.error('Power On Intent: Turning on '+cleanStateArray[1]+ 'in Family Room and Kitchen');
               savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"PowerOn"],"full");
               savantLib.serviceRequest(["Kitchen",cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"PowerOn"],"full");
               savantLib.serviceRequest([cleanStateArray[0],cleanStateArray[1],cleanStateArray[2],cleanStateArray[3],cleanStateArray[4],"Play"],"full");
               res.say('Turning on '+cleanStateArray[1]+ 'in Family Room and Kitchen').send();
             }else{
-              console.log('Power On Intent: No previous service. Please choose a service to turn on');
+              log.error('Power On Intent: No previous service. Please choose a service to turn on');
               res.say('No previous service. Please choose a service to turn on').send();
             }
           });

@@ -1,58 +1,70 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
   eventAnalytics = require('../lib/eventAnalytics'),
   fs = require('fs'),
   path = require('path'),
   plist = require('simple-plist'),
   savantLib = require('../lib/savantLib'),
-  stringLib = require('../lib/stringLib');
+  _ = require('lodash'),
+  format = require('simple-fmt');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {//Intent meta information
-    'intentName' : 'setVolumePreset',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Set volume Preset for AV zone with current value',
-    'intentEnabled' : 1
+    'name' : 'setVolumePreset',
+    'version' : '3.0',
+    'description' : 'Set volume Preset for AV zone with current value',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone','zoneWithService','rangeWithRange'],
+      'test': {
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'},
+        '3' : {'scope': 'prams', 'attribute': 'range'}
+      }
+    },
+    'voiceMessages' : {
+      'success' : 'Saving volume preset {0} in {1}'
+    },
+    'slots' : {'RANGE':'RANGE','ZONE':'ZONE'},
+    'utterances' : ['save current volume to {preset |} {-|RANGE} in {-|ZONE}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('setVolumePreset', {
-    		"slots":{"ZONE":"ZONE","RANGE":"RANGE"}
-    		,"utterances":["save current volume to {preset |} {-|RANGE} in {-|ZONE}"]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          var requestedZone = cleanZones[0][0];
-          return stringLib.cleanRange(req.slot('RANGE'))
-          .then(function (requestedRange) {
-            savantLib.readState(requestedZone+'.CurrentVolume', function(currentVolume) {
-              userPresets.volume[requestedZone][requestedRange] = currentVolume;
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+            var prams = _.get(req.sessionAttributes,'prams',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          _.forEach(zone.actionable, function(zone){
+            savantLib.readStateQ(zone+'.CurrentVolume')
+            .then(function (currentVolume){
+              log.info(intentDictionary.name+' - Saving current volume:'+currentVolume)
+              userPresets.volume[zone][prams.range] = currentVolume;
               var userPresetsFile = path.resolve(__dirname,'../userFiles/userPresets.plist');
               if (fs.existsSync(userPresetsFile)) {
-                console.log("Writing user preset");
+                log.error(intentDictionary.name + ' - Writing user preset');
                 plist.writeFileSync(userPresetsFile, userPresets);
               }
-              a.sendAlexa(["setVolumePreset",requestedRange,currentVolume]);
+              a.sendAlexa(['setVolumePreset',requestedRange,currentVolume]);
             });
-          })
-          .thenResolve(cleanZones);
+          },prams);
+          return format(intentDictionary.voiceMessages.success,prams.range,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-
-          var voiceMessage = 'Saving volume preset '+req.slot('RANGE')+' in ' + cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .then(function (voiceMessage){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found or Percent was out of range
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-    	}
+  	}
     );
   }
   callback(intentDictionary);

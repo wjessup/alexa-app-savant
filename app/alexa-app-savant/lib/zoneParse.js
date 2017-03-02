@@ -99,9 +99,36 @@ function getZoneOrganization(plistFile, callback) {
   });
 }
 
+function getChannels(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+  .then(function(obj) {
+    var ret = {};
+    var channelNameArray = [];
+    for (var key in obj) {
+      var zoneChannelNameArray = [];
+      var keyArray = key.split('-')
+      if (keyArray[4]==='SVC_AV_TV'){
+        var zoneChans = {}
+        _.forEach(obj[key],function(value,key){
+          _.set(zoneChans,value.Name,key)
+          zoneChannelNameArray.push(value.Name)
+        })
+        var serviceName = keyArray[1];
+        var zoneObj = {}
+        _.set(zoneObj,serviceName,zoneChans);
+        _.set(ret,keyArray[0],zoneObj)
+        channelNameArray = zoneChannelNameArray
+      }
+    }
+    channelNameArray = _.uniq(channelNameArray)
+    return [ret,channelNameArray]
+  });
+}
+
 module.exports = {
 getZones: getZones,
 getZoneServices: getZoneServices,
 getServiceNames: getServiceNames,
-getZoneOrganization: getZoneOrganization
+getZoneOrganization: getZoneOrganization,
+getChannels:getChannels
 }

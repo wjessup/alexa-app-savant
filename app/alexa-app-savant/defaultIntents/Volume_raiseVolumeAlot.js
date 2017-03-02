@@ -1,41 +1,55 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
-  var intentDictionary = {//Intent meta information
-    'intentName' : 'raiseVolumeAlot',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Increase volume for AV zone by a large preset ammount',
-    'intentEnabled' : 1
+  var intentDictionary = {
+    'name' : 'raiseVolumeAlot',
+    'version' : '3.0',
+    'description' : 'Increase volume for AV zone by a large preset ammount',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone','zoneWithService'],
+      'test': {
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      }
+    },
+    'voiceMessages' : {
+      'success': 'Increasing volume alot in {0}'
+    },
+    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO'},
+    'utterances' : [
+      '{increasePrompt} volume in {-|ZONE} a lot', 'Make {-|ZONE} much louder',
+      '{increasePrompt} volume in {-|ZONE} and {-|ZONE_TWO} a lot', 'Make {-|ZONE} and {-|ZONE_TWO} much louder'
+    ]
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    var a = new eventAnalytics.event(intentDictionary.intentName);
-    app.intent('raiseVolumeAlot', {
-    		"slots":{"ZONE":"ZONE"}
-    		,"utterances":["{increasePrompt} volume in {-|ZONE} a lot", "Make {-|ZONE} much louder"]
-    	}, function(req,res) {
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          return action.relativeVolume(cleanZones,20)//increase volume by 40% in cleanZones
-          .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          action.relativeVolume(zone.actionable,20,20);
+          return zone
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Increasing volume alot in '+ cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"Two Way, 20","type":"adjust"}]);
+        .then(function (zone){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,zone.speakable)))
         })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-    	}
+    }
     );
   }
   callback(intentDictionary);

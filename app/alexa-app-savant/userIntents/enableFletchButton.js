@@ -7,21 +7,21 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'enableFletchButton',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Enable state of amazon IOT button',
-    'intentEnabled' : 1
+    'name' : 'enableFletchButton',
+    'version' : '1.0',
+    'description' : 'Enable state of amazon IOT button',
+    'enabled' : 1
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('enableFletchButton', {
         "slots":{}
         ,"utterances":["{enablePrompt} {fletch|fletcher |} button"]
       },function(req,res) {
-      console.log('enableFletchButton Intent: Fletchers Button is now enabled');
+      log.error('enableFletchButton Intent: Fletchers Button is now enabled');
       savantLib.writeState("userDefined.fletchButton",1);
       res.say('Fletchers Button is now enabled').send();
       return false;

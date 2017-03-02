@@ -1,38 +1,43 @@
-//Intent includes
-var savantLib = require('../lib/savantLib'),
-eventAnalytics = require('../lib/eventAnalytics');
+const
+  savantLib = require('../lib/savantLib'),
+  format = require('simple-fmt'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
-//Intent exports
-module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
-    'intentName' : 'queryHVACMode',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Get current mode for single HVAC zone. NOTE: change tstatScope in config file',
-    'intentEnabled' : 1
+    'name' : 'queryHVACMode',
+    'version' : '3.0',
+    'description' : 'Get current mode for single HVAC zone. NOTE: change tstatScope in config file',
+    'enabled' : 1,
+    'required' : {
+      'resolve': [],
+      'test': {}
+    },
+    'voiceMessages' : {
+      'success': 'The system is currently set to {0}'
+    },
+    'slots' : {},
+    'utterances' : ['what mode is the {hvacSystemPrompt} in','is the {hvacSystemPrompt} on','is the {hvacSystemPrompt} off']
   };
 
-  //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
-    //Intent
-    app.intent('queryHVACMode', {
-    		"slots":{}
-    		,"utterances":["what mode is the {hvacSystemPrompt} in","is the {hvacSystemPrompt} on","is the {hvacSystemPrompt} off"]
-    	},function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-    		//query HVAc mode state
-    		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5], function(currentMode) {
-          var voiceMessage = 'The system is currently set to '+ currentMode;
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendHVAC(["ThermostatMode_",currentMode]);
-    		});
-    		return false;
-    	}
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          return savantLib.readStateQ(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5])
+        })
+        .then(function (stateValue){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,stateValue)))
+          a.sendHVAC(['ThermostatMode_',stateValue]);
+        })
+        .fail(function(err) {
+          app.intentErr(req,res,err);
+        });
+    }
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

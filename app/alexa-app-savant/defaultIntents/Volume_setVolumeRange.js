@@ -1,45 +1,54 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {//Intent meta information
-    'intentName' : 'setVolumeRange',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Set volume for AV zone with high med low presets',
-    'intentEnabled' : 1
+    'name' : 'setVolumeRange',
+    'version' : '3.0',
+    'description' : 'Set volume for AV zone with high med low presets',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone','zoneWithService','rangeWithRange'],
+      'test': {
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'},
+        '3' : {'scope': 'prams', 'attribute': 'range'}
+      }
+    },
+    'voiceMessages' : {
+      'success' : 'Setting volume to {0} in {1}'
+    },
+    'slots' : {'RANGE':'RANGE','ZONE':'ZONE'},
+    'utterances' : ['set volume in {-|ZONE} {to |} {-|RANGE}','set {-|ZONE} volume {to |} {-|RANGE}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('setVolumeRange', {
-    		"slots":{"RANGE":"RANGE","ZONE":"ZONE"}
-    		,"utterances":["set volume in {-|ZONE} {to |} {-|RANGE}","set {-|ZONE} volume {to |} {-|RANGE}"]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          if (typeof(req.slot('RANGE')) != "undefined"){
-            return action.setVolume(cleanZones, req.slot('RANGE'),'range')//Set volume to requested range in all cleanZones
-            .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+            var prams = _.get(req.sessionAttributes,'prams',{});
           }else {
-            var err = 'I didnt understand please try again. Say High,Medium,or Low';
-            throw err
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
           }
+          action.setVolume(zone.actionable,prams.range,'range')//Set volume to requested range in all zones
+          a.sendAV([zone,'Zone','SetVolume',{'value':prams.range,'type':'set'}]);
+          return format(intentDictionary.voiceMessages.success,prams.range,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Setting volume to ' + req.slot('RANGE') + ' in ' + cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAV([cleanZones,"Zone","SetVolume",{"value":req.slot('RANGE'),"type":"set"}]);
+        .then(function (voiceMessage){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found or range could not be matched
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
       }
     );
   }

@@ -1,42 +1,62 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'sleepArm',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Start a sleep timer with a variable ammount',
-    'intentEnabled' : 1
+    'name' : 'sleepArm',
+    'version' : '3.0',
+    'description' : 'Start a sleep timer with a variable ammount',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone'],
+      'test':{
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      },
+      'failMessage': []
+    },
+    'voiceMessages' : {
+      'success': 'Starting timer for {0} minutes in {1}',
+      'error':{
+        'outOfRange' : 'I didnt understand please try again. Say a number between 1 and 120'
+      }
+    },
+    'slots' : {'TIMER':'NUMBER','ZONE':'ZONE'},
+    'utterances' : ['{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}','{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('sleepArm', {
-        "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
-        ,"utterances":["{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}","{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes"]
-      }, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          return action.sleepTimer(cleanZones,req.slot('TIMER'),"arm")//start timer by requested ammount in cleanZones
-          .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          value = Number(req.slot('TIMER'));
+          if ((value< 1 || value>121) || isNaN(value)){
+            throw app.builderErr(intentDictionary.name,'endSession',intentDictionary.voiceMessages.error.outOfRange,'outOfRange')
+          }
+          action.sleepTimer(zone.actionable,value,'arm');
+          a.sendSleep([zone,'dis_sleepArm',value]);
+          return format(intentDictionary.voiceMessages.success,value,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Starting timer for '+req.slot('TIMER')+' minutes in '+cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendSleep([cleanZones,"dis_sleepArm",req.slot('TIMER')]);
+        .then(function(voiceMessage) {
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found or time was out of range
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-      }
+    }
     );
-  }
   callback(intentDictionary);
+  }
 };

@@ -1,5 +1,5 @@
 //Intent includes
-var matcher = require('../lib/zoneMatcher');
+var matcher = require('../lib/matchers/zone');
 var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
@@ -9,14 +9,14 @@ module.exports = function(app,callback){
 
   //Intent meta information
   var intentDictionary = {
-    'intentName' : 'lightsOnValue',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Set lighting for AV zone to a percentage',
-    'intentEnabled' : 1
+    'name' : 'lightsOnValue',
+    'version' : '1.0',
+    'description' : 'Set lighting for AV zone to a percentage',
+    'enabled' : 1
   };
 
   //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
     //Intent
     app.intent('lightsOnValue', {
     		"slots":{"PERCENTAGE":"NUMBER","ZONE":"ZONE"}
@@ -24,18 +24,18 @@ module.exports = function(app,callback){
     	},function(req,res) {
     		//Make sure volume request is between 1-100
     		if (req.slot('PERCENTAGE')> 0 ||req.slot('PERCENTAGE')<101|| req.slot('PERCENTAGE') == null|| typeof(req.slot('PERCENTAGE')) == 'undefined' ){
-          console.log("Raw Lighting request: "+req.slot('PERCENTAGE'))
+          log.error("Raw Lighting request: "+req.slot('PERCENTAGE'))
         }else {
           var voiceMessage = 'I didnt understand please try again. Say a number between 1 and 100';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
           return
         }
         ///Match request to zone then do something
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
+        matcherZone.single((req.slot('ZONE')), function (err, cleanZone){
           if (err) {
               voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
+              log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
               res.say(voiceMessage).send();
               return
           }
@@ -44,7 +44,7 @@ module.exports = function(app,callback){
 
           //inform
           var voiceMessage = "Setting lights to to "+req.slot('PERCENTAGE')+" percent in "+ cleanZone;
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
     	return false;

@@ -47,6 +47,12 @@ module.exports = function(app){
     logger.write(app.dictionary.services[key]+'<br>');
   };
   logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> COMMANDREQ<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
+  for (var key in app.dictionary.serviceCommands){
+    logger.write(app.dictionary.serviceCommands[key]+'<br>');
+  };
+  logger.write('<BR>');
   logger.write('<b>Custom Slot Type:</b> RANGE<br>');
   logger.write('<b>Custom Slot Values:</b><br>');
   for (var key in app.dictionary.rangePrompt){
@@ -64,6 +70,12 @@ module.exports = function(app){
   for (var key in app.dictionary.lightingPrompt){
     logger.write(app.dictionary.lightingPrompt[key]+'<br>');
   };
-
-  console.log("Finished Writing customSlotTypes");
+  logger.write('<BR>');
+  logger.write('<b>Custom Slot Type:</b> CHANNEL<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
+  for (var key in appDictionaryChannelsArray){
+    logger.write(appDictionaryChannelsArray[key]+'<br>');
+  };
+appDictionaryChannelsArray
+  log.error("Finished Writing customSlotTypes");
 };

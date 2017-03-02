@@ -1,5 +1,5 @@
 const
-  matcher = require('../lib/zoneMatcher'),
+  matcher = require('../lib/matchers/zone'),
   action = require('../lib/actionLib'),
   eventAnalytics = require('../lib/eventAnalytics');
 
@@ -7,13 +7,13 @@ module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'muteOff',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Send Mute On to requested zone',
-    'intentEnabled' : 1
+    'name' : 'muteOff',
+    'version' : '1.0',
+    'description' : 'Send Mute On to requested zone',
+    'enabled' : 1
   };
 
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
     app.intent('muteOff', {
     		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","SERVICE":"SERVICE"}
     		,"utterances":[
@@ -22,7 +22,7 @@ module.exports = function(app,callback){
           "{to |} unmute {-|SERVICE}","{-|SERVICE} {to |} unmute"
         ]
     	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
+        var a = new eventAnalytics.event(intentDictionary.name);
         if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
           serviceMatcher.activeServiceNameMatcher(req.slot('SERVICE'))
           .then(function(cleanZones){
@@ -31,29 +31,29 @@ module.exports = function(app,callback){
           })
           .then(function(cleanZones) {//Inform
             var voiceMessage = 'Unmute';
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
             a.sendAV([cleanZones,req.slot('SERVICE'),"MuteOff"]);
           })
           .fail(function(voiceMessage) {//service could not be found
-            console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
             res.say(voiceMessage).send();
           });
           return false
         }
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
+        matcher.multi(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
         .then(function(cleanZones) {
           action.muteCommand(cleanZones,'off')//Send unmute command to all cleanZones
           return cleanZones
         })
         .then(function(cleanZones) {//Inform
           var voiceMessage = 'Unmute';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
           a.sendAV([cleanZones,"Zone","MuteOff"]);
         })
         .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
       return false;

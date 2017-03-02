@@ -1,40 +1,52 @@
 const
-  matcher = require('../lib/zoneMatcher'),
-  action = require('../lib/actionLib'),
+  savantLib = require('../lib/savantLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'primaryZoneDeclare',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'tell alexa what zone you are in',
-    'intentEnabled' : 1
+    'name' : 'primaryZoneDeclare',
+    'version' : '3.0',
+    'description' : 'tell alexa what zone you are in',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone'],
+      'test':{
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+        }
+    },
+    'voiceMessages' : {
+      'success': 'Setting location to {0}'
+    },
+    'slots' : {'ZONE':'ZONE'},
+    'utterances' : ['I am in {the |} {-|ZONE}',"I'm in {the |} {-|ZONE}",'set {primry |} {location|zone} to {-|ZONE}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('primaryZoneDeclare', {
-    		"slots":{"ZONE":"ZONE"}
-    		,"utterances":["I am in {the |}{-|ZONE}","set {primry |} {location|zone} to {-|ZONE}"]
-    	},function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
-          if (err) {
-              var voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
-              res.say(voiceMessage).send();
-              return
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            return
           }
-          currentZone = cleanZone;
-          savantLib.writeState("userDefined.currentZone",currentZone);
-          var voiceMessage = "Setting location to "+currentZone;
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAlexa(["primaryZoneDeclare",currentZone]);
+          currentZone = zone;
+          log.error('current type: '+currentZone.constructor)
+          log.error('current type: '+JSON.stringify(currentZone))
+          savantLib.writeState('userDefined.currentZone.speakable',zone.speakable);
+          savantLib.writeState('userDefined.currentZone.actionable',zone.actionable);
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,zone.speakable)))
+          a.sendAlexa(['primaryZoneDeclare',currentZone]);
+        })
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-    		return false;
     	}
     );
   }

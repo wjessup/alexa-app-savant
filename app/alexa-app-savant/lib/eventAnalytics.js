@@ -24,21 +24,21 @@ getUUID()
     startUA()
     userAction.event({ec: "alexa", ea: "Skill Boot", el: skillPackage.version}).send();
     if (newUser === 1){
-      console.log("New UUID Created: "+userInfo.uuid);
+      log.error("New UUID Created: "+userInfo.uuid);
       userAction.event({ec: "User Created",ea: "User Created" }).send();
     }else{
-      console.log("Using Existing UUID: "+userInfo.uuid);
+      log.error("Using Existing UUID: "+userInfo.uuid);
     }
   }else{
     startUA()
     if (newUser === 1){
-      console.log("New UUID Created: "+userInfo.uuid);
+      log.error("New UUID Created: "+userInfo.uuid);
       userAction.event({ec: "Blocked User", ea: "Blocked User" }).send();
     }
   }
 })
 .fail(function (err){
-  console.log("i got an error: "+err);
+  log.error("i got an error: "+err);
 });
 
 class event {
@@ -70,28 +70,50 @@ class event {
       userAction.exception(eventData).send();
     }
   }
-  sendTime(eventData) { //eventData = [cat,disc]
+
+  /*sendTimeOLD(eventData) { //eventData = [cat,disc]
     if (allowAnonymousData){
+      if (!eventData[1]){
+        eventData[1] = this.intent;
+      }
       let time = +new Date();
       userAction.timing(eventData[0],eventData[1],time - this.refTime).send();
     }
   }
+  */
+  sendTime(tc,tv) {
+    if (allowAnonymousData){
+      if (tv){
+        var tv = this.intent;
+      }
+      let time = +new Date();
+      userAction.timing(tc,tv,time - this.refTime).send();
+    }
+  }
+  sendTimeManual(tc,startTime) {
+    if (allowAnonymousData){
+      var tv = this.intent;
 
-  sendAV(eventData){ //eventData = [cleanZones, service, command, volume]
-    this.zones = eventData[0];
+      let time = +new Date();
+      userAction.timing(tc,tv,time - startTime).send();
+    }
+  }
+
+  sendAV(eventData){ //eventData = [cleanzone, service, command, volume]
+    this.zone = eventData[0];
     this.service = eventData[1];
     this.command = eventData[2];
     this.volumeLevel = eventData[3];
 
     this.sendEvent(["userAction Type","AV",this.intent]);
     this.processIntent();
-    this.processZones();
+    this.processzone();
     this.processService();
     this.processCommand();
     this.processVolumeLevel();
   }
-  sendLighting(eventData){ //eventData = [cleanZones, lightingLevel, lightingSlot]
-    this.zones = eventData[0];
+  sendLighting(eventData){ //eventData = [cleanzone, lightingLevel, lightingSlot]
+    this.zone = eventData[0];
     this.service = "Zone";
     this.command = "__RoomSetBrightness";
     this.lightingLevel = eventData[1];
@@ -99,7 +121,7 @@ class event {
 
     this.sendEvent(["userAction Type","Lighting",this.intent]);
     this.processIntent();
-    this.processZones();
+    this.processzone();
     this.processService();
     this.processCommand();
     this.processLightingLevel();
@@ -124,8 +146,8 @@ class event {
     this.processIntent();
     this.processAlexa();
   }
-  sendSleep(eventData){ //eventData = [cleanZones,command,Sleep Time]
-    this.zones = eventData[0];
+  sendSleep(eventData){ //eventData = [cleanzone,command,Sleep Time]
+    this.zone = eventData[0];
     this.service = "sleepTimer";
     this.command = eventData[1];
     this.sleepTime = eventData[2];
@@ -136,7 +158,7 @@ class event {
 
     this.sendEvent(["userAction Type","Sleep Timer",this.intent]);
     this.processIntent();
-    this.processZones();
+    this.processzone();
     this.processService();
     this.processCommand();
     this.processSleep();
@@ -144,7 +166,6 @@ class event {
 
   processIntent(){
     this.sendEvent(["Intent",this.intent]);
-    this.sendTime(["Intent",this.intent]);
   }
   processService(){
     this.sendEvent(["Service",this.service,this.intent]);
@@ -161,7 +182,7 @@ class event {
       }else if (this.volumeLevel.type === "adjust"){
         this.sendEvent(["Volume Level","Adjust",this.volumeLevel.value]);
       }else{
-        console.log('mis-used type')
+        log.error('mis-used type')
       }
     }
   }
@@ -180,33 +201,33 @@ class event {
   processSleep(){
     this.sendEvent(["Sleep Timer",this.command,this.sleepTime,this.sleepEV]);
   }
-  processZones(){
-    //cleanZones
-    for (var key of this.zones[0]){
+  processzone(){
+    //cleanzone
+    for (var key of this.zone.actionable){
       this.sendEvent(["Zone Name",key,this.intent]);
     }
-    if (this.zones[0].length > 1){
-      this.sendEvent(["Zone Request","Multi",this.intent,this.zones[0].length]);
+    if (this.zone.actionable.length > 1){
+      this.sendEvent(["Zone Request","Multi",this.intent,this.zone.actionable.length]);
     }else{
-      this.sendEvent(["Zone Request","Single",this.intent,this.zones[0].length]);
+      this.sendEvent(["Zone Request","Single",this.intent,this.zone.actionable.length]);
     }
-    if (this.zones[0].length != this.zones[1].length){
-      this.sendEvent(["Zone Type","Group",this.intent,this.zones[0].length]);
+    if (this.zone.actionable.length != this.zone.speakable.length){
+      this.sendEvent(["Zone Type","Group",this.intent,this.zone.actionable.length]);
     }else{
-      this.sendEvent(["Zone Type","Single Zone",this.intent,this.zones[0].length]);
+      this.sendEvent(["Zone Type","Single Zone",this.intent,this.zone.actionable.length]);
     }
   }
 }
 
 function startUA(){
-  userAction = ua('UA-43924133-7', userInfo.uuid)//.debug();
+  userAction = ua('UA-43924133-9', userInfo.uuid)//.debug();//UA-43924133-7
 }
 
 function getUUID(){
   var defer = q.defer();
   if (fs.existsSync(userInfoFile)) {
     userInfo = plist.readFileSync(userInfoFile);
-    //console.log("User identifier: "+userInfo.uuid);
+    //log.error("User identifier: "+userInfo.uuid);
     if (!userInfo.uuid){
       newUser = 1;
       userInfo.uuid = uuidV4();
@@ -241,9 +262,9 @@ function systemAnalytics(){
       userInfo.systemInfo = {};
       plist.writeFileSync(userInfoFile, userInfo);
     }
-    if (userInfo.systemInfo.Zones != appDictionaryArray.length){
-      userInfo.systemInfo.Zones = appDictionaryArray.length
-      userAction.event({ec: "System Size",ea: "Number of Zones", ev: appDictionaryArray.length}).send();
+    if (userInfo.systemInfo.zone != appDictionaryArray.length){
+      userInfo.systemInfo.zone = appDictionaryArray.length
+      userAction.event({ec: "System Size",ea: "Number of zone", ev: appDictionaryArray.length}).send();
       plist.writeFileSync(userInfoFile, userInfo);
     }
     if (userInfo.systemInfo.Groups != appDictionaryGroupArray.length){
@@ -264,6 +285,6 @@ function systemAnalytics(){
 }
 
 module.exports = {
-  event,
+  event:event,
   systemAnalytics:systemAnalytics
 }

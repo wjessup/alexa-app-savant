@@ -1,24 +1,29 @@
 const
-  savantLib = require('../lib/savantLib'),
   _ = require('lodash'),
+  action = require('../lib/actionLib'),
   eventAnalytics = require('../lib/eventAnalytics');
 
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'name' : 'primaryZoneClear',
+    'name' : 'zzzzCatchAll',
     'version' : '3.0',
-    'description' : 'tell alexa what zone you are in',
+    'description' : 'catch rogue requests',
     'enabled' : 1,
     'required' : {
       'resolve': {},
       'test':{}
     },
     'voiceMessages' : {
-      'success': 'Clearing current zone'
+      'success': ''
     },
-    'slots' : {},
-    'utterances' : ['{clear|remove} {primary|current} zone']
+    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO','SERVICE':'SERVICE','COMMANDREQ':'COMMANDREQ'},
+    'utterances' : [
+      '{-|ZONE}',
+      '{-|ZONE_TWO}',
+      '{-|SERVICE}',
+      '{-|COMMANDREQ}'
+    ]
   };
 
   if (intentDictionary.enabled === 1){
@@ -27,12 +32,8 @@ module.exports = function(app,callback){
       var a = new eventAnalytics.event(intentDictionary.name);
       return app.prep(req, res)
         .then(function(req) {
-          currentZonePrevious = currentZone;
-          currentZone = false;
-          savantLib.writeState('userDefined.currentZone.speakable','false');
-          savantLib.writeState('userDefined.currentZone.actionable','false');
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
-          a.sendAlexa(['primaryZoneClear',currentZonePrevious]);
+          //this should never run
+          a.sendAlexa(['zzzzCatchAllIntnet','']);
         })
         .fail(function(err) {
           app.intentErr(req,res,err);

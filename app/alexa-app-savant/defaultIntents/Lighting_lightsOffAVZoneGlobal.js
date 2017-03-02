@@ -1,39 +1,55 @@
-//Intent includes
-var matcher = require('../lib/zoneMatcher');
-var zoneParse = require('../lib/zoneParse');
-var savantLib = require('../lib/savantLib'),
-eventAnalytics = require('../lib/eventAnalytics');
+const
+  action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  savantLib = require('../lib/savantLib'),
+  format = require('simple-fmt'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
-//Intent exports
-module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
-    'intentName' : 'lightsOffAVZoneGlobal',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Turn off lights in a defined AV zone using Savants __RoomSetBrightness workflow',
-    'intentEnabled' : 1
+    'name' : 'lightsOffAVZoneGlobal',
+    'version' : '3.0',
+    'description' : 'Turn off lights in a defined AV zone using Savants __RoomSetBrightness workflow',
+    'enabled' : 1,
+    'required' : {
+      'resolve': [],
+      'test':{},
+      'failMessage': []
+    },
+    'voiceMessages' : {
+      'success': 'Turning off lights in all zones',
+      'error':{}
+    },
+    'slots' : {},
+    'utterances' : ['{actionPrompt} off all lights','{actionPrompt} off lights in all zones'],
+    'placeholder' : {
+      'zone' : {
+        'actionable' : [],
+        'speakable' : []
+      }
+    }
   };
 
-  //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
-    //Intent
-    app.intent('lightsOffAVZoneGlobal', {
-    		"slots":{}
-    		,"utterances":["{actionPrompt} off all lights","{actionPrompt} off lights in all zones"]
-    	},function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.intentName);
-      //set dim level
-      savantLib.serviceRequest("","lighting","",[0]);
-
-      //inform
-      var voiceMessage = 'Turning off lights in all zones';
-      console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-      res.say(voiceMessage).send();
-      a.sendLighting(["All","Off",req.slot('LIGHTING')]);
-    	return false;
-    	}
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          _.forEach(appDictionaryArray, function(zone){
+            savantLib.serviceRequest([zone],'lighting','',[0]);
+          });
+          a.sendLighting([intentDictionary.placeholder.zone,'Off','']);
+        })
+        .then(function (voiceMessage){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
+        })
+        .fail(function(err) {
+          log.error(err)
+          app.intentErr(req,res,err);
+        });
+    }
     );
   }
   //Return intent meta info to index

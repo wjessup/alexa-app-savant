@@ -1,38 +1,43 @@
-//Intent includes
-var savantLib = require('../lib/savantLib'),
-eventAnalytics = require('../lib/eventAnalytics');
+const
+  savantLib = require('../lib/savantLib'),
+  format = require('simple-fmt'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
-//Intent exports
-module.change_code = 1;
 module.exports = function(app,callback){
 
-  //Intent meta information
   var intentDictionary = {
-    'intentName' : 'queryHeatSetPoint',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Get current heat point temperature for single HVAC zone. NOTE: change tstatScope in config file',
-    'intentEnabled' : 1
+    'name' : 'queryHeatSetPoint',
+    'version' : '3.0',
+    'description' : 'Get current heat point temperature for single HVAC zone. NOTE: change tstatScope in config file',
+    'enabled' : 1,
+    'required' : {
+      'resolve': [],
+      'test': {}
+    },
+    'voiceMessages' : {
+      'success': 'The Heat is currently set to {0} degrees'
+    },
+    'slots' : {},
+    'utterances' : ['what is the current Heat {set |} {point |}', 'what is the heat {set |} {to |}']
   };
 
-  //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
-    //Intent
-    app.intent('queryHeatSetPoint', {
-    		"slots":{"currentTemp":"NUMBER"}
-    		,"utterances":["what is the current Heat set point", "what is the heat set to"]
-    	},function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-    		//query heat point state
-    		savantLib.readState(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentHeatPoint_'+tstatScope[5], function(currentTemp) {
-          var voiceMessage = 'The Heat is currently set to '+ currentTemp +' degrees';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendHVAC(["ThermostatCurrentHeatPoint_",currentTemp]);
-    		});
-    		return false;
-    	}
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          return savantLib.readStateQ(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentHeatPoint_'+tstatScope[5])
+        })
+        .then(function (stateValue){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,stateValue)))
+          a.sendHVAC(['ThermostatCurrentHeatPoint_',stateValue]);
+        })
+        .fail(function(err) {
+          app.intentErr(req,res,err);
+        });
+    }
     );
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };

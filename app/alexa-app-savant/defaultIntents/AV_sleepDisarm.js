@@ -1,41 +1,55 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'sleepDisarm',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Stop a sleep timer in a zone',
-    'intentEnabled' : 1
+    'name' : 'sleepDisarm',
+    'version' : '3.0',
+    'description' : 'Stop a sleep timer in a zone',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone'],
+      'test':{
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      },
+      'failMessage': []
+    },
+    'voiceMessages' : {
+      'success': 'Disabling timer in {0}',
+      'error':{}
+    },
+    'slots' : {'ZONE':'ZONE'},
+    'utterances' : ['{Stop|disable} {sleep |} timer in {-|ZONE}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('sleepDisarm', {
-        "slots":{"ZONE":"ZONE"}
-        ,"utterances":["{Stop|disable} {sleep |} timer in {-|ZONE}"]
-      }, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          return action.sleepTimer(cleanZones,"","disarm")//Disable Sleep timer in cleanZones
-          .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          action.sleepTimer(zone,'','disarm')
+          a.sendSleep([zone,'dis_sleepDisarm']);
+          return format(intentDictionary.voiceMessages.success,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Disabling timer in '+cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendSleep([cleanZones,"dis_sleepDisarm"]);
+        .then(function(voiceMessage) {
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-      }
+    }
     );
   }
   callback(intentDictionary);

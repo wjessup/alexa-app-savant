@@ -1,5 +1,5 @@
 //Intent includes
-var matcher = require('../lib/zoneMatcher');
+var matcher = require('../lib/matchers/zone');
 var zoneParse = require('../lib/zoneParse');
 var savantLib = require('../lib/savantLib');
 
@@ -9,23 +9,23 @@ module.exports = function(app,callback){
 
   //Intent meta information
   var intentDictionary = {
-    'intentName' : 'lightsOnRange',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Set lighting for AV zone with high med low presets',
-    'intentEnabled' : 1
+    'name' : 'lightsOnRange',
+    'version' : '1.0',
+    'description' : 'Set lighting for AV zone with high med low presets',
+    'enabled' : 1
   };
 
   //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
     //Intent
     app.intent('lightsOnRange', {
     		"slots":{"RANGE":"LITERAL","ZONE":"ZONE"}
     		,"utterances":["{actionPrompt} on {-|ZONE} lights to {-|RANGE}"]
     	},function(req,res) {
-    		console.log("Received range: "+ req.slot('RANGE'));
+    		log.error("Received range: "+ req.slot('RANGE'));
         if (!req.slot('RANGE')){
           var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
           return false;
         }
@@ -33,10 +33,10 @@ module.exports = function(app,callback){
         editZone = req.slot('ZONE').replace(/the/ig,"");
 
         //Match request to zone then do something
-        matcher.zoneMatcher((req.slot('ZONE')), function (err, cleanZone){
+        matcherZone.single((req.slot('ZONE')), function (err, cleanZone){
           if (err) {
               voiceMessage = err;
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
+              log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
               res.say(voiceMessage).send();
               return
           }
@@ -54,14 +54,14 @@ module.exports = function(app,callback){
     				  break;
             default:
               var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
-              console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+              log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
               res.say(voiceMessage).send();
         			return false;
       			  break;
     			}
           //inform
           var voiceMessage = 'Setting '+cleanZone+' lights to '+req.slot('RANGE');
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
+          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
           res.say(voiceMessage).send();
         });
     	return false;

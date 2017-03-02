@@ -2,7 +2,7 @@ var dnode = require('dnode');
 var savantLib = require('./savantLib');
 
 //Setup any required Savant states
-console.log('Setting up fletch button');
+log.error('Setting up fletch button');
 savantLib.writeState("userDefined.fletchButton",1);
 
 //start server to receive requests from lambda server
@@ -10,10 +10,10 @@ var server = dnode({
     customRequest : function (s, cb) {
 			cb(
 				savantLib.readState("userDefined.fletchButton" ,function(fletchButton) {
-					console.log("look what i found (fletch button): "+ fletchButton);
+					log.error("look what i found (fletch button): "+ fletchButton);
 					if (fletchButton == 1){
 						savantLib.readState('Kitchen.ZoneIsActive', function(isActive) {
-							console.log("look what i found : "+isActive);
+							log.error("look what i found : "+isActive);
 							if (isActive == 0) {
 								savantLib.serviceRequest([s],"custom");
 							} else {
@@ -21,7 +21,7 @@ var server = dnode({
 							}
 						})
 					} else {
-						console.log("button disabled, do nothing.");
+						log.error("button disabled, do nothing.");
 						//FEEDBACK
 					}
 				})
@@ -40,7 +40,7 @@ exports.handler = function(event, context, callback) {
   var d = dnode.connect('<<Savant host WAN address>>',5004);
   d.on('remote', function (remote) {
       remote.customRequest('Lutron_KitchenAV_On', function (s) {
-          console.log('maybe i can tell amazon iot something here?');
+          log.error('maybe i can tell amazon iot something here?');
           d.end();
       });
   });

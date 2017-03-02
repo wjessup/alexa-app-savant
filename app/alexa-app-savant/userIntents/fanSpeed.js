@@ -7,14 +7,14 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'fanSpeed',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Control fan with presets high/med/low as well as on/off',
-    'intentEnabled' : 1
+    'name' : 'fanSpeed',
+    'version' : '1.0',
+    'description' : 'Control fan with presets high/med/low as well as on/off',
+    'enabled' : 1
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('fanSpeed', {
@@ -44,7 +44,7 @@ module.exports = function(app,callback){
     			break;
     		}
 
-    		console.log('fanSpeed Intent: Setting fan to '+req.slot('SPEED'));
+    		log.error('fanSpeed Intent: Setting fan to '+req.slot('SPEED'));
     		savantLib.serviceRequest([SPEED],"custom");
     		res.say('Setting fan to '+req.slot('SPEED')).send();
     		return false;

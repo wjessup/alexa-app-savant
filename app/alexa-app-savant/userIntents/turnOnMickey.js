@@ -7,14 +7,14 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'turnOnMickey',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Launch custom workflow starting music in kitchen',
-    'intentEnabled' : 1
+    'name' : 'turnOnMickey',
+    'version' : '1.0',
+    'description' : 'Launch custom workflow starting music in kitchen',
+    'enabled' : 1
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('turnOnMickey', {
@@ -24,7 +24,7 @@ module.exports = function(app,callback){
 
         savantLib.serviceRequest(["Lutron_KitchenAV_On"],"custom");
 
-        console.log('turnOnMickey Intent: Turning on Mickey');
+        log.error('turnOnMickey Intent: Turning on Mickey');
         res.say('Turning on Mickey').send();
         return false;
       }

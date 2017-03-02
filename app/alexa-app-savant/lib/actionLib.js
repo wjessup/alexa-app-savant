@@ -1,21 +1,22 @@
 const
-  savantLib = require('../lib/savantLib'),
+  savantLib = require('./savantLib'),
+  commandLib = require('./commandLib.json'),
   _ = require('lodash'),
   q = require('q');
 
 
-function powerOffAV(cleanZones){
+function powerOffAV(actionableZones){
   var defer = q.defer();
-  //Turn off all zones in cleanZones
-  for (var key in cleanZones[0]){
-    console.log("sending service request: "+cleanZones[key]);
-    savantLib.serviceRequest([cleanZones[0][key],"PowerOff"],"zone");
+  //Turn off all zones in actionableZones
+  for (var key in actionableZones){
+    log.error("action.powerOffAV - "+actionableZones[key]);
+    savantLib.serviceRequest([actionableZones[key],"PowerOff"],"zone");
   }
   defer.resolve();
   return defer.promise
 }
 
-function setLighting(cleanZones,value,action){
+function setLighting(actionableZones,value,action){
   var defer = q.defer();
   switch (action){
     case "percent":
@@ -24,31 +25,39 @@ function setLighting(cleanZones,value,action){
         var err = 'I didnt understand please try again. say a number between 1 and 100';
         defer.reject(err);
       } else {
-        for (var key in cleanZones[0]){
-          console.log("sending service request: "+cleanZones[0][key]);
-          savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[value]);
+        for (var key in actionableZones){
+          log.error("action.setLighting - "+actionableZones[key]);
+          savantLib.serviceRequest([actionableZones[key]],"lighting","",[value]);
           defer.resolve();
         }
       }
       break;
     case "range":
-      for (var key in cleanZones[0]){
-        var requestedZone = cleanZones[0][key];
+      for (var key in actionableZones){
+        var requestedZone = actionableZones[key];
         switch (_.toLower(value)){
           case "high":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
+          //  savantLib.serviceRequest([actionableZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([actionableZones[key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
+            log.error("action.setLighting - "+actionableZones[key]);
             defer.resolve();
             break;
           case "hi":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
+          //  savantLib.serviceRequest([actionableZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([actionableZones[key]],"lighting","",[userPresets.lighting[requestedZone]["high"]]);
+            log.error("action.setLighting - "+actionableZones[key]);
             defer.resolve();
             break;
           case "medium":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["medium"]]);
+          //  savantLib.serviceRequest([actionableZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([actionableZones[key]],"lighting","",[userPresets.lighting[requestedZone]["medium"]]);
+            log.error("action.setLighting - "+actionableZones[key]);
             defer.resolve();
             break;
           case "low":
-            savantLib.serviceRequest([cleanZones[0][key]],"lighting","",[userPresets.lighting[requestedZone]["low"]]);
+            //savantLib.serviceRequest([actionableZones[key]],"lighting","",[100]);
+            savantLib.serviceRequest([actionableZones[key]],"lighting","",[userPresets.lighting[requestedZone]["low"]]);
+            log.error("action.setLighting - "+actionableZones[key]);
             defer.resolve();
             break;
           default:
@@ -66,7 +75,7 @@ function setLighting(cleanZones,value,action){
   return defer.promise
 }
 
-function setVolume(cleanZones,value,action){
+function setVolume(actionableZones,value,action){
   var defer = q.defer();
   switch (action){
     case "percent":
@@ -75,33 +84,37 @@ function setVolume(cleanZones,value,action){
         var err = 'I didnt understand please try again. say a number between 1 and 100';
         defer.reject(err);
       }else {
-        console.log("Raw Volume request: "+value)
+        log.error("Raw Volume request: "+value)
         var volumeValue = Math.round(value/2);
-        for (var key in cleanZones[0]){
-          console.log("sending service request: "+cleanZones[0][key]);
-          savantLib.serviceRequest([cleanZones[key]],"volume","",[volumeValue]);
+        for (var key in actionableZones){
+          log.error("action.setVolume - "+actionableZones[key]);
+          savantLib.serviceRequest([actionableZones[key]],"volume","",[volumeValue]);
         }
         defer.resolve();
       }
       break;
     case "range":
-      for (var key in cleanZones[0]){
-        var requestedZone = cleanZones[0][key];
+      for (var key in actionableZones){
+        var requestedZone = actionableZones[key];
         switch (_.toLower(value)){
           case "high":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
+            savantLib.serviceRequest([actionableZones[key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
+            log.error("action.setVolume - "+actionableZones[key]);
             defer.resolve();
             break;
           case "hi":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
+            savantLib.serviceRequest([actionableZones[key]],"volume","",[userPresets.volume[requestedZone]["high"]]);
+            log.error("action.setVolume - "+actionableZones[key]);
             defer.resolve();
             break;
           case "medium":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["medium"]]);
+            savantLib.serviceRequest([actionableZones[key]],"volume","",[userPresets.volume[requestedZone]["medium"]]);
+            log.error("action.setVolume - "+actionableZones[key]);
             defer.resolve();
             break;
           case "low":
-            savantLib.serviceRequest([cleanZones[0][key]],"volume","",[userPresets.volume[requestedZone]["low"]]);
+            savantLib.serviceRequest([actionableZones[key]],"volume","",[userPresets.volume[requestedZone]["low"]]);
+            log.error("action.setVolume - "+actionableZones[key]);
             defer.resolve();
             break;
           default:
@@ -119,15 +132,30 @@ function setVolume(cleanZones,value,action){
   return defer.promise
 }
 
-function relativeVolume(cleanZones,value){
+function relativeVolume(actionableZones,value,steps){
   var defer = q.defer();
-  for (var key in cleanZones[0]){
-    savantLib.readState(cleanZones[0][key]+'.CurrentVolume', function(currentVolume,stateIn) {
-      var originalZone = stateIn.split(".");//parse original zone
-      var newVolume = Number(currentVolume)+value;//adjust volume
-      savantLib.serviceRequest([originalZone[0]],"volume","",[newVolume]);//set volume
-    });
-  }
+  _.forEach(actionableZones, function(zone){
+    savantLib.readMultipleStateQ(zone+'.RelativeVolumeOnly" "'+zone+'.CurrentVolume')
+    .then(function (response){
+      if (response[0] === '0'){
+        var newVolume = Number(response[1])+value
+        savantLib.serviceRequest([zone],'volume','',[newVolume]);
+        log.error('setting two way volume in '+zone )
+        a.sendAV([cleanZones,'Zone','Adjust Volume',{'value':'Two Way, '+value,'type':'adjust'}]);
+      }else{
+        if (value > 0) {
+          var action = "VolumeUp"
+        }else{
+          var action = "VolumeDown"
+        }
+        _.times(steps, function() {
+           savantLib.serviceRequest([zone,action],'zone');
+        },zone,action);
+        log.error('setting one way Volume in '+zone )
+        a.sendAV([cleanZones,'Zone','Adjust Volume',{'value':'One Way, '+action,'type':'adjust'}]);
+      }
+    })
+  },value);
   defer.resolve();
   return defer.promise
 }
@@ -135,16 +163,12 @@ function relativeVolume(cleanZones,value){
 function readStateLastPower(path) {
   var defer = q.defer();
   savantLib.readState(path, function(LastActiveService) {
-    console.log("LastActiveService:"+LastActiveService+"dsfdsf")
-    console.log('type: '+typeof(LastActiveService))
+    log.error('actionLib.readStateLastPower - LastActiveService: "'+LastActiveService+'"')
     if (!LastActiveService || LastActiveService.length === 0){
-      console.log("in the if")
-      var err = 'No previous service. Please say which service to turn on';
-      defer.reject(err);
+      defer.reject({type: "endSession", exception: "noLastService"});
     }else{
       var cleanZoneArray = LastActiveService.split("-");
-      console.log("last service:  " +LastActiveService);
-      //turn on zone
+      log.error("actionLib.readStateLastPower - last service:  " +LastActiveService);
       savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"PowerOn"],"full");
       savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
       defer.resolve();
@@ -153,14 +177,13 @@ function readStateLastPower(path) {
   return defer.promise;
 }
 
-function lastPowerOn(cleanZones){
+function lastPowerOn(actionableZones){
   var prom = q();
-  for (var key in cleanZones[0]) {
+  for (var key in actionableZones) {
     prom = prom.then(function() {
-      return readStateLastPower(cleanZones[0][key]+".LastActiveService");
+      return readStateLastPower(actionableZones[key]+".LastActiveService");
     })
   }
-  console.log("past the for")
   return prom
 }
 
@@ -170,12 +193,13 @@ function bulkPowerOn(servicesArray){
     //turn on zone
     savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"PowerOn"],"full");
     savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"Play"],"full");
+    log.error("action.bulkPowerOn - "+servicesArray[key][0]);
   }
   defer.resolve();
   return defer.promise
 }
 
-function sleepTimer(cleanZones,value,action){
+function sleepTimer(actionableZones,value,action){
   var defer = q.defer();
   if (action === "arm" || action === "increment"){
     value = Number(value);
@@ -186,69 +210,94 @@ function sleepTimer(cleanZones,value,action){
   }
   switch (action){
     case "arm":
-      for (var key in cleanZones[0]){
-        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepArm","zone",cleanZones[0][key],"minutes",value],"full");
+      for (var key in actionableZones){
+        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepArm","zone",actionableZones[key],"minutes",value],"full");
+        log.error("action.sleepTimer - "+customWorkflowScope[0]);
       }
-      defer.resolve(cleanZones);
+      defer.resolve(actionableZones);
     break;
     case "disarm":
-      for (var key in cleanZones[0]){
-        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepDisarm","zone",cleanZones[0][key]],"full");
+      for (var key in actionableZones){
+        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepDisarm","zone",actionableZones[key]],"full");
+        log.error("action.sleepTimer - "+customWorkflowScope[0]);
       }
-      defer.resolve(cleanZones);
+      defer.resolve(actionableZones);
     break;
     case "increment":
-      for (var key in cleanZones[0]){
-        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepIncrement","zone",cleanZones[0][key],"minutes",value],"full");
+      for (var key in actionableZones){
+        savantLib.serviceRequest([customWorkflowScope[0],customWorkflowScope[1],"","1","SVC_GEN_GENERIC","dis_sleepIncrement","zone",actionableZones[key],"minutes",value],"full");
+        log.error("action.sleepTimer - "+customWorkflowScope[0]);
       }
-      defer.resolve(cleanZones);
+      defer.resolve(actionableZones);
     break;
   }
   return defer.promise
 }
 
-function serviceCommand(cleanZones,value,action){ //value is serviceRequest to send, must match savant
+function serviceCommand(actionableZones,value,action){ //value is serviceRequest to send, must match savant
   var defer = q.defer();
   switch (action){
-    case "commandMatcher"://accepts cleanZones as single zone string not array
-      console.log("sending service request: "+cleanZones[key]);
-      savantLib.serviceRequest([cleanZones,value],"zone");
+    case "commandMatcher"://accepts actionableZones as single zone string not array
+      savantLib.serviceRequest([actionableZones,value],"zone");
+      log.error("action.serviceCommand - "+actionableZones[key]);
       break;
-    case "allzones"://Send command to all zones in cleanZones, typically not wanted
-      for (var key in cleanZones[0]){
-        console.log("sending service request: "+cleanZones[key]);
-        savantLib.serviceRequest([cleanZones[0][key],value],"zone");
+    case "allzones"://Send command to all zones in actionableZones, typically not wanted
+      for (var key in actionableZones){
+        savantLib.serviceRequest([actionableZones[key],value],"zone");
+        log.error("action.serviceCommand - "+actionableZones[key]);
       }
       break;
-    default://Send command to only first zone in cleanZones, stopping any duplicate actions
-      console.log("sending service request: "+cleanZones[key]);
-      savantLib.serviceRequest([cleanZones[0][0],value],"zone");
+    default://Send command to only first zone in actionableZones, stopping any duplicate actions
+      savantLib.serviceRequest([actionableZones[0],value],"zone");
+      log.error("action.serviceCommand - "+actionableZones);
       break;
   }
-  defer.resolve(cleanZones);
+  defer.resolve(actionableZones);
   return defer.promise
 }
 
-function muteCommand(cleanZones,action){
+function muteCommand(actionableZones,action){
   var defer = q.defer();
   switch (action){
-    case "on"://Send mute command to all zones in cleanZones
-      for (var key in cleanZones[0]){
-        console.log("sending service request: "+cleanZones[key]);
-        savantLib.serviceRequest([cleanZones[0][key],"MuteOn"],"zone");
+    case "on"://Send mute command to all zones in actionableZones
+      for (var key in actionableZones){
+        savantLib.serviceRequest([actionableZones[key],"MuteOn"],"zone");
+        log.error("sending service request: "+actionableZones[key]);
       }
       break;
-    case "off"://Send unmute command to all zones in cleanZones
-      for (var key in cleanZones[0]){
-        console.log("sending service request: "+cleanZones[key]);
-        savantLib.serviceRequest([cleanZones[0][key],"MuteOff"],"zone");
+    case "off"://Send unmute command to all zones in actionableZones
+      for (var key in actionableZones){
+        savantLib.serviceRequest([actionableZones[key],"MuteOff"],"zone");
+        log.error("sending service request: "+actionableZones[key]);
       }
       break;
   }
-  defer.resolve(cleanZones);
+  defer.resolve(actionableZones);
   return defer.promise
 }
 
+function channelTune(actionableZones,channel){
+  var defer = q.defer();
+  log.error("actionLib.channelTune - tune to :"+channel.number)
+  for (var key of channel.number){
+    serviceCommand(actionableZones,commandLib.numbers[key])
+    sleep(500);
+  }
+  serviceCommand(actionableZones,"enter")
+
+  defer.resolve(channel.name);
+  return defer.promise
+}
+
+
+
+function sleep(dur) {
+ var d = new Date().getTime() + dur;
+  while(new Date().getTime() <= d ) {
+    //Do nothing
+  }
+
+}
 
 module.exports = {
 powerOffAV: powerOffAV,
@@ -259,5 +308,6 @@ lastPowerOn: lastPowerOn,
 bulkPowerOn: bulkPowerOn,
 sleepTimer: sleepTimer,
 serviceCommand: serviceCommand,
-muteCommand: muteCommand
+muteCommand: muteCommand,
+channelTune:channelTune
 }

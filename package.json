@@ -1,6 +1,6 @@
 {
   "name": "alexa-app-savant",
-  "version": "0.0.73",
+  "version": "0.1.1",
   "description": "alexa-app app for Savant automation systems",
   "main": "index.js",
   "homepage": "https://gitlab.com/twentyeight7/alexa-app-savant",
@@ -28,15 +28,19 @@
   },
   "license": "ISC",
   "dependencies": {
-    "alexa-app": "^2.3.4",
-    "alexa-app-server": "^2.3.1",
+    "alexa-app": "^3.1.0",
+    "alexa-app-server": "^3.0.0",
     "alexa-verifier": "0.0.5",
     "bluebird": "^2.9.34",
     "body-parser": "~1.0.1",
     "ejs": "~0.7.1",
     "express": "~4.0.0",
     "hotswap": "^1.1.0",
+    "log-timestamp": "^0.1.2",
+    "loglevel": "^1.4.1",
     "q": "^1.4.1",
+    "similarity": "^1.1.0",
+    "simple-fmt": "^0.1.0",
     "universal-analytics": "^0.4.8",
     "uuid": "^3.0.1"
   }

@@ -1,42 +1,62 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'sleepIncrement',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Start a sleep timer with a variable ammount',
-    'intentEnabled' : 1
+    'name' : 'sleepIncrement',
+    'version' : '3.0',
+    'description' : 'Extend sleep timer with a variable ammount',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone'],
+      'test':{
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      },
+      'failMessage': []
+    },
+    'voiceMessages' : {
+      'success': 'Adding {0} more minutes in {1}',
+      'error':{
+        'outOfRange' : 'I didnt understand please try again. Say a number between 1 and 120'
+      }
+    },
+    'slots' : {'TIMER':'NUMBER','ZONE':'ZONE'},
+    'utterances' : ['add {1-120|TIMER} minutes to {sleep |} timer in {-|ZONE}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('sleepIncrement', {
-        "slots":{"TIMER":"NUMBER","ZONE":"ZONE"}
-        ,"utterances":["add {1-120|TIMER} minutes to {sleep |} timer in {-|ZONE}"]
-      }, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          return action.sleepTimer(cleanZones,req.slot('TIMER'),"increment")//Add time to timer by requested ammount in cleanZones
-          .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          value = Number(req.slot('TIMER'));
+          if ((value< 1 || value>121) || isNaN(value)){
+            throw app.builderErr(intentDictionary.name,'endSession',intentDictionary.voiceMessages.error.outOfRange,'outOfRange')
+          }
+          action.sleepTimer(zone.actionable,value,'increment');
+          a.sendSleep([zone,'dis_sleepIncrement',value]);
+          return format(intentDictionary.voiceMessages.success,value,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Adding '+req.slot('TIMER')+' more minutes in '+cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendSleep([cleanZones,"dis_sleepIncrement",req.slot('TIMER')]);
+        .then(function(voiceMessage) {
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found or Percent was out of range
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-      }
+    }
     );
-  }
   callback(intentDictionary);
+  }
 };

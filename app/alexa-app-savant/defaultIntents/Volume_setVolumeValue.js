@@ -1,41 +1,60 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
-  var intentDictionary = {//Intent meta information
-    'intentName' : 'setVolumeValue',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Set volume for AV zone in percentage',
-    'intentEnabled' : 1
+  var intentDictionary = {
+    'name' : 'setVolumeValue',
+    'version' : '3.0',
+    'description' : 'Set volume for AV zone in percentage',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone','zoneWithService'],
+      'test': {
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      }
+    },
+    'voiceMessages' : {
+      'success' : 'Setting volume to {0} in {1}',
+      'error':{
+        'outOfRange' : 'I didnt understand please try again. Say a number between 1 and 100'
+      }
+    },
+    'slots' : {'VOLUMEVALUE':'NUMBER','ZONE':'ZONE'},
+    'utterances' : ['set volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}','set {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}']
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('setVolumeValue', {
-    		"slots":{"VOLUMEVALUE":"NUMBER","ZONE":"ZONE"}
-    		,"utterances":["set volume in {-|ZONE} to {0-100|VOLUMEVALUE} {percent |}","set {-|ZONE} volume to {0-100|VOLUMEVALUE} {percent |}"]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          return action.setVolume(cleanZones,req.slot('VOLUMEVALUE'),'percent')//Set volume to requested value in all cleanZones
-          .thenResolve(cleanZones);
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
+          }
+          value = Number(req.slot('VOLUMEVALUE'));
+          if ((value< 1 || value>100) || isNaN(value)){
+            throw app.builderErr(intentDictionary.name,'endSession',intentDictionary.voiceMessages.error.outOfRange,'outOfRange')
+          }
+          action.setVolume(zone.actionable,value,'percent')
+          a.sendAV([zone,'Zone','SetVolume',{'value':value,'type':'set'}]);
+          return format(intentDictionary.voiceMessages.success,value,zone.speakable)
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Setting volume to ' + req.slot('VOLUMEVALUE') + ' in ' + cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAV([cleanZones,"Zone","SetVolume",{"value":req.slot('VOLUMEVALUE'),"type":"set"}]);
+        .then(function (voiceMessage){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
         })
-        .fail(function(voiceMessage) {//Zone could not be found or Percent was out of range
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-    	}
+    }
     );
   }
   callback(intentDictionary);

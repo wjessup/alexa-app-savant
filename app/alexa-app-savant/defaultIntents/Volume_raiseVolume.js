@@ -1,61 +1,55 @@
 const
-  matcher = require('../lib/zoneMatcher'),
   action = require('../lib/actionLib'),
-  savantLib = require('../lib/savantLib'),
+  _ = require('lodash'),
+  format = require('simple-fmt'),
   eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'intentName' : 'raiseVolume',
-    'intentVersion' : '2.0',
-    'intentDescription' : 'Increase volume for AV zone by a preset ammount',
-    'intentEnabled' : 1
+    'name' : 'raiseVolume',
+    'version' : '3.0',
+    'description' : 'Increase volume for AV zone by a preset ammount',
+    'enabled' : 1,
+    'required' : {
+      'resolve': ['zoneWithZone','zoneWithService'],
+      'test': {
+        '1' : {'scope': 'zone', 'attribute': 'actionable'},
+        '2' : {'scope': 'zone', 'attribute': 'speakable'}
+      }
+    },
+    'voiceMessages' : {
+      'success': 'Increasing volume in {0}'
+    },
+    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO'},
+    'utterances' : [
+      '{increasePrompt} volume in {-|ZONE}', 'Make {-|ZONE} louder',
+      '{increasePrompt} volume in {-|ZONE} and {-|ZONE_TWO}', 'Make {-|ZONE} and {-|ZONE_TWO} louder'
+    ]
   };
 
-  if (intentDictionary.intentEnabled === 1){
-    app.intent('raiseVolume', {
-    		"slots":{"ZONE":"ZONE"}
-    		,"utterances":["{increasePrompt} volume in {-|ZONE}", "Make {-|ZONE} louder"]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.intentName);
-        matcher.zonesMatcher(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          for (var key in cleanZones[0]){
-            var requestedZone = cleanZones[0][key]
-            savantLib.readState(requestedZone+'.RelativeVolumeOnly', function(RelativeVolumeOnly,stateIn) {
-              var originalZone = stateIn.split(".");//parse original zone
-              if (RelativeVolumeOnly === "0"){
-                savantLib.readState(originalZone[0]+'.CurrentVolume', function(currentVolume,stateIn) {
-                  var originalZone = stateIn.split(".");//parse original zone
-                  var newVolume = Number(currentVolume)+6;//adjust volume
-                  savantLib.serviceRequest([originalZone[0]],"volume","",[newVolume]);//set volume
-                });
-                console.log("setting two way volume in "+originalZone[0] )
-                a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"Two Way, 6","type":"adjust"}]);
-              }else{
-                for (var i = 0; i < 10; i++){
-                  savantLib.serviceRequest([originalZone[key],"VolumeUp"],"zone");
-                }
-                console.log("setting one way Volume in "+originalZone[0] )
-                a.sendAV([cleanZones,"Zone","Adjust Volume",{"value":"One Way, 10","type":"adjust"}]);
-              }
-            });
+  if (intentDictionary.enabled === 1){
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function (){
+          if (_.get(req.sessionAttributes,'error',{}) === 0){
+            var zone = _.get(req.sessionAttributes,'zone',{});
+          }else {
+            log.error(intentDictionary.name+' - intent not run verify failed')
+            return
           }
-          return cleanZones
+          action.relativeVolume(zone.actionable,6,10);
+          return zone
         })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Increasing volume in '+ cleanZones[1];
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .then(function (zone){
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,zone.speakable)))
         })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.intentName+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
+        .fail(function(err) {
+          app.intentErr(req,res,err);
         });
-      return false;
-    	}
+    }
     );
   }
   callback(intentDictionary);

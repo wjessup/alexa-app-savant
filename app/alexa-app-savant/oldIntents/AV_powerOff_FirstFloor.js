@@ -7,21 +7,21 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'powerOff_FirstFloor',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Power off multiple known zone',
-    'intentEnabled' : 0
+    'name' : 'powerOff_FirstFloor',
+    'version' : '1.0',
+    'description' : 'Power off multiple known zone',
+    'enabled' : 0
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('powerOff_FirstFloor', {
     		"slots":{"ZONE":"ZONE"}
     		,"utterances":["{actionPrompt} off first floor"]
     	},function(req,res) {
-  			console.log('Power Off Intent: Turning off first floor');
+  			log.error('Power Off Intent: Turning off first floor');
   			savantLib.serviceRequest(["Kitchen","PowerOff"],"zone");
         savantLib.serviceRequest(["Family Room","PowerOff"],"zone");
         savantLib.serviceRequest(["Living Room","PowerOff"],"zone");

@@ -7,14 +7,14 @@ module.exports = function(app,callback){
 
 //Intent meta information
   var intentDictionary = {
-    'intentName' : 'turnOnSanta',
-    'intentVersion' : '1.0',
-    'intentDescription' : 'Launch custom workflow making santa fart',
-    'intentEnabled' : 1
+    'name' : 'turnOnSanta',
+    'version' : '1.0',
+    'description' : 'Launch custom workflow making santa fart',
+    'enabled' : 1
   };
 
 //Intent Enable/Disable
-  if (intentDictionary.intentEnabled === 1){
+  if (intentDictionary.enabled === 1){
 
 //Intent
     app.intent('turnOnSanta', {
@@ -22,7 +22,7 @@ module.exports = function(app,callback){
     		,"utterances":["Turn on santa","make santa talk"]
     	},function(req,res) {
     		savantLib.serviceRequest(["Santa"],"custom");
-    		console.log('turnOnSanta Intent: Santa');
+    		log.error('turnOnSanta Intent: Santa');
     		res.say('').send();
     		return false;
     	}

@@ -1,46 +1,37 @@
-var didYouMean = require('didyoumean');
-var stringLib = require('../lib/stringLib');
-var _ = require('lodash');
-var q = require('q');
-var eventAnalytics = require('./eventAnalytics');
-var matchedKeyGroups=[];
-var cleanZones = [];
+const
+  didYouMean = require('didyoumean'),
+  _ = require('lodash'),
+  q = require('q'),
+  stringLib = require('../stringLib'),
+  eventAnalytics = require('../eventAnalytics'),
+  voiceMessages = require('../voiceMessages.json');
 
-
-
-function zoneMatcher(zoneIn,callback){
+function single(zoneIn,callback){
   var a = new eventAnalytics.event();
-  //Remove the word the if it exists
-  var editZone = zoneIn.replace(/the/ig,"");
-  //Match request to zone list
+  log.error("matcherZone.single -  Matching requested zone...");
+  log.info("matcherZone.single -  zoneIn: "+zoneIn);
+  var editZone = zoneIn.replace(/the/ig,"");//Remove the word "the" if it exists
   var cleanZone = didYouMean(editZone, appDictionaryArray);
-
-  //make sure cleanZone exists
-  if (typeof cleanZone == 'undefined' || cleanZone == null){
-    //return error
-    var err = 'I didnt understand which zone you wanted, please try again.';
-    a.sendError("zoneMatcher Fail: "+zoneIn);
-    callback(err, undefined);
-  }else{
-    //return cleanZone
-    a.sendTime(["Matching","zoneMatcher"]);
+  if (typeof cleanZone == 'undefined' || cleanZone == null){// no match
+    a.sendError("Single Zone Match Fail: "+zoneIn);
+    callback(voiceMessages.error.zoneNotFound, undefined);
+  }else{// match
+    a.sendTime("Matching","Single");
     callback(undefined, cleanZone);
   }
 }
 
-function zonesMatcher(rawZone1,rawZone2){
+function multi(rawZone1,rawZone2){
   var a = new eventAnalytics.event();
+  var matchedKeyGroups=[];
+  var ret = {};
+  log.error("matcherZone.multi - Matching requested zones...");
   var defer = q.defer();
   // Set raw input to '' if empty
-  if (!rawZone1){
-    var rawZone1 = '';
-  }
-  if (!rawZone2){
-    var rawZone2 = '';
-  }
-
-  console.log("Looking for: "+rawZone1+" and " +rawZone2);
-
+  if (!rawZone1){ var rawZone1 = '' }
+  if (!rawZone2){ var rawZone2 = '' }
+  log.info("matcherZone.multi - slot 1: "+rawZone1);
+  log.info("matcherZone.multi - slot 2: "+rawZone2);
   //sanitize input
   var lowerrawZone1 = _.toLower(rawZone1);
   var lowerrawZone2 = _.toLower(rawZone2);
@@ -51,7 +42,6 @@ function zonesMatcher(rawZone1,rawZone2){
     lowerrawZone1 = lowerrawZone1.replace(/1st/ig,"first");
     lowerrawZone2 = lowerrawZone2.replace(/1st/ig,"first");
   }
-
   //find Group match from either slot, then concat
   var matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
   var matchedGroups2 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
@@ -59,7 +49,7 @@ function zonesMatcher(rawZone1,rawZone2){
   matchedGroups = matchedGroups.filter(function(x){//remove empty
     return (x !== (undefined || ''));
   });
-  console.log("matchedGroups: "+matchedGroups);
+  log.info("matcherZone.multi - matchedGroups: "+matchedGroups);
   //find zone matches from either slot, then concat
   var matchedZones1 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
   var matchedZones2 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
@@ -67,7 +57,7 @@ function zonesMatcher(rawZone1,rawZone2){
   matchedZones = matchedZones.filter(function(x){//remove empty
     return (x !== (undefined || ''));
   });
-  console.log("matchedZones: "+matchedZones);
+  log.info("matcherZone.multi - matchedZones: "+matchedZones);
 
   // match Zones to savant case
   for (var key in matchedZones){
@@ -84,42 +74,36 @@ function zonesMatcher(rawZone1,rawZone2){
 
   if (currentZone === false && matchedGroups.length === 0 & matchedZones.length === 0){
     //fail off if we didnt get a match
-      console.log("no zones found");
-      var err = 'I didnt understand which zone you wanted, please try again.';
-      a.sendError("zonesMatcher Fail: "+rawZone1+" , "+rawZone2);
-      defer.reject(err);
+      log.error("matcherZone.multi - no zones found");
+      a.sendError("Multi Zone Match Fail: "+rawZone1+" , "+rawZone2);
+      defer.reject(voiceMessages.error.zoneNotFound);
   }else if(currentZone != false && matchedGroups.length === 0 & matchedZones.length === 0){
-    //cleanzone[0] = zones to take action in
-    cleanZones[0] = [currentZone];
-    //cleanzone2 = what to tell user you are doing.  says group name not zone names
-    cleanZones[1] = [currentZone];
-    console.log("Single zone mode: "+cleanZones);
-    console.log("");
-    defer.resolve(cleanZones);
+    log.error("matcherZone.multi - Single zone mode");
+    ret = currentZone;
+    a.sendError("Single zone mode: "+ret.actionable);
+    defer.resolve(ret);
   }else{
-    //cleanzone[0] = zones to take action in
-    cleanZones[0] = matchedZones.concat(matchedKeyGroups);
-    //cleanzone2 = what to tell user you are doing.  says group name not zone names
-    cleanZones[1] = stringLib.addAnd(matchedGroups.concat(matchedZones));
-    //what did we find?
-    console.log("---------");
-    console.log("Zones to send commands to:");
-    for (var key in cleanZones[0]){
-      console.log("zone "+key+": "+ cleanZones[0][key]);
+    ret.actionable = matchedZones.concat(matchedKeyGroups);
+    ret.speakable = stringLib.addAnd(matchedGroups.concat(matchedZones));
+
+    log.info("matcherZone.multi ---------");
+    log.info("matcherZone.multi - Zones to send commands to:");
+    for (var key in ret.actionable){
+      log.info('matcherZone.multi - zone '+key+': '+ ret.actionable[key]);
     }
-    console.log("---------");
-    console.log("Zones to say:");
-    for (var key in cleanZones[1]){
-      console.log("zone "+key+": "+ cleanZones[1][key]);
+    log.info("matcherZone.multi ---------");
+    log.info("matcherZone.multi - Zones to say:");
+    for (var key in ret.speakable){
+      log.info('matcherZone.multi - zone '+key+': '+ ret.speakable[key]);
     }
-    console.log("---------");
-    defer.resolve(cleanZones);
+    log.info("matcherZone.multi ---------");
+    defer.resolve(ret);
   }
-  a.sendTime(["Matching","zonesMatcher"]);
+  a.sendTime("Matching","Multi");
   return defer.promise;
 }
 
 module.exports = {
-zoneMatcher : zoneMatcher,
-zonesMatcher : zonesMatcher
+single : single,
+multi : multi
 }

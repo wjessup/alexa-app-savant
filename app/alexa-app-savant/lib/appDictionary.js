@@ -1,6 +1,8 @@
-var zoneParse = require('./zoneParse');
-var _ = require('lodash');
-var eventAnalytics = require('./eventAnalytics');
+const
+	zoneParse = require('./zoneParse'),
+	commandLib = require('./commandLib.json'),
+	_ = require('lodash')
+ 	eventAnalytics = require('./eventAnalytics');
 
 appDictionaryArray = [];
 zoneServices = {};
@@ -23,21 +25,25 @@ module.exports = function(app){
 		"decreasePrompt":["lower","decrease","turn down"],
 		"lightingPrompt":["Lights","Light","lighting"],
 		"thingPrompt":["tv","speakers","video","audio","music"],
-		"serviceCommands":["Play","Pause","Up","Down","Left","Right","ok","enter","Select","Back","Exit","Return","off","power off","on","power on"]
+		"serviceCommands": _.keys(commandLib),
+		"channelAction": ["Switch","tune","change"]
 	};
+	app.usedSlots = {"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING","RANGE":"RANGE","PERCENTAGE":"PERCENTAGE","SERVICE":"SERVICE","tempToSet":"NUMBER","modeToSet":"LITERAL"}
+//["Play","Pause","Up","Down","Left","Right","ok","enter","Select","Back","Exit","Return","off","power off","on","power on"]
+
 
 	zoneParse.getZoneOrganization(globalZoneOrganization)
 	.then(function(groupDictionary) {
-		//console.log("groupNames: "+groupDictionary[1]);
+		//log.error("groupNames: "+groupDictionary[1]);
 		app.dictionary.systemGroupNames = groupDictionary[1];
 		app.dictionary.systemGroups = groupDictionary[0];
 		appDictionaryGroups = groupDictionary[0];
 		appDictionaryGroupArray = _.values(app.dictionary.systemGroupNames);
 		appDictionaryGroupArrayLowerCase = _.map(appDictionaryGroupArray, function(item) { return _.toLower(item); });
-		//console.log("app.dictionary.systemGroupNames: "+app.dictionary.systemGroupNames);
-		//console.log("app.dictionary.systemGroups: "+ JSON.stringify(app.dictionary.systemGroups));
-		//console.log("appDictionaryGroupArray: "+appDictionaryGroupArray);
-		//console.log("appDictionaryGroupArrayLowerCase: "+appDictionaryGroupArrayLowerCase);
+		//log.error("app.dictionary.systemGroupNames: "+app.dictionary.systemGroupNames);
+		//log.error("app.dictionary.systemGroups: "+ JSON.stringify(app.dictionary.systemGroups));
+		//log.error("appDictionaryGroupArray: "+appDictionaryGroupArray);
+		//log.error("appDictionaryGroupArrayLowerCase: "+appDictionaryGroupArrayLowerCase);
 	});
 
 	zoneParse.getZones(serviceOrderPlist)
@@ -45,23 +51,30 @@ module.exports = function(app){
 		app.dictionary.systemZones = systemZones;
 		appDictionaryArray = _.values(app.dictionary.systemZones);
 		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
-		//console.log("app.dictionary.systemZones: "+ JSON.stringify(app.dictionary.systemZones));
-		//console.log("appDictionaryArray: "+appDictionaryArray);
-		//console.log("appDictionaryArrayLowerCase: "+ appDictionaryArrayLowerCase);
+		//log.error("app.dictionary.systemZones: "+ JSON.stringify(app.dictionary.systemZones));
+		//log.error("appDictionaryArray: "+appDictionaryArray);
+		//log.error("appDictionaryArrayLowerCase: "+ appDictionaryArrayLowerCase);
 	});
 
 
 	zoneParse.getZoneServices(serviceOrderPlist)
 	.then(function(foundservices) {
 		systemServices = foundservices;
-		//console.log("systemServices: "+JSON.stringify(systemServices));
+		//log.error("systemServices: "+JSON.stringify(systemServices));
 	});
 
   zoneParse.getServiceNames(serviceOrderPlist)
   .then(function(systemServices) {
     app.dictionary.services = systemServices;
 		appDictionaryServiceNameArray = _.values(app.dictionary.services);
-		//console.log("app.dictionary.services: "+app.dictionary.services);
+		//log.error("app.dictionary.services: "+app.dictionary.services);
+  });
+
+	zoneParse.getChannels(channelsByService)
+  .then(function(channelsByService) {
+    appDictionaryChannels = channelsByService[0];
+		appDictionaryChannelsArray = channelsByService[1]
+		//log.error("appDictionaryChannels: "+JSON.stringify(appDictionaryChannels));
   });
 
 

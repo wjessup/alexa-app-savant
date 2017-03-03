@@ -20,7 +20,7 @@ module.exports = function(app,callback){
       'success': 'Setting heat to {0} degrees',
       'error':{
         'outOfRange' : 'I didnt understand please try again. Say a number between 60 and 90',
-        'requestMatchCurrent' : 'The AC is already set to {0}'
+        'requestMatchCurrent' : 'The heat is already set to {0}'
       }
     },
     'slots' : {'tempToSet':'NUMBER'},

@@ -17,7 +17,7 @@ module.exports = function(app,callback){
       'failMessage': []//['zoneService']
     },
     'voiceMessages' : {
-      'success': 'Setting AC to {0} degrees',
+      'success': 'Setting heat to {0} degrees',
       'error':{
         'outOfRange' : 'I didnt understand please try again. Say a number between 60 and 90',
         'requestMatchCurrent' : 'The AC is already set to {0}'

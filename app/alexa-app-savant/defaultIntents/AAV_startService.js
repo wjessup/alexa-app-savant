@@ -6,7 +6,7 @@ const
 module.exports = function(app,callback){
 
   var intentDictionary = {
-    'name' : 'startService',
+    'name' : 'StartService',
     'version' : '3.0',
     'description' : 'Turn on any service in any AV zone',
     'enabled' : 1,

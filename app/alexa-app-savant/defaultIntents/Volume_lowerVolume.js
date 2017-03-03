@@ -23,7 +23,7 @@ module.exports = function(app,callback){
     },
     'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO'},
     'utterances' : [
-      '{decreasePrompt} volume in {-|ZONE}', 'Make {-|ZONE} lower',
+      '{decreasePrompt} volume in {-|ZONE}', 'Make {-|ZONE} lower', 'lower {-|ZONE}',
       '{decreasePrompt} volume in {-|ZONE} and {-|ZONE_TWO}', 'Make {-|ZONE} and {-|ZONE_TWO} lower'
     ]
   };

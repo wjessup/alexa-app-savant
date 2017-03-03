@@ -1,12 +1,10 @@
 const
   savantLib = require('../savantLib'),
+  fuzzy = require('./fuzzy'),
   _ = require('lodash'),
   didYouMean = require('didyoumean'),
   similarity = require("similarity"),
   q = require('q');
-
-
-
 
 function getChannel(activeZone,requestedChannel){
   var a = new eventAnalytics.event();
@@ -28,7 +26,7 @@ function getChannel(activeZone,requestedChannel){
       var channelNames = _.keys(zoneChannels)
       //log.error("zoneChannels: "+JSON.stringify(zoneChannels))
       //log.error("channelNames: "+JSON.stringify(channelNames))
-      var matchedChannelObj = findBestChannel(requestedChannel,channelNames)
+      var matchedChannelObj = fuzzy.findBest(requestedChannel,channelNames)
       defer.resolve({
         number:zoneChannels[matchedChannelObj.name],
         name:matchedChannelObj.name,
@@ -38,24 +36,6 @@ function getChannel(activeZone,requestedChannel){
   a.sendTime("Matching","channel.getChannel");
   return defer.promise
 }
-
-
-function findBestChannel(requestedChannel,channelNames) {
-  var best = { score: 0, name:''};
-  _.forEach(channelNames,function(channel){
-    //log.error('requestedChannel: '+requestedChannel)
-    //log.error('channel: '+channel)
-    var distance = similarity(requestedChannel, channel)
-    log.debug(channel+' was scored: '+distance)
-    if (distance > best.score){
-      best.score = distance;
-      best.name = channel;
-      log.debug("best Match: "+best.name+" @ "+best.score)
-    }
-  })
-  return best;
-}
-
 
 module.exports = {
   getChannel:getChannel

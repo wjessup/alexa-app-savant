@@ -1,5 +1,6 @@
 const
 	zoneParse = require('./zoneParse'),
+	savantLib  = require('./savantLib'),
 	commandLib = require('./commandLib.json'),
 	_ = require('lodash')
  	eventAnalytics = require('./eventAnalytics');
@@ -26,14 +27,17 @@ module.exports = function(app){
 		"lightingPrompt":["Lights","Light","lighting"],
 		"thingPrompt":["tv","speakers","video","audio","music"],
 		"serviceCommands": _.keys(commandLib),
-		"channelAction": ["Switch","tune","change"]
-	};
-	app.usedSlots = {"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING","RANGE":"RANGE","PERCENTAGE":"PERCENTAGE","SERVICE":"SERVICE","tempToSet":"NUMBER","modeToSet":"LITERAL"}
-//["Play","Pause","Up","Down","Left","Right","ok","enter","Select","Back","Exit","Return","off","power off","on","power on"]
+		"channelAction": ["Switch","tune","change"],
+		"sceneAction" : ["recall","activate"]
+	}
 
+
+
+	//app.usedSlots = {"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","LIGHTING":"LIGHTING","RANGE":"RANGE","PERCENTAGE":"PERCENTAGE","SERVICE":"SERVICE","tempToSet":"NUMBER","modeToSet":"LITERAL"}
 
 	zoneParse.getZoneOrganization(globalZoneOrganization)
 	.then(function(groupDictionary) {
+		log.error("Building group list...")
 		//log.error("groupNames: "+groupDictionary[1]);
 		app.dictionary.systemGroupNames = groupDictionary[1];
 		app.dictionary.systemGroups = groupDictionary[0];
@@ -44,48 +48,58 @@ module.exports = function(app){
 		//log.error("app.dictionary.systemGroups: "+ JSON.stringify(app.dictionary.systemGroups));
 		//log.error("appDictionaryGroupArray: "+appDictionaryGroupArray);
 		//log.error("appDictionaryGroupArrayLowerCase: "+appDictionaryGroupArrayLowerCase);
-	});
-
-	zoneParse.getZones(serviceOrderPlist)
+	})
+	.then(zoneParse.getZones.bind(null,serviceOrderPlist))
 	.then(function(systemZones) {
+		log.error("Building zone list...")
 		app.dictionary.systemZones = systemZones;
 		appDictionaryArray = _.values(app.dictionary.systemZones);
 		appDictionaryArrayLowerCase = _.map(appDictionaryArray, function(item) { return _.toLower(item); });
 		//log.error("app.dictionary.systemZones: "+ JSON.stringify(app.dictionary.systemZones));
 		//log.error("appDictionaryArray: "+appDictionaryArray);
 		//log.error("appDictionaryArrayLowerCase: "+ appDictionaryArrayLowerCase);
-	});
-
-
-	zoneParse.getZoneServices(serviceOrderPlist)
-	.then(function(foundservices) {
-		systemServices = foundservices;
-		//log.error("systemServices: "+JSON.stringify(systemServices));
-	});
-
-  zoneParse.getServiceNames(serviceOrderPlist)
-  .then(function(systemServices) {
+	})
+	.then(zoneParse.getZoneServices.bind(null,serviceOrderPlist))
+	.then (function(foundservices){
+		log.error("Building service array library...")
+			systemServices = foundservices;
+			//log.error("systemServices: "+JSON.stringify(systemServices));
+	})
+	.then(zoneParse.getServiceNames.bind(null,serviceOrderPlist))
+	.then (function(systemServices){
+		log.error("Building service name list...")
     app.dictionary.services = systemServices;
 		appDictionaryServiceNameArray = _.values(app.dictionary.services);
 		//log.error("app.dictionary.services: "+app.dictionary.services);
-  });
-
-	zoneParse.getChannels(channelsByService)
-  .then(function(channelsByService) {
+	})
+	.then(zoneParse.getChannels.bind(null,channelsByService))
+	.then (function(channelsByService){
+		log.error("Building favorite channel libray...")
     appDictionaryChannels = channelsByService[0];
 		appDictionaryChannelsArray = channelsByService[1]
 		//log.error("appDictionaryChannels: "+JSON.stringify(appDictionaryChannels));
-  });
+	})
+	.then(function(){
 
-
-	var _dictionaryCheck = setInterval(function() {
-	    if (typeof app.dictionary.services != 'undefined' && typeof app.dictionary.systemZones != 'undefined') {
-	        clearInterval(_dictionaryCheck);
-	        require('./customSlotFile')(app);
-					require('./userPresets')(app);
-					eventAnalytics.systemAnalytics();
-			}
-	}, 10);
-
-
+		if (app.environment.sceneSupport) {
+			log.error("Building Scene list...")
+			savantLib.getSceneNames()
+			.then(function (ret){
+				var scenes = _.uniq(_.keys(ret));
+				for (var key in scenes){
+					scenes[key] = scenes[key].replace(/[0-9]/g, '');
+				}
+				app.dictionary.sceneExample = scenes;
+			});
+		}else {
+			log.error("Building Scene list...Skipping Running Savant version "+app.environment.version)
+		}
+	})
+	.then (function(){
+		log.error("Building customSlotFile...")
+    require('./customSlotFile')(app);
+		log.error("Loading User Presets...")
+		require('./userPresets')(app);
+		eventAnalytics.systemAnalytics();
+	});
 };

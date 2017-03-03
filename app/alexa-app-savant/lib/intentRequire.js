@@ -10,10 +10,10 @@ var requiredDic = {};
 function set(intentDictionary){
   if (_.has(intentDictionary,"required")){
     _.set(requiredDic,intentDictionary.name,intentDictionary.required)
-    log.debug(JSON.stringify(requiredDic[intentDictionary.name]));
+    log.debug("  "+JSON.stringify(requiredDic[intentDictionary.name]));
   }else{
     _.set(requiredDic,intentDictionary.name,"")
-    log.debug("no required set")
+    log.debug("  no required set")
   }
 }
 

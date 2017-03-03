@@ -2,14 +2,16 @@
 
 const
 	alexa = require('alexa-app'),
-	path = require('path'),
-	environmentLib = require('./lib/environmentLib');
+	path = require('path');
+
 
 
 var
 	config = require('./userFiles/config'),
 	app = new alexa.app(skillName); // Define an alexa-app
-	environmentLib.getSavantVersion()
+
+	require('./lib/environmentLib')(app);
+	app.getSavantVersion()
 		.then (function (ret){
 			app.environment = ret;
 			require('./lib/appDictionary')(app); //Setup appDictionary
@@ -17,8 +19,7 @@ var
 			require('./lib/loadIntents')(app); //Import intents from default and user dir
 			require('./lib/currentZoneLib'); //Recall currentZone from Savant
 			require('./lib/amazon_IoT'); //Use amazon IoT buttons with skill
-
-		})
+		});
 
 
 module.exports = app;

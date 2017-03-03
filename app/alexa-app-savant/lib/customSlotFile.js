@@ -77,5 +77,5 @@ module.exports = function(app){
     logger.write(appDictionaryChannelsArray[key]+'<br>');
   };
 appDictionaryChannelsArray
-  log.error("Finished Writing customSlotTypes");
+  log.error("Finished Writing customSlotTypes.");
 };

@@ -6,6 +6,7 @@ const
   matcherCommand = require('./matchers/command'),
   matcherWord  = require('./matchers/word'),
   matcherChannel  = require('./matchers/channel'),
+  matchersScene  = require('./matchers/scene'),
   voiceMessages = require('./voiceMessages.json'),
   _ = require('lodash'),
   q = require('q');
@@ -170,6 +171,33 @@ function channelWithName(req,intentResolves){
   }
 }
 
+function sceneWithScene(req,intentResolves){
+  log.debug('resovler.sceneWithScene - start')
+  if (_.includes(intentResolves,"sceneWithScene")){
+    if (!req.slot('SCENE')){
+      return
+    }
+    return matchersScene.getScene(req.slot('SCENE'))
+    .then(function (ret){
+      log.error('resovler.sceneWithScene - matched scene: '+JSON.stringify(ret));
+      req.getSession().set("scene", ret);
+    })
+    .thenResolve(req)
+    .fail(function(err) {//range could not be matched
+      log.info('resovler.sceneWithScene - err: '+JSON.stringify(err))
+      if (err.type === "endSession"){
+        if (!_.has(err,"voiceMessage")){
+          err.voiceMessage = "this needs something..."//voiceMessages["error"][err.exception]+session.zone.actionable[0]
+        }
+        throw err;
+      }
+    });
+  }
+  log.info('resovler.sceneWithScene - did not try: '+intentResolves)
+  return q(req);
+}
+
+
 
 module.exports = {
   zoneWithZone:zoneWithZone,
@@ -177,5 +205,6 @@ module.exports = {
   serviceWithService:serviceWithService,
   commandWithCommand:commandWithCommand,
   rangeWithRange:rangeWithRange,
-  channelWithName:channelWithName
+  channelWithName:channelWithName,
+  sceneWithScene:sceneWithScene
 }

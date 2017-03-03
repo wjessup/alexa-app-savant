@@ -75,6 +75,7 @@ module.exports = function(app){
     .then(resolver.commandWithCommand.bind(null,req,required.resolve))
     .then(resolver.rangeWithRange.bind(null,req,required.resolve))
     .then(resolver.channelWithName.bind(null,req,required.resolve))
+    .then(resolver.sceneWithScene.bind(null,req,required.resolve))
     .then(verifyInfo.bind(null,req,res))
     .then(function(req){
       req.sessionAttributes.aPrep.sendTime('prep');

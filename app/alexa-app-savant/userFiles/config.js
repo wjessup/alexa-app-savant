@@ -34,6 +34,7 @@ switch (os.platform()){
     serviceOrderPlist = configPath+'/serviceOrder.plist';
     globalZoneOrganization = configPath+'/globalZoneOrganization.plist';
     channelsByService = configPath+'/channelsByService.plist';
+    documentInfo = configPath+'/documentInfo.plist';
     break;
   case 'linux':
     appLocation = process.env['HOME'];

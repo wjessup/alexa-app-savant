@@ -8,7 +8,7 @@ module.exports = function(app){
   userPresets = {};
 
   getPresets()
-  log.error("Finished Loading User Presets...")
+  log.error("Finished Loading User Presets.")
 
 
   function getPresets(){

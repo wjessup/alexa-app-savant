@@ -7,8 +7,8 @@ skillName = 'savant';
 
 //Single zone mode  Set to name of zone you would like set as the primary zone
 currentZone = {
-  'actionable' : false,// 'Family Room'
-  'speakable' : false// 'Family Room'
+  'actionable' : [false],// 'Family Room'
+  'speakable' : [false]// 'Family Room'
 };
 
 //Custom workflow location: customWorkflowScope = ['<<Zone Name>>','<<Host Name>>'];

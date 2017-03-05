@@ -14,7 +14,7 @@ const
 function zoneWithZone (req, intentResolves){
   log.debug('resovler.ZoneWithZone - start')
   if (_.includes(intentResolves,"zoneWithZone")){
-    if (req.slot('ZONE') || req.slot('ZONE_TWO') || currentZone.actionable != false){
+    if (req.slot('ZONE') || req.slot('ZONE_TWO') || currentZone.actionable[0] != false){
       let session = req.getSession();
       if (!_.has(session, "zone")){//if we do not already have a zone
         return matcherZone.multi(req.slot('ZONE'), req.slot('ZONE_TWO'))//parse requested zone and return

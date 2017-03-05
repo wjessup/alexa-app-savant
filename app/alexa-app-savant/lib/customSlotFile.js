@@ -49,8 +49,8 @@ module.exports = function(app){
   logger.write('<BR>');
   logger.write('<b>Custom Slot Type:</b> COMMANDREQ<br>');
   logger.write('<b>Custom Slot Values:</b><br>');
-  for (var key in app.dictionary.serviceCommands){
-    logger.write(app.dictionary.serviceCommands[key]+'<br>');
+  for (var key in app.dictionary.serviceCommands.transport){
+    logger.write(app.dictionary.serviceCommands.transport[key]+'<br>');
   };
   logger.write('<BR>');
   logger.write('<b>Custom Slot Type:</b> RANGE<br>');

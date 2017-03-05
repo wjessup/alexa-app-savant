@@ -17,7 +17,7 @@ module.exports = function(app,callback){
         '1' : {'scope': 'zone', 'attribute': 'actionable'},
         '2' : {'scope': 'zone', 'attribute': 'speakable'}
       },
-      'failMessage': ['zoneService']
+      'failMessage': []//zoneService
     },
     'voiceMessages' : {
       'success': {

@@ -72,19 +72,23 @@ function multi(rawZone1,rawZone2){
     }
   }
 
-  if (currentZone === false && matchedGroups.length === 0 & matchedZones.length === 0){
+  if (currentZone.actionable[0] === false && matchedGroups.length === 0 & matchedZones.length === 0){
     //fail off if we didnt get a match
       log.error("matcherZone.multi - no zones found");
       a.sendError("Multi Zone Match Fail: "+rawZone1+" , "+rawZone2);
       defer.reject(voiceMessages.error.zoneNotFound);
-  }else if(currentZone != false && matchedGroups.length === 0 & matchedZones.length === 0){
+  }else if(currentZone.actionable[0] != false && matchedGroups.length === 0 & matchedZones.length === 0){
+    log.error("currentZone.actionable: '"+currentZone.actionable+"'");
+    log.error("currentZone.speakable: '"+currentZone.speakable+"'");
+
     log.error("matcherZone.multi - Single zone mode");
     ret = currentZone;
     a.sendError("Single zone mode: "+ret.actionable);
     defer.resolve(ret);
   }else{
-    ret.actionable = matchedZones.concat(matchedKeyGroups);
-    ret.speakable = stringLib.addAnd(matchedGroups.concat(matchedZones));
+    ret.actionable = _.uniq(matchedZones.concat(matchedKeyGroups));
+    ret.speakable = _.uniq(matchedGroups.concat(matchedZones));
+    ret.speakable = stringLib.addAnd(ret.speakable);
 
     log.info("matcherZone.multi ---------");
     log.info("matcherZone.multi - Zones to send commands to:");

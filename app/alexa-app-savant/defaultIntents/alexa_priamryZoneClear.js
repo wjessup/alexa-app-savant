@@ -1,5 +1,6 @@
 const
   savantLib = require('../lib/savantLib'),
+  currentZoneLib = require('../lib/currentZoneLib'),
   _ = require('lodash'),
   eventAnalytics = require('../lib/eventAnalytics');
 
@@ -28,9 +29,8 @@ module.exports = function(app,callback){
       return app.prep(req, res)
         .then(function(req) {
           currentZonePrevious = currentZone;
-          currentZone = false;
-          savantLib.writeState('userDefined.currentZone.speakable','false');
-          savantLib.writeState('userDefined.currentZone.actionable','false');
+          currentZoneLib.set(false,'speakable');
+          currentZoneLib.set(false,'actionable');
           app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
           a.sendAlexa(['primaryZoneClear',currentZonePrevious]);
         })

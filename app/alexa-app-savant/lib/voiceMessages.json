@@ -5,17 +5,31 @@
     "serviceNotActive": " is not active anywhere.",
     "noLastService": "No previous service. Please say which service to turn on",
     "rangeNoMatch" : "I didnt understand please try again. Say High,Medium,or Low",
-    "tvNotActive" : "There is no TV service active in " 
+    "tvNotActive" : "There is no TV service active in "
   },
   "reprompt" : {
-    "actionable" : "which zone?",
-    "speakable" : "which zone?",
-    "name" : "which service?",
-    "zoneService" : "which zone or service?",
-    "commandNoMatch" : "Which command?",
-    "avCommand" : "Which command?",
-    "range" : "Say High,Medium,or Low",
-    "number": "Which channel?"
+    "zone" : {
+      "actionable" : "which zone?",
+      "speakable" : "which zone?"
+    },
+    "service": {
+      "name" : "which service?",
+      "serviceArray" : "does not have"
+    },
+    "command" : {
+      "avCommand" : "Which command?",
+      "commandNoMatch" : "Which command?"
+    },
+    "channel" : {
+      "number" : "Which channel?"
+    },
+    "prams" : {
+      "range" : "Say High,Medium,or Low"
+    },
+    "scene" : {
+      "name" : "which scene?"
+    },
+    "zoneService" : "which zone or service?"
   },
   "success" : {
     "generic" : "done"

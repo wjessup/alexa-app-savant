@@ -196,7 +196,7 @@ function verifyInfo(req, res) {
         if (_.includes(required.failMessage,"zoneService")){
           var err = {type:"reprompt",voiceMessage:voiceMessages.reprompt["zoneService"],exception: "Missing "+attribute}
         }else{
-          var err = {type:"reprompt",voiceMessage:voiceMessages.reprompt[attribute],exception: "Missing "+attribute}
+          var err = {type:"reprompt",voiceMessage:voiceMessages.reprompt[scope][attribute],exception: "Missing "+attribute}
         }
         req.getSession().set("error", 1);
         defer.reject(err);

@@ -60,6 +60,12 @@ function setLighting(actionableZones,value,action){
             log.error("action.setLighting - "+actionableZones[key]);
             defer.resolve();
             break;
+            case "on":
+              //savantLib.serviceRequest([actionableZones[key]],"lighting","",[100]);
+              savantLib.serviceRequest([actionableZones[key]],"lighting","",[userPresets.lighting[requestedZone]["on"]]);
+              log.error("action.setLighting - "+actionableZones[key]);
+              defer.resolve();
+              break;
           default:
             var err = 'I didnt understand please try again. Say High,Medium,or Low';
             defer.reject(err);

@@ -97,7 +97,7 @@ module.exports = function(app,callback){
           if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!prams.range)){
             a.sendLighting([zone,'On',req.slot('LIGHTING')]);
             log.error(intentDictionary.name+' Intent - a lighting request without a percentage or range, turn on light to preset value');
-            return action.setLighting(zone.actionable,100,'percent')//set lights to 100% in all cleanZones
+            return action.setLighting(zone.actionable,"on",'range')
             .thenResolve(format(intentDictionary.voiceMessages.success['lighting'],zone.speakable));
           }
           // need a catch here

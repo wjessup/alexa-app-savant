@@ -37,6 +37,7 @@ module.exports = function(app){
       userPresets.lighting[key]["high"] = 100;
       userPresets.lighting[key]["medium"] = 50;
       userPresets.lighting[key]["low"] = 25;
+      userPresets.lighting[key]["on"] = 100;
     };
     for (var key of app.dictionary.systemGroupNames){
       userPresets.volume[key] =  {};
@@ -47,6 +48,7 @@ module.exports = function(app){
       userPresets.lighting[key]["high"] = 100;
       userPresets.lighting[key]["medium"] = 50;
       userPresets.lighting[key]["low"] = 25;
+      userPresets.lighting[key]["on"] = 100;
     };
   }
 };

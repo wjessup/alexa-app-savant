@@ -66,9 +66,11 @@ module.exports = function(app){
 			//log.error("systemServices: "+JSON.stringify(systemServices));
 	})
 	.then(zoneParse.getServiceNames.bind(null,serviceOrderPlist))
-	.then (function(systemServices){
+	.then (function(ret){
 		log.error("Building service name list...")
-    app.dictionary.services = systemServices;
+		app.dictionary.sourceComponents = ret.sourceComponent
+		app.dictionary.serviceAlias = ret.serviceAlias
+		app.dictionary.services = ret.serviceAlias.concat(ret.sourceComponent)
 		appDictionaryServiceNameArray = _.values(app.dictionary.services);
 		//log.error("app.dictionary.services: "+app.dictionary.services);
 	})

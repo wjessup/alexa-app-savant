@@ -176,9 +176,15 @@ function readStateLastPower(path) {
       var cleanZoneArray = LastActiveService.split("-");
       log.error("actionLib.readStateLastPower - last service:  " +LastActiveService);
       savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"PowerOn"],"full");
-      savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
-      defer.resolve();
+      var sourceComponent = cleanZoneArray[1]
+      if (userPresets.sourceComponent[sourceComponent]["playWithPower"]) {
+        log.error("actionLib.readStateLastPower - Sending Play command for "+sourceComponent)
+        savantLib.serviceRequest([cleanZoneArray[0],cleanZoneArray[1],cleanZoneArray[2],cleanZoneArray[3],cleanZoneArray[4],"Play"],"full");
+      }else {
+        log.error("actionLib.readStateLastPower - Skipping Play command for "+sourceComponent)
+      }
     }
+      defer.resolve();
   });
   return defer.promise;
 }
@@ -197,9 +203,21 @@ function bulkPowerOn(servicesArray){
   var defer = q.defer();
   for (var key in servicesArray){
     //turn on zone
-    savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"PowerOn"],"full");
-    savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"Play"],"full");
     log.error("action.bulkPowerOn - "+servicesArray[key][0]);
+    savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"PowerOn"],"full");
+    savantLib.readStateQ(servicesArray[key][0]+".ActiveService")
+    .then(function (currentValue){
+      currentValue = currentValue.split("-");
+      var sourceComponent = currentValue[1]
+      if (userPresets.sourceComponent[sourceComponent]["playWithPower"]) {
+        log.error("actionLib.bulkPowerOn - Sending Play command for "+sourceComponent)
+        savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"Play"],"full");
+      }else{
+        log.error("actionLib.bulkPowerOn - Skipping Play command for "+sourceComponent)
+      }
+
+    })
+
   }
   defer.resolve();
   return defer.promise

@@ -58,7 +58,10 @@ function getServiceNames(plistFile) {
   return q.nfcall(plist.readFile, plistFile)
   .then(function(obj) {
     obj = obj.ServiceOrderPerZone;
-    var ret = []
+    var ret = {
+      "sourceComponent" : [],
+      "serviceAlias" : []
+    }
     for (var key in obj){
       for (var key2 in obj[key]){
         let value = obj[key][key2]; // map references is time consuming so let’s do it only once
@@ -68,12 +71,13 @@ function getServiceNames(plistFile) {
           "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE","nonService","SVC_ENV_SECURITYCAMERA"
         ];
         if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
-          ret.push(value["Source Component"]);
-          ret.push(value["Alias"]);
+          ret.sourceComponent.push(value["Source Component"]);
+          ret.serviceAlias.push(value["Alias"]);
         }
       }
     }
-    ret= _.uniq(ret, 'id');
+    ret.sourceComponent = _.uniq(ret.sourceComponent);
+    ret.serviceAlias = _.uniq(ret.serviceAlias);
     return ret;
   })
 }

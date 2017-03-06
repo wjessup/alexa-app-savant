@@ -205,6 +205,7 @@ function bulkPowerOn(servicesArray){
     //turn on zone
     log.error("action.bulkPowerOn - "+servicesArray[key][0]);
     savantLib.serviceRequest([servicesArray[key][0],servicesArray[key][1],servicesArray[key][2],servicesArray[key][3],servicesArray[key][4],"PowerOn"],"full");
+    sleep(100);
     return savantLib.readStateQ(servicesArray[key][0]+".ActiveService")
     .then(function (currentValue){
       currentValue = currentValue.split("-");

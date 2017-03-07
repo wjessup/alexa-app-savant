@@ -45,8 +45,8 @@ module.exports = function(app,callback){
           if (currentSetPoint == req.slot('tempToSet') ){
             throw app.builderErr(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.error.requestMatchCurrent,currentSetPoint),'requestMatchCurrent')
           }
-          savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],'PowerOn'],'full');
-          savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],'SetHeatPointTemperature','ThermostatAddress',tstatScope[5],'CoolPointTemperature',req.slot('tempToSet')],'full');
+          //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],'PowerOn'],'full');
+          savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],'SetHeatPointTemperature','ThermostatAddress',tstatScope[5],'HeatPointTemperature',req.slot('tempToSet')],'full');
           a.sendHVAC(['SetHeatPointTemperature',req.slot('tempToSet')]);
           return format(intentDictionary.voiceMessages.success,req.slot('tempToSet'))
         })

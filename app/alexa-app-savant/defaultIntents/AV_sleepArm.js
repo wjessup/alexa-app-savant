@@ -22,11 +22,13 @@ module.exports = function(app,callback){
     'voiceMessages' : {
       'success': 'Starting timer for {0} minutes in {1}',
       'error':{
+        'timeMissing' : 'for how long?',
         'outOfRange' : 'I didnt understand please try again. Say a number between 1 and 120'
       }
     },
     'slots' : {'TIMER':'NUMBER','ZONE':'ZONE'},
-    'utterances' : ['{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}','{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes']
+    'utterances' : ['{actionPrompt} sleep timer for {1-120|TIMER} minutes in {-|ZONE}','{actionPrompt} sleep timer in {-|ZONE} for {1-120|TIMER} minutes',
+      'set a sleep timer', '{1-120|TIMER} minutes']
   };
 
   if (intentDictionary.enabled === 1){
@@ -41,10 +43,17 @@ module.exports = function(app,callback){
             log.error(intentDictionary.name+' - intent not run verify failed')
             return
           }
+
+          if (!req.slot('TIMER')){
+            throw app.builderErr(intentDictionary.name,'reprompt',intentDictionary.voiceMessages.error.timeMissing,'timeMissing')
+          }
           value = Number(req.slot('TIMER'));
-          if ((value< 1 || value>121) || isNaN(value)){
+          if ((value< 1 || value>121)){
             throw app.builderErr(intentDictionary.name,'endSession',intentDictionary.voiceMessages.error.outOfRange,'outOfRange')
           }
+
+
+
           action.sleepTimer(zone.actionable,value,'arm');
           a.sendSleep([zone,'dis_sleepArm',value]);
           return format(intentDictionary.voiceMessages.success,value,zone.speakable)

@@ -18,8 +18,7 @@
     "savant"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "./setup/setup.sh"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": {
     "name": "Christopher Clark",
@@ -28,20 +27,21 @@
   },
   "license": "ISC",
   "dependencies": {
-    "alexa-app": "^3.1.0",
+    "alexa-app": "^3.2.0",
     "alexa-app-server": "^3.0.0",
-    "alexa-verifier": "0.0.5",
-    "bluebird": "^2.9.34",
-    "body-parser": "~1.0.1",
-    "ejs": "~0.7.1",
-    "express": "~4.0.0",
-    "hotswap": "^1.1.0",
+    "body-parser": "^1.17.1",
     "log-timestamp": "^0.1.2",
     "loglevel": "^1.4.1",
     "q": "^1.4.1",
     "similarity": "^1.1.0",
     "simple-fmt": "^0.1.0",
     "universal-analytics": "^0.4.8",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "didyoumean": "^1.2.1",
+    "lodash": "^4.17.2",
+    "simple-plist": "^0.2.1"
+  },
+  "optionalDependencies": {
+    "dnode": "^1.2.2"
   }
 }

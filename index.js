@@ -8,11 +8,12 @@ require('log-timestamp');
 
 AlexaAppServer.start( {
 	server_root : __dirname,
-	port:4141,
+	port:1415,
 	httpsPort:1414,
   httpsEnabled:true,
 	app_dir:"app",
 	debug: true,
+	verify: false,
   privateKey:'private-key.pem',
   certificate:'cert.cer'
 	,preRequest: function(json,req,res) {

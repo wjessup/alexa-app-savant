@@ -1,33 +1,46 @@
-//Intent includes
-var savantLib = require('../lib/savantLib');
+const
+  savantLib = require('../lib/savantLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
-//Intent exports
-module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
   var intentDictionary = {
     'name' : 'enableFletchButton',
-    'version' : '1.0',
-    'description' : 'Enable state of amazon IOT button',
-    'enabled' : 1
+    'version' : '3.0',
+    'description' : 'enable state of amazon IOT button',
+    'enabled' : 1,
+    'required' : {
+      'resolve': {},
+      'test':{}
+    },
+    'voiceMessages' : {
+      'success': 'Fletchers Button is now enabled'
+    },
+    'slots' : {},
+    'utterances' : ["enable {fletch|fletcher|fletcher's |} button"],
+    'placeholder' : {
+      'zone' : {
+        'actionable' : [],
+        'speakable' : []
+      }
+    }
   };
 
-//Intent Enable/Disable
   if (intentDictionary.enabled === 1){
-
-//Intent
-    app.intent('enableFletchButton', {
-        "slots":{}
-        ,"utterances":["{enablePrompt} {fletch|fletcher |} button"]
-      },function(req,res) {
-      log.error('enableFletchButton Intent: Fletchers Button is now enabled');
-      savantLib.writeState("userDefined.fletchButton",1);
-      res.say('Fletchers Button is now enabled').send();
-      return false;
-      }
-    );
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          savantLib.writeState("userDefined.fletchButton",1);
+          a.sendAlexa(['FletchButton',"enable"]);
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
+        })
+        .fail(function(err) {
+          app.intentErr(req,res,err);
+        });
+    }
+    )
   }
-//Return intent meta info to index
   callback(intentDictionary);
 };

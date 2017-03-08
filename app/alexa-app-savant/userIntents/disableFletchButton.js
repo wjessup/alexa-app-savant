@@ -1,33 +1,46 @@
-//Intent includes
-var savantLib = require('../lib/savantLib');
+const
+  savantLib = require('../lib/savantLib'),
+  eventAnalytics = require('../lib/eventAnalytics');
 
-//Intent exports
-module.change_code = 1;
 module.exports = function(app,callback){
 
-//Intent meta information
   var intentDictionary = {
     'name' : 'disableFletchButton',
-    'version' : '1.0',
+    'version' : '3.0',
     'description' : 'Disable state of amazon IOT button',
-    'enabled' : 1
+    'enabled' : 1,
+    'required' : {
+      'resolve': {},
+      'test':{}
+    },
+    'voiceMessages' : {
+      'success': 'Fletchers Button is now disabled'
+    },
+    'slots' : {},
+    'utterances' : ["disable {fletch|fletcher|fletcher's |} button"],
+    'placeholder' : {
+      'zone' : {
+        'actionable' : [],
+        'speakable' : []
+      }
+    }
   };
 
-//Intent Enable/Disable
   if (intentDictionary.enabled === 1){
-
-//Intent
-    app.intent('disableFletchButton', {
-    		"slots":{}
-    		,"utterances":["{disablePrompt} {fletch|fletcher |} button"]
-    	},function(req,res) {
-    		log.error('disableFletchButton Intent: Fletchers Button is now disabled');
-    		savantLib.writeState("userDefined.fletchButton",0);
-    		res.say('Fletchers Button is now disabled').send();
-    		return false;
-    	}
-    );
+    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
+    function(req,res) {
+      var a = new eventAnalytics.event(intentDictionary.name);
+      return app.prep(req, res)
+        .then(function(req) {
+          savantLib.writeState("userDefined.fletchButton",0);
+          a.sendAlexa(['FletchButton',"disable"]);
+          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
+        })
+        .fail(function(err) {
+          app.intentErr(req,res,err);
+        });
+    }
+    )
   }
-//Return intent meta info to index
   callback(intentDictionary);
 };

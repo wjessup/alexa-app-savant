@@ -13,7 +13,6 @@ module.exports = function(app){
     .then(function(obj) {
       var ret = {}
       ret.version = obj.RPMAppDocumentBlueprintVersionKey
-      log.error("compare "+ app.compareVersion(ret.version,8.3))
       if (app.compareVersion(ret.version,'8.3')< 0){//less than 0 means system version is older then 8.3
         ret.sceneSupport = false
       }else(

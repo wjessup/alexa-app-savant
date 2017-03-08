@@ -71,7 +71,12 @@ function serviceWithService(req, intentResolves){
   log.debug('resovler.serviceWithService - start')
   if (_.includes(intentResolves,"serviceWithService")){
     let session = req.sessionAttributes;
-    return matcherService.avaiable(session.zone.actionable,req.slot('SERVICE'))
+    if (_.has(session, "zone")){
+      var zone = session.zone
+    }else{
+      var zone = {"actionable":[],"speakable":[]}
+    }
+    return matcherService.avaiable(zone.actionable,req.slot('SERVICE'))
     .then(function(ret){
       log.error('resovler.serviceWithService - matched Services: '+JSON.stringify(ret));
       req.getSession().set("service", ret);

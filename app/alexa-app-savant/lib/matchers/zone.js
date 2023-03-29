@@ -1,113 +1,95 @@
-const
-  didYouMean = require('didyoumean'),
-  _ = require('lodash'),
-  q = require('q'),
-  stringLib = require('../stringLib'),
-  eventAnalytics = require('../eventAnalytics'),
-  voiceMessages = require('../voiceMessages.json');
+const didYouMean = require('didyoumean');
+const _ = require('lodash');
+const q = require('q');
+const stringLib = require('../stringLib');
+const eventAnalytics = require('../eventAnalytics');
+const voiceMessages = require('../voiceMessages.json');
 
-function single(zoneIn,callback){
-  var a = new eventAnalytics.event();
-  log.error("matcherZone.single -  Matching requested zone...");
-  log.info("matcherZone.single -  zoneIn: "+zoneIn);
-  var editZone = zoneIn.replace(/the/ig,"");//Remove the word "the" if it exists
-  var cleanZone = didYouMean(editZone, appDictionaryArray);
-  if (typeof cleanZone == 'undefined' || cleanZone == null){// no match
-    a.sendError("Single Zone Match Fail: "+zoneIn);
+
+function single(zoneIn, callback) {
+  const a = new eventAnalytics.event();
+  console.log('matcherZone.single -  Matching requested zone...');
+  console.log(`matcherZone.single -  zoneIn: ${zoneIn}`);
+  const editZone = zoneIn.replace(/the/gi, '');
+  const cleanZone = didYouMean(editZone, appDictionaryArray);
+  if (!cleanZone) {
+    a.sendError(`Single Zone Match Fail: ${zoneIn}`);
     callback(voiceMessages.error.zoneNotFound, undefined);
-  }else{// match
-    a.sendTime("Matching","Single");
+  } else {
+    a.sendTime('Matching', 'Single');
     callback(undefined, cleanZone);
   }
 }
 
-function multi(rawZone1,rawZone2){
-  var a = new eventAnalytics.event();
-  var matchedKeyGroups=[];
-  var ret = {};
-  log.error("matcherZone.multi - Matching requested zones...");
-  var defer = q.defer();
-  // Set raw input to '' if empty
-  if (!rawZone1){ var rawZone1 = '' }
-  if (!rawZone2){ var rawZone2 = '' }
-  log.info("matcherZone.multi - slot 1: "+rawZone1);
-  log.info("matcherZone.multi - slot 2: "+rawZone2);
-  //sanitize input
-  var lowerrawZone1 = _.toLower(rawZone1);
-  var lowerrawZone2 = _.toLower(rawZone2);
-  var hasFirst = appDictionaryGroupArrayLowerCase.filter(function (item) {
-    return item.indexOf('1st') >= 0;
-  });
-  if (hasFirst){
-    lowerrawZone1 = lowerrawZone1.replace(/1st/ig,"first");
-    lowerrawZone2 = lowerrawZone2.replace(/1st/ig,"first");
+function multi(rawZone1, rawZone2) {
+  const a = new eventAnalytics.event();
+  const matchedKeyGroups = [];
+  const ret = {};
+  console.log('matcherZone.multi - Matching requested zones...');
+  const defer = q.defer();
+  let lowerRawZone1 = _.toLower(rawZone1) || '';
+  let lowerRawZone2 = _.toLower(rawZone2) || '';
+  const hasFirst = appDictionaryGroupArrayLowerCase.filter((item) =>
+    item.indexOf('1st') >= 0);
+  if (hasFirst.length) {
+    lowerRawZone1 = lowerRawZone1.replace(/1st/ig, 'first');
+    lowerRawZone2 = lowerRawZone2.replace(/1st/ig, 'first');
   }
-  //find Group match from either slot, then concat
-  var matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
-  var matchedGroups2 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
-  var matchedGroups = matchedGroups1.concat(matchedGroups2);
-  matchedGroups = matchedGroups.filter(function(x){//remove empty
-    return (x !== (undefined || ''));
+  const matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, (sub) =>
+    lowerRawZone1.indexOf(sub) >= 0);
+  const matchedGroups2 = _.filter(appDictionaryGroupArrayLowerCase, (sub) =>
+    lowerRawZone2.indexOf(sub) >= 0);
+  const matchedGroups = matchedGroups1.concat(matchedGroups2).filter((x) => x !== undefined || x !== '');
+  console.log(`matcherZone.multi - matchedGroups: ${matchedGroups}`);
+
+  const matchedZones1 = _.filter(appDictionaryArrayLowerCase, (sub) =>
+    lowerRawZone1.indexOf(sub) >= 0);
+  const matchedZones2 = _.filter(appDictionaryArrayLowerCase, (sub) =>
+    lowerRawZone2.indexOf(sub) >= 0);
+  const matchedZones = matchedZones1.concat(matchedZones2).filter((x) => x !== undefined || x !== '');
+  console.log(`matcherZone.multi - matchedZones: ${matchedZones}`);
+  matchedZones.forEach((key) => {
+    matchedZones[key] = didYouMean(key, appDictionaryArray);
   });
-  log.info("matcherZone.multi - matchedGroups: "+matchedGroups);
-  //find zone matches from either slot, then concat
-  var matchedZones1 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
-  var matchedZones2 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
-  var matchedZones = matchedZones1.concat(matchedZones2);
-  matchedZones = matchedZones.filter(function(x){//remove empty
-    return (x !== (undefined || ''));
+  matchedGroups.forEach((key) => {
+    const matchedKeyGroup = didYouMean(key, appDictionaryGroupArray);
+    matchedKeyGroups.push(...appDictionaryGroups[matchedKeyGroup]);
   });
-  log.info("matcherZone.multi - matchedZones: "+matchedZones);
 
-  // match Zones to savant case
-  for (var key in matchedZones){
-    matchedZones[key] = didYouMean(matchedZones[key],appDictionaryArray);
-  };
-  //Get Group's zones, matched to savant's case
-  matchedKeyGroups.length = 0;
-  for (var key in matchedGroups){
-    var matchedKeyGroup = didYouMean(matchedGroups[key],appDictionaryGroupArray);
-    for (var key2 in appDictionaryGroups[matchedKeyGroup]){
-    matchedKeyGroups.push(appDictionaryGroups[matchedKeyGroup][key2]);
-    }
-  }
-
-  if (currentZone.actionable[0] === false && matchedGroups.length === 0 & matchedZones.length === 0){
-    //fail off if we didnt get a match
-      log.error("matcherZone.multi - no zones found");
-      a.sendError("Multi Zone Match Fail: "+rawZone1+" , "+rawZone2);
-      defer.reject(voiceMessages.error.zoneNotFound);
-  }else if(currentZone.actionable[0] != false && matchedGroups.length === 0 & matchedZones.length === 0){
-    log.error("currentZone.actionable: '"+currentZone.actionable+"'");
-    log.error("currentZone.speakable: '"+currentZone.speakable+"'");
-
-    log.error("matcherZone.multi - Single zone mode");
+  if (currentZone.actionable[0] === false && matchedGroups.length === 0 && matchedZones.length === 0) {
+    console.log('matcherZone.multi - no zones found');
+    a.sendError(`Multi Zone Match Fail: ${rawZone1} , ${rawZone2}`);
+    defer.reject(voiceMessages.error.zoneNotFound);
+  } else if (currentZone.actionable[0] !== false && matchedGroups.length === 0 && matchedZones.length === 0) {
+    console.log(`currentZone.actionable: '${currentZone.actionable}'`);
+    console.log(`currentZone.speakable: '${currentZone.speakable}'`);
+    console.log('matcherZone.multi - Single zone mode');
     ret = currentZone;
-    a.sendError("Single zone mode: "+ret.actionable);
+    a.sendError(`Single zone mode: ${ret.actionable}`);
     defer.resolve(ret);
-  }else{
+  } else {
     ret.actionable = _.uniq(matchedZones.concat(matchedKeyGroups));
     ret.speakable = _.uniq(matchedGroups.concat(matchedZones));
     ret.speakable = stringLib.addAnd(ret.speakable);
-
-    log.info("matcherZone.multi ---------");
-    log.info("matcherZone.multi - Zones to send commands to:");
-    for (var key in ret.actionable){
-      log.info('matcherZone.multi - zone '+key+': '+ ret.actionable[key]);
-    }
-    log.info("matcherZone.multi ---------");
-    log.info("matcherZone.multi - Zones to say:");
-    for (var key in ret.speakable){
-      log.info('matcherZone.multi - zone '+key+': '+ ret.speakable[key]);
-    }
-    log.info("matcherZone.multi ---------");
+    console.log('matcherZone.multi ---------');
+    console.log('matcherZone.multi - Zones to send commands to:');
+    ret.actionable.forEach((key) => {
+      console.log(`matcherZone.multi - zone ${key} : ${ret.actionable[key]}`);
+    });
+    console.log('matcherZone.multi ---------');
+    console.log('matcherZone.multi - Zones to say:');
+    ret.speakable.forEach((key) => {
+      console.log(`matcherZone.multi - zone ${key} : ${ret.speakable[key]}`);
+    });
+    console.log('matcherZone.multi ---------');
     defer.resolve(ret);
   }
-  a.sendTime("Matching","Multi");
+  a.sendTime('Matching', 'Multi');
   return defer.promise;
 }
 
+
 module.exports = {
-single : single,
-multi : multi
-}
+  single,
+  multi,
+};

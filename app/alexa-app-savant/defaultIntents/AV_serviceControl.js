@@ -1,79 +1,116 @@
-const
-  action = require('../lib/actionLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const didYouMean = require('didyoumean');
+const _ = require('lodash');
+const q = require('q');
+const stringLib = require('../stringLib');
+const eventAnalytics = require('../eventAnalytics');
+const voiceMessages = require('../voiceMessages.json');
 
-module.exports = function(app,callback){
+function single(zoneIn, callback) {
+    const analyticsEvent = new eventAnalytics.event();
+    log.error("matcherZone.single -  Matching requested zone...");
+    log.info("matcherZone.single -  zoneIn: " + zoneIn);
+    const editZone = zoneIn.replace(/the/ig, ""); // Remove the word "the" if it exists
+    const cleanZone = didYouMean(editZone, appDictionaryArray);
 
-  var intentDictionary = {
-    'name' : 'serviceControl',
-    'version' : '3.0',
-    'description' : 'Send AV command to requested zone',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone','zoneWithService','commandWithCommand'],
-      'test':{
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'},
-        '3' : {'scope': 'command', 'attribute': 'avCommand'}
-      },
-      'failMessage': []//['zoneService']
-    },
-    'voiceMessages' : {
-      'success': {}
-    },
-    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO','SERVICE':'SERVICE','COMMANDREQ':'COMMANDREQ'},
-    'utterances' : [
-      '{to |} control {-|SERVICE}',
-      '{to |} control {-|ZONE}',
-      '{-|COMMANDREQ}',
-      '{to |} {-|COMMANDREQ} in {-|ZONE}',
-      '{to |} {-|COMMANDREQ} {-|ZONE}',
-      '{to |} {send |} {-|COMMANDREQ} {command |}',
-      '{to |} {send |} {-|COMMANDREQ} in {-|ZONE}',
-      '{to |} {send |} {-|COMMANDREQ} {command |} {to |} {-|SERVICE} ',
-      '{to |} {send |} {-|COMMANDREQ} {command |}{in |} {the |} {-|ZONE}',
-      '{to |} {send |} {-|COMMANDREQ} {command |}{in |} {the |} {-|ZONE} and {-|ZONE_TWO}',
-      '{-|ZONE} and {-|ZONE_TWO} {to |} {-|COMMANDREQ}',
-      '{to |} {-|COMMANDREQ} {-|SERVICE}',
-      '{-|ZONE} {to |} {-|COMMANDREQ}'
-    ]
-  };
-
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-            var service = _.get(req.sessionAttributes,'service',{name:'Zone'});
-            var command = _.get(req.sessionAttributes, 'command',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          action.serviceCommand(zone.actionable,command.avCommand)//Send command to actionable zones
-          if (!app.isReprompt(req)){
-            var voiceMessage = req.slot('COMMANDREQ');
-          }else{
-            var voiceMessage = 'ok';
-          }
-
-          req.data.request.intent.slots.COMMANDREQ.value = '';//clear COMMANDREQ slot so we dont get duplicate last command
-          req.sessionAttributes.command = {};
-          
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'reprompt',voiceMessage))
-          a.sendAV([zone,service.name,command.avCommand]);
-        })
-        .fail(function(err) {
-          log.error("err "+err)
-          app.intentErr(req,res,err);
-        });
+    if (!cleanZone) { // no match
+        analyticsEvent.sendError("Single Zone Match Fail: " + zoneIn);
+        callback(voiceMessages.error.zoneNotFound, undefined);
+    } else { // match
+        analyticsEvent.sendTime("Matching", "Single");
+        callback(undefined, cleanZone);
     }
-    );
-  }
-  callback(intentDictionary);
-};
+}
+
+function multi(rawZone1 = '', rawZone2 = '') {
+    const analyticsEvent = new eventAnalytics.event();
+    const matchedKeyGroups = [];
+    let ret = {};
+    log.error("matcherZone.multi - Matching requested zones...");
+    const defer = q.defer();
+
+    log.info("matcherZone.multi - slot 1: " + rawZone1);
+    log.info("matcherZone.multi - slot 2: " + rawZone2);
+
+    // Sanitize input
+    const lowerRawZone1 = _.toLower(rawZone1);
+    const lowerRawZone2 = _.toLower(rawZone2);
+    const hasFirst = appDictionaryGroupArrayLowerCase.some(item => item.includes('1st'));
+
+    if (hasFirst) {
+        lowerRawZone1 = lowerRawZone1.replace(/1st/ig, "first");
+        lowerRawZone2 = lowerRawZone2.replace(/1st/ig, "first");
+    }
+
+    const matchedGroups = findMatches(lowerRawZone1, lowerRawZone2, appDictionaryGroupArrayLowerCase);
+    const matchedZones = findMatches(lowerRawZone1, lowerRawZone2, appDictionaryArrayLowerCase);
+
+    log.info("matcherZone.multi - matchedGroups: " + matchedGroups);
+    log.info("matcherZone.multi - matchedZones: " + matchedZones);
+
+    // Match Zones to savant case
+    matchedZones.forEach((zone, index) => {
+        matchedZones[index] = didYouMean(zone, appDictionaryArray);
+    });
+
+    // Get Group's zones, matched to savant's case
+    matchedKeyGroups.length = 0;
+    for (const group of matchedGroups) {
+        const matchedKeyGroup = didYouMean(group, appDictionaryGroupArray);
+        for (const key in appDictionaryGroups[matchedKeyGroup]) {
+            matchedKeyGroups.push(appDictionaryGroups[matchedKeyGroup][key]);
+        }
+    }
+
+    const isActionableEmpty = currentZone.actionable[0] === false;
+    const areGroupsAndZonesEmpty = matchedGroups.length === 0 && matchedZones.length === 0;
+
+    if (isActionableEmpty && areGroupsAndZonesEmpty) {
+        log.error("matcherZone.multi - no zones found");
+        analyticsEvent.sendError("Multi Zone Match Fail: " + rawZone1 + " , " + rawZone2);
+        defer.reject(voiceMessages.error.zoneNotFound);
+    } else if (!isActionableEmpty && areGroupsAndZonesEmpty) {
+        log.error("currentZone.actionable: '" + currentZone.actionable + "'");
+        log.error("currentZone.speakable: '" + currentZone.speakable + "'");
+
+        log.error("matcherZone.multi - Single zone mode");
+        ret = currentZone;
+        analyticsEvent.sendError("Single zone mode: " + ret.actionable);
+        defer.resolve(ret);
+    } else {
+        ret.actionable = _.uniq([...matchedZones, ...matchedKeyGroups]);
+        ret.speakable = _.uniq([...matchedGroups, ...matchedZones]);
+        ret.speakable = stringLib.addAnd(ret.speakable);
+
+        logMultiZoneInfo(ret);
+        defer.resolve(ret);
+    }
+
+    analyticsEvent.sendTime("Matching", "Multi");
+    return defer.promise;
+}
+
+function findMatches(input1, input2, dictionary) {
+    const groupMatches1 = _.filter(dictionary, sub => input1.includes(sub));
+    const groupMatches2 = _.filter(dictionary, sub => input2.includes(sub));
+    return _.uniq([...groupMatches1, ...groupMatches2]).filter(x => x);
+}
+
+function logMultiZoneInfo(zoneInfo) {
+    log.info("matcherZone.multi ---------");
+    logMultiZones("matcherZone.multi - Zones to send commands to:", zoneInfo.actionable);
+    log.info("matcherZone.multi ---------");
+    logMultiZones("matcherZone.multi - Zones to say:", zoneInfo.speakable);
+    log.info("matcherZone.multi ---------");
+}
+
+function logMultiZones(message, zones) {
+    log.info(message);
+    zones.forEach((zone, index) => {
+        log.info(`matcherZone.multi - zone ${index}: ${zone}`);
+    });
+}
+
+module.exports = {
+    single: single,
+    multi: multi
+}

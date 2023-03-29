@@ -1,106 +1,141 @@
-const didYouMean = require('didyoumean');
-const _ = require('lodash');
-const q = require('q');
-const stringLib = require('../stringLib');
-const eventAnalytics = require('../eventAnalytics');
-const voiceMessages = require('../voiceMessages.json');
+const eventAnalytics = require('./eventAnalytics'),
+    _ = require('lodash'),
+    q = require('q');
 
-function replace1stWithFirst(text) {
-  return text.replace(/1st/ig, 'first');
+function serviceRequest(requestIn, typeIn, argumentIn, argumentValueIn) {
+    log.debug("serviceRequest sending:" + requestIn);
+
+    let requestToSend = '';
+
+    switch (typeIn.toLowerCase()) {
+        case "zone":
+            requestToSend = `servicerequest "${requestIn[0]}" "" "" "" "" "${requestIn[1]}"`;
+            break;
+        case "volume":
+            requestToSend = `servicerequest "${requestIn[0]}" "" "" "" "" "SetVolume" "VolumeValue" "${argumentValueIn[0]}"`;
+            break;
+        case "custom":
+            requestToSend = `servicerequest "${customWorkflowScope[0]}" "${customWorkflowScope[1]}" "" "1" "SVC_GEN_GENERIC" "${requestIn[0]}"`;
+            break;
+        case "lighting":
+            requestToSend = `servicerequest "${requestIn[0]}" "" "" "" "SVC_ENV_LIGHTING" "__RoomSetBrightness" "BrightnessLevel" "${argumentValueIn[0]}"`;
+            break;
+        case "full":
+            requestToSend = `servicerequest "${requestIn.join('" "')}"`;
+            log.debug(requestToSend);
+            break;
+    }
+
+    sendToSCLI(requestToSend);
 }
 
-function removeTheFromText(text) {
-  return text.replace(/the/ig, '');
-}
+function readState(stateIn, callback) {
+    log.debug("savantLib.readState - Looking for state: \"" + stateIn + "\"");
+    sendToSCLI("readstate \"" + stateIn + "\"", function (response) {
+        log.debug("savantLib.readState - response: " + response);
 
-function sanitizeInput(text) {
-  return replace1stWithFirst(_.toLower(text));
-}
+        response = response.replace(/(\r\n|\n|\r)/gm, "");
 
-function single(zoneIn, callback) {
-  const event = new eventAnalytics.event();
-  log.error('matcherZone.single -  Matching requested zone...');
-  log.info('matcherZone.single -  zoneIn: ' + zoneIn);
-  const cleanZone = didYouMean(removeTheFromText(zoneIn), appDictionaryArray);
-
-  if (!cleanZone) {
-    event.sendError('Single Zone Match Fail: ' + zoneIn);
-    callback(voiceMessages.error.zoneNotFound, undefined);
-  } else {
-    event.sendTime('Matching', 'Single');
-    callback(undefined, cleanZone);
-  }
-}
-
-function multi(rawZone1 = '', rawZone2 = '') {
-  const event = new eventAnalytics.event();
-
-  log.error('matcherZone.multi - Matching requested zones...');
-  log.info('matcherZone.multi - slot 1: ' + rawZone1);
-  log.info('matcherZone.multi - slot 2: ' + rawZone2);
-
-  const sanitizedZone1 = sanitizeInput(rawZone1);
-  const sanitizedZone2 = sanitizeInput(rawZone2);
-
-  const matchedGroups = _.uniq([
-    ..._.filter(appDictionaryGroupArrayLowerCase, (sub) => sanitizedZone1.includes(sub)),
-    ..._.filter(appDictionaryGroupArrayLowerCase, (sub) => sanitizedZone2.includes(sub)),
-  ]);
-
-  const matchedZones = _.uniq([
-    ..._.filter(appDictionaryArrayLowerCase, (sub) => sanitizedZone1.includes(sub)),
-    ..._.filter(appDictionaryArrayLowerCase, (sub) => sanitizedZone2.includes(sub)),
-  ]).map((zone) => didYouMean(zone, appDictionaryArray));
-
-  const matchedKeyGroups = _.flatMap(matchedGroups, (group) => {
-    const matchedGroup = didYouMean(group, appDictionaryGroupArray);
-    return appDictionaryGroups[matchedGroup];
-  });
-
-  const defer = q.defer();
-
-  if (
-    currentZone.actionable[0] === false
-    && matchedGroups.length === 0
-    && matchedZones.length === 0
-  ) {
-    log.error('matcherZone.multi - no zones found');
-    event.sendError('Multi Zone Match Fail: ' + rawZone1 + ' , ' + rawZone2);
-    defer.reject(voiceMessages.error.zoneNotFound);
-  } else if (
-    currentZone.actionable[0] !== false
-    && matchedGroups.length === 0
-    && matchedZones.length === 0
-  ) {
-    log.error('currentZone.actionable: \'' + currentZone.actionable + '\'');
-    log.error('currentZone.speakable: \'' + currentZone.speakable + '\'');
-
-    log.error('matcherZone.multi - Single zone mode');
-    event.sendError('Single zone mode: ' + currentZone.actionable);
-    defer.resolve(currentZone);
-  } else {
-    const ret = {
-      actionable: _.uniq([...matchedZones, ...matchedKeyGroups]),
-      speakable: stringLib.addAnd(_.uniq([...matchedGroups, ...matchedZones])),
-    };
-
-    log.info('matcherZone.multi - Zones to send commands to:');
-    ret.actionable.forEach((zone, index) => {
-      log.info('matcherZone.multi - zone ' + index + ': ' + zone);
+        const ea = new eventAnalytics.event();
+        ea.sendTime("readState", stateIn);
+        callback(response, stateIn);
     });
+}
 
-    log.info('matcherZone.multi - Zones to say:');
-    ret.speakable.forEach((zone, index) => {
-      log.info('matcherZone.multi - zone ' + index + ': ' + zone);
+function readStateQ(stateIn) {
+    return q.Promise(function (resolve) {
+        readState(stateIn, function (stateValue) {
+            resolve(stateValue);
+        });
     });
+}
 
-    defer.resolve(ret);
-  }
-  event.sendTime('Matching', 'Multi');
-  return defer.promise;
+function readMultipleState(stateIn, callback) {
+    log.debug("savantLib.readMultipleState - Looking for state: \"" + stateIn + "\"");
+    sendToSCLI("readstate \"" + stateIn + "\"", function (response) {
+        log.debug("savantLib.readMultipleState - Readstate response: " + response);
+
+        response = response.split(/\n/).filter(x => x !== (undefined || ''));
+
+        const ea = new eventAnalytics.event();
+        ea.sendTime("readMultipleState", stateIn);
+        callback(response, stateIn);
+    });
+}
+
+function readMultipleStateQ(stateIn) {
+    return q.Promise(function (resolve) {
+        readMultipleState(stateIn, function (stateValue) {
+            resolve(stateValue);
+        });
+    });
+}
+
+function writeState(stateIn, valueIn) {
+    log.debug(`savantLib.writeState - Requesting state: writestate "${stateIn}" "${valueIn}"`);
+    sendToSCLI(`writestate "${stateIn}" "${valueIn}"`);
+}
+
+function getSceneNames() {
+    const defer = q.defer();
+    log.debug("savantLib.getSceneNames - Requesting scenes");
+    sendToSCLI("getSceneNames", function (response) {
+        log.debug("savantLib.getSceneNames - getSceneNames response: " + response);
+
+        response = response.split(/\n/).filter(x => x !== (undefined || ''));
+
+        const ret = {};
+        for (const key in response) {
+            const scene = response[key].split(',');
+            ret[scene[0]] = {
+                name: scene[0],
+                id: scene[1],
+                user: scene[2]
+            };
+        }
+
+        const ea = new eventAnalytics.event();
+        ea.sendTime("getSceneNames");
+        defer.resolve(ret);
+    });
+    return defer.promise;
+}
+
+function activateScene(scene) {
+    log.debug("activateScene.activateScene - Activating Scene: " + scene.name);
+    sendToSCLI(`activateScene "${scene.name}" "${scene.id}" "${scene.user}"`);
+}
+
+function sendToSCLI(consoleString, callback) {
+    const fullcommand = sclibridgePath + " " + consoleString;
+    log.info("savantLib.sendToSCLI - Running:  " + fullcommand);
+
+    const child = require('child_process');
+    const ps = child.exec(fullcommand, (error, stdout, stderr) => {
+        log.info('savantLib.sendToSCLI - SCLI Response: ' + stdout);
+
+        if (error) {
+            log.error('savantLib.sendToSCLI - error: ' + error);
+            log.error('savantLib.sendToSCLI - error.code: ' + error.code);
+            log.error('savantLib.sendToSCLI - error.signal: ' + error.signal);
+            log.error('savantLib.sendToSCLI - stderr: ' + stderr);
+        }
+
+        if (callback) {
+            const ea = new eventAnalytics.event();
+            ea.sendTime("sendToSCLI", consoleString.substr(0, consoleString.indexOf(' ')));
+            callback(stdout);
+        }
+    });
 }
 
 module.exports = {
-  single,
-  multi,
-};
+    serviceRequest: serviceRequest,
+    readState: readState,
+    readStateQ: readStateQ,
+    readMultipleState: readMultipleState,
+    readMultipleStateQ: readMultipleStateQ,
+    writeState: writeState,
+    getSceneNames: getSceneNames,
+    activateScene: activateScene
+}

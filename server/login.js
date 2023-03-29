@@ -1,46 +1,51 @@
-const zoneParse = require('./zoneParse');
-const savantLib = require('./savantLib');
-const commandLib = require('./commandLib.json');
-const _ = require('lodash');
-const eventAnalytics = require('./eventAnalytics');
+const fs = require('fs');
+const path = require("path");
+const logger = fs.createWriteStream(path.join(__dirname, '..', '..', '..','public_html','customSlotTypes.html'));
 
-let appDictionaryArray = [];
-let zoneServices = {};
-
-module.exports = function(app) {
-  app.dictionary = {
-    // ... Add all properties from above
-    "sceneAction" : ["recall","activate"]
-  };
-
-  async function initialize() {
-    try {
-      const groupDictionary = await zoneParse.getZoneOrganization(globalZoneOrganization);
-      const systemZones = await zoneParse.getZones(serviceOrderPlist);
-      const foundservices = await zoneParse.getZoneServices(serviceOrderPlist);
-      const ret = await zoneParse.getServiceNames(serviceOrderPlist);
-      const channelsByService = await zoneParse.getChannels(channelsByService);
-
-      app.dictionary.systemGroupNames = groupDictionary[1];
-      app.dictionary.systemGroups = groupDictionary[0];
-      app.dictionary.systemZones = systemZones;
-      app.dictionary.sourceComponents = ret.sourceComponent;
-      app.dictionary.serviceAlias = ret.serviceAlias;
-      app.dictionary.services = ret.serviceAlias.concat(ret.sourceComponent);
-
-      if (app.environment.sceneSupport) {
-        const scenes = await savantLib.getSceneNames();
-        app.dictionary.sceneExample = scenes.map(scene => scene.replace(/[0-9]/g, '')).filter((value, index, self) => self.indexOf(value) === index);
-      }
-
-      require('./customSlotFile')(app);
-      require('./userPresets')(app);
-      eventAnalytics.systemAnalytics();
-      
-    } catch(error) {
-      console.error('Error initializing app: ', error);
-    }
+function writeCustomSlot(logger, typeName, values) {
+  logger.write(`<b>Custom Slot Type:</b> ${typeName}<br>`);
+  logger.write('<b>Custom Slot Values:</b><br>');
+  
+  for (const key in values) {
+    logger.write(`${values[key]}<br>`);
   }
+  logger.write('<BR>');
+}
 
-  initialize();
+module.exports = function(app){
+  logger.write('<h2>Temporary Intents and Utterances:</h2>');
+  logger.write('<b>Initial Intent Schema:</b> <BR>');
+  logger.write(`{
+  "intents": [
+    {
+      "intent": "TEMP",
+      "slots": []
+    }
+  ]
+}<br>`);
+
+  logger.write('<BR>');
+  logger.write('<b>Initial Sample Utterances:</b> <BR>');
+  logger.write('TEMP	TEMP<br>');
+
+  logger.write('<h2>Custom Slots:</h2>');
+  logger.write('<BR>');
+  
+  writeCustomSlot(logger, 'ZONE', app.dictionary.systemZones);
+  writeCustomSlot(logger, 'ZONE_TWO', app.dictionary.systemGroupNames);
+  writeCustomSlot(logger, 'SERVICE', app.dictionary.services);
+  writeCustomSlot(logger, 'COMMANDREQ', app.dictionary.serviceCommands.transport);
+  writeCustomSlot(logger, 'RANGE', app.dictionary.rangePrompt);
+  
+  logger.write('<b>Custom Slot Type:</b> PERCENTAGE<br>');
+  logger.write('<b>Custom Slot Values:</b><br>');
+  for (let i = 1; i < 101; i++) {
+    logger.write(`${i}<br>`);
+  }
+  logger.write('<BR>');
+  
+  writeCustomSlot(logger, 'LIGHTING', app.dictionary.lightingPrompt);
+  writeCustomSlot(logger, 'CHANNEL', app.get('dictionary_channels_array'));
+
+  console.error("Finished Writing customSlotTypes.");
 };

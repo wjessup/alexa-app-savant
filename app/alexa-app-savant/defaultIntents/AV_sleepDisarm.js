@@ -1,56 +1,119 @@
-const
-  action = require('../lib/actionLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+"use strict";
 
-module.exports = function(app,callback){
+const plist = require("simple-plist");
+const fs = require("fs");
+const _ = require("lodash");
+const q = require("q");
 
-  var intentDictionary = {
-    'name' : 'sleepDisarm',
-    'version' : '3.0',
-    'description' : 'Stop a sleep timer in a zone',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone'],
-      'test':{
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'}
-      },
-      'failMessage': []
-    },
-    'voiceMessages' : {
-      'success': 'Disabling timer in {0}',
-      'error':{}
-    },
-    'slots' : {'ZONE':'ZONE'},
-    'utterances' : ['{Stop|disable} {sleep |} timer in {-|ZONE}']
-  };
+const disabledTypes = [
+  "SVC_GEN_GENERIC",
+  "SVC_ENV_LIGHTING",
+  "SVC_ENV_HVAC",
+  "SVC_ENV_FAN",
+  "SVC_ENV_SHADE",
+  "SVC_SETTINGS_STEREO",
+  "SVC_SETTINGS_SURROUNDSOUND",
+  "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE",
+  "nonService",
+  "SVC_ENV_SECURITYCAMERA"
+];
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          action.sleepTimer(zone,'','disarm')
-          a.sendSleep([zone,'dis_sleepDisarm']);
-          return format(intentDictionary.voiceMessages.success,zone.speakable)
-        })
-        .then(function(voiceMessage) {
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
-    }
+const readPlistFile = (plistFile) => q.nfcall(plist.readFile, plistFile);
+
+// Extracts enabled services only
+const extractEnabledServices = (services) =>
+  _.filter(services, (service) => {
+    const type = _.get(service, "Service Type");
+    return (
+      service.Enabled === 1 && (!type || !_.includes(disabledTypes, type))
     );
-  }
-  callback(intentDictionary);
+  });
+
+const getZones = async (plistFile) => {
+  const obj = await readPlistFile(plistFile);
+  return Object.keys(obj.ServiceOrderPerZone);
+};
+
+const getZoneServices = async (plistFile) => {
+  const obj = await readPlistFile(plistFile);
+  const serviceOrderPerZone = obj.ServiceOrderPerZone;
+
+  return _.mapValues(serviceOrderPerZone, (zones, key) => {
+    return _.transform(
+      extractEnabledServices(zones),
+      (accumulator, service, index) => {
+        accumulator[index] = {
+          ..._.pick(service, [
+            "Source Component",
+            "Source Logical Component",
+            "Service Variant ID",
+            "Service Type",
+            "Alias"
+          ]),
+          Zone: key
+        };
+      },
+      {}
+    );
+  });
+};
+
+const getServiceNames = async (plistFile) => {
+  const obj = await readPlistFile(plistFile);
+  const services = _.flatMap(obj.ServiceOrderPerZone);
+  const enabledServices = extractEnabledServices(services);
+
+  return {
+    sourceComponent: _.uniq(_.map(enabledServices, "Source Component")),
+    serviceAlias: _.uniq(_.map(enabledServices, "Alias"))
+  };
+};
+
+const getZoneOrganization = async (plistFile) => {
+  const obj = await readPlistFile(plistFile);
+  const zoneOrderList = obj.RPMZoneOrderList;
+
+  return _.reduce(
+    zoneOrderList,
+    (accumulator, zoneOrder) => {
+      const groupName = zoneOrder.RPMGroupName;
+      accumulator.array.push(groupName);
+      accumulator.object[groupName] = _.mapValues(
+        zoneOrder.Children,
+        "Identifier"
+      );
+      return accumulator;
+    },
+    { object: {}, array: [] }
+  );
+};
+
+const getChannels = async (plistFile) => {
+  const obj = await readPlistFile(plistFile);
+
+  return _.reduce(
+    obj,
+    (accumulator, zones, key) => {
+      const keyArray = key.split("-");
+      if (keyArray[4] === "SVC_AV_TV") {
+        const serviceName = keyArray[1];
+        _.assign(accumulator.object, {
+          [keyArray[0]]: { [serviceName]: _.mapValues(zones, "Name") }
+        });
+        accumulator.array = _.uniq(
+          accumulator.array.concat(_.map(zones, "Name"))
+        );
+      }
+      return accumulator;
+    },
+    { object: {}, array: [] }
+  );
+};
+
+module.exports = {
+  getZones,
+  getZoneServices,
+  getServiceNames,
+  getZoneOrganization,
+  getChannels
 };

@@ -1,105 +1,106 @@
-const savantLib = require('../savantLib');
 const didYouMean = require('didyoumean');
-const action = require('../actionLib');
-const eventAnalytics = require('../eventAnalytics');
 const _ = require('lodash');
 const q = require('q');
+const stringLib = require('../stringLib');
+const eventAnalytics = require('../eventAnalytics');
+const voiceMessages = require('../voiceMessages.json');
 
-function available(actionableZones, serviceIn) {
-  const a = new eventAnalytics.event();
-  const defer = q.defer();
-  const serviceArray = [];
-
-  for (const key in actionableZones) {
-    const cleanZone = actionableZones[key];
-    const zoneServices = systemServices[cleanZone];
-
-    const foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", didYouMean(serviceIn, _.map(zoneServices, "Alias"))]);
-    const foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", didYouMean(serviceIn, _.map(zoneServices, "Source Component"))]);
-
-    let foundService;
-    if (foundServiceAliasIndex) {
-      foundService = zoneServices[foundServiceAliasIndex];
-    } else if (foundServiceComponentIndex) {
-      foundService = zoneServices[foundServiceComponentIndex];
-    }
-
-    if (foundService) {
-      serviceArray.push([
-        foundService["Zone"],
-        foundService["Source Component"],
-        foundService["Source Logical Component"],
-        foundService["Service Variant ID"],
-        foundService["Service Type"],
-        foundService["Alias"]
-      ]);
-    } else {
-      a.sendError("serviceMatcher Fail: " + serviceIn);
-      defer.reject("zoneNotFound");
-      return defer.promise;
-    }
-  }
-
-  const ret = { serviceArray, name: serviceIn };
-  defer.resolve(ret);
-  a.sendTime("Matching", "service.available");
-  return defer.promise;
+function replace1stWithFirst(text) {
+  return text.replace(/1st/ig, 'first');
 }
 
-function active(serviceIn) {
-  const a = new eventAnalytics.event();
-  const defer = q.defer();
-  let stateRequest = '';
+function removeTheFromText(text) {
+  return text.replace(/the/ig, '');
+}
 
-  const serviceName = didYouMean(serviceIn, appDictionaryServiceNameArray);
-  if (!serviceName) {
-    a.sendError("activeServiceNameMatcher Fail: " + serviceIn);
-    defer.reject("zoneNotFound");
-    return defer.promise;
+function sanitizeInput(text) {
+  return replace1stWithFirst(_.toLower(text));
+}
+
+function single(zoneIn, callback) {
+  const event = new eventAnalytics.event();
+  log.error('matcherZone.single -  Matching requested zone...');
+  log.info('matcherZone.single -  zoneIn: ' + zoneIn);
+  const cleanZone = didYouMean(removeTheFromText(zoneIn), appDictionaryArray);
+
+  if (!cleanZone) {
+    event.sendError('Single Zone Match Fail: ' + zoneIn);
+    callback(voiceMessages.error.zoneNotFound, undefined);
+  } else {
+    event.sendTime('Matching', 'Single');
+    callback(undefined, cleanZone);
   }
+}
 
-  for (const key in appDictionaryArray) {
-    stateRequest += `"${appDictionaryArray[key]}.ActiveService" `;
-  }
-  stateRequest = stateRequest.trim();
+function multi(rawZone1 = '', rawZone2 = '') {
+  const event = new eventAnalytics.event();
 
-  savantLib.readMultipleState(stateRequest, function (activeServices) {
-    const activeServicesArray = activeServices.map(service => service.split("-"));
-    let ret;
+  log.error('matcherZone.multi - Matching requested zones...');
+  log.info('matcherZone.multi - slot 1: ' + rawZone1);
+  log.info('matcherZone.multi - slot 2: ' + rawZone2);
 
-    for (const key in activeServicesArray) {
-      const zone = activeServicesArray[key][0];
-      const zoneServices = systemServices[zone];
+  const sanitizedZone1 = sanitizeInput(rawZone1);
+  const sanitizedZone2 = sanitizeInput(rawZone2);
 
-      for (const key2 in zoneServices) {
-        const isMatchedService = 
-          (zoneServices[key2]["Alias"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1]) ||
-          (zoneServices[key2]["Source Component"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1]);
+  const matchedGroups = _.uniq([
+    ..._.filter(appDictionaryGroupArrayLowerCase, (sub) => sanitizedZone1.includes(sub)),
+    ..._.filter(appDictionaryGroupArrayLowerCase, (sub) => sanitizedZone2.includes(sub)),
+  ]);
 
-        if (isMatchedService) {
-          if (!ret) {
-            ret = { zone: { actionable: [], speakable: [] } };
-          }
-          ret.zone.actionable.push(zone);
-          ret.zone.speakable.push(zone);
-        }
-      }
-    }
+  const matchedZones = _.uniq([
+    ..._.filter(appDictionaryArrayLowerCase, (sub) => sanitizedZone1.includes(sub)),
+    ..._.filter(appDictionaryArrayLowerCase, (sub) => sanitizedZone2.includes(sub)),
+  ]).map((zone) => didYouMean(zone, appDictionaryArray));
 
-    if (!ret) {
-      a.sendError(["activeServiceNameMatcher Match not active: " + serviceName]);
-      defer.reject({ type: "endSession", exception: "serviceNotActive" });
-    } else {
-      ret.service = { name: serviceName };
-      defer.resolve(ret);
-    }
+  const matchedKeyGroups = _.flatMap(matchedGroups, (group) => {
+    const matchedGroup = didYouMean(group, appDictionaryGroupArray);
+    return appDictionaryGroups[matchedGroup];
   });
 
-  a.sendTime("Matching", "service.active");
+  const defer = q.defer();
+
+  if (
+    currentZone.actionable[0] === false
+    && matchedGroups.length === 0
+    && matchedZones.length === 0
+  ) {
+    log.error('matcherZone.multi - no zones found');
+    event.sendError('Multi Zone Match Fail: ' + rawZone1 + ' , ' + rawZone2);
+    defer.reject(voiceMessages.error.zoneNotFound);
+  } else if (
+    currentZone.actionable[0] !== false
+    && matchedGroups.length === 0
+    && matchedZones.length === 0
+  ) {
+    log.error('currentZone.actionable: \'' + currentZone.actionable + '\'');
+    log.error('currentZone.speakable: \'' + currentZone.speakable + '\'');
+
+    log.error('matcherZone.multi - Single zone mode');
+    event.sendError('Single zone mode: ' + currentZone.actionable);
+    defer.resolve(currentZone);
+  } else {
+    const ret = {
+      actionable: _.uniq([...matchedZones, ...matchedKeyGroups]),
+      speakable: stringLib.addAnd(_.uniq([...matchedGroups, ...matchedZones])),
+    };
+
+    log.info('matcherZone.multi - Zones to send commands to:');
+    ret.actionable.forEach((zone, index) => {
+      log.info('matcherZone.multi - zone ' + index + ': ' + zone);
+    });
+
+    log.info('matcherZone.multi - Zones to say:');
+    ret.speakable.forEach((zone, index) => {
+      log.info('matcherZone.multi - zone ' + index + ': ' + zone);
+    });
+
+    defer.resolve(ret);
+  }
+  event.sendTime('Matching', 'Multi');
   return defer.promise;
 }
 
 module.exports = {
-  available,
-  active
+  single,
+  multi,
 };

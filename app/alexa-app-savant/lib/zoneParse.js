@@ -1,138 +1,140 @@
 "use strict";
 
-const
-  plist = require('simple-plist'),
-  fs = require('fs'),
-  _ = require('lodash'),
-  q = require('q');
+const plist = require('simple-plist');
+const fs = require('fs');
+const _ = require('lodash');
+const q = require('q');
 
+const disabledTypes = [
+  "SVC_GEN_GENERIC",
+  "SVC_ENV_LIGHTING",
+  "SVC_ENV_HVAC",
+  "SVC_ENV_FAN",
+  "SVC_ENV_SHADE",
+  "SVC_SETTINGS_STEREO",
+  "SVC_SETTINGS_SURROUNDSOUND",
+  "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE",
+  "nonService",
+  "SVC_ENV_SECURITYCAMERA"
+];
 
-
-function getZones(plistFile, callback) {
-  return q.nfcall(plist.readFile, plistFile)
-  .then(function(obj) {
-    obj = obj.ServiceOrderPerZone;
-    var ret = []
-    for (var key in obj){
-      ret.push(key);
-    }
-    return ret;
-  })
+function readPlistFile(plistFile) {
+  return q.nfcall(plist.readFile, plistFile);
 }
 
-function getZoneServices(plistFile, callback) {
-  return q.nfcall(plist.readFile, plistFile)
-  .then(function(obj) {
-    obj = obj.ServiceOrderPerZone;
-    var ret = {}
+function getZones(plistFile) {
+  return readPlistFile(plistFile).then((obj) => Object.keys(obj.ServiceOrderPerZone));
+}
 
-    for (var key in obj){
-      var dic = []
-      var serviceObj = {};
-      var i = 0
-      for (var key2 in obj[key]){
-        let value = obj[key][key2]; // map references is time consuming so let’s do it only once
-        let type = _.get(value, 'Service Type');
-        let disabledTypes = ["SVC_GEN_GENERIC","SVC_ENV_LIGHTING","SVC_ENV_HVAC","SVC_ENV_FAN",
-          "SVC_ENV_SHADE","SVC_SETTINGS_STEREO","SVC_SETTINGS_SURROUNDSOUND",
-          "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE","nonService","SVC_ENV_SECURITYCAMERA"
-        ];
-        if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
-          serviceObj[i] = {};
-          serviceObj[i]["Zone"] = key;
-          serviceObj[i]["Source Component"] =  obj[key][key2]["Source Component"];
-          serviceObj[i]["Source Logical Component"] = obj[key][key2]["Source Logical Component"];
-          serviceObj[i]["Service Variant ID"] = obj[key][key2]["Service Variant ID"];
-          serviceObj[i]["Service Type"] = obj[key][key2]["Service Type"];
-          serviceObj[i]["Alias"] = obj[key][key2]["Alias"];
-          i++;
-        }
-      }
-      ret[key] = serviceObj;
+function getZoneServices(plistFile) {
+  return readPlistFile(plistFile).then((obj) => {
+    const zoneServices = {};
+    const services = obj.ServiceOrderPerZone;
+
+    for (const [zone, zoneServiceList] of Object.entries(services)) {
+      zoneServices[zone] = getEnabledServices(zoneServiceList, zone);
     }
-    return ret
-  })
+
+    return zoneServices;
+  });
+}
+
+function getEnabledServices(zoneServiceList, zone) {
+  return zoneServiceList.reduce((enabledServices, zoneService, index) => {
+    const serviceType = _.get(zoneService, 'Service Type');
+    if (zoneService.Enabled === 1 && (!serviceType || !disabledTypes.includes(serviceType))) {
+      enabledServices[index] = {
+        Zone: zone,
+        "Source Component": zoneService["Source Component"],
+        "Source Logical Component": zoneService["Source Logical Component"],
+        "Service Variant ID": zoneService["Service Variant ID"],
+        "Service Type": zoneService["Service Type"],
+        Alias: zoneService.Alias
+      };
+    }
+    return enabledServices;
+  }, {});
 }
 
 function getServiceNames(plistFile) {
-  return q.nfcall(plist.readFile, plistFile)
-  .then(function(obj) {
-    obj = obj.ServiceOrderPerZone;
-    var ret = {
-      "sourceComponent" : [],
-      "serviceAlias" : []
-    }
-    for (var key in obj){
-      for (var key2 in obj[key]){
-        let value = obj[key][key2]; // map references is time consuming so let’s do it only once
-        let type = _.get(value, 'Service Type');
-        let disabledTypes = ["SVC_GEN_GENERIC","SVC_ENV_LIGHTING","SVC_ENV_HVAC",
-          "SVC_ENV_SHADE","SVC_SETTINGS_STEREO","SVC_SETTINGS_SURROUNDSOUND",
-          "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE","nonService","SVC_ENV_SECURITYCAMERA"
-        ];
-        if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
-          ret.sourceComponent.push(value["Source Component"]);
-          ret.serviceAlias.push(value["Alias"]);
+  return readPlistFile(plistFile).then((obj) => {
+    const serviceNames = {
+      sourceComponent: [],
+      serviceAlias: []
+    };
+
+    for (const key in obj.ServiceOrderPerZone){
+      for (const value of Object.values(obj.ServiceOrderPerZone[key])){
+        const serviceType = _.get(value, 'Service Type');
+        if (value.Enabled === 1 && (!serviceType || !disabledTypes.includes(serviceType))) {
+          serviceNames.sourceComponent.push(value["Source Component"]);
+          serviceNames.serviceAlias.push(value["Alias"]);
         }
       }
     }
-    ret.sourceComponent = _.uniq(ret.sourceComponent);
-    ret.serviceAlias = _.uniq(ret.serviceAlias);
-    return ret;
-  })
+    serviceNames.sourceComponent = _.uniq(serviceNames.sourceComponent);
+    serviceNames.serviceAlias = _.uniq(serviceNames.serviceAlias);
+    return serviceNames;
+  });
 }
 
-function getZoneOrganization(plistFile, callback) {
-  return q.nfcall(plist.readFile, plistFile)
-  .then(function(obj) {
-    obj = obj.RPMZoneOrderList;
-    var retObj = {};
-    var retArray = [];
-    for (var key in obj){
-      var zoneGroupName = obj[key]["RPMGroupName"];
-      retArray.push(zoneGroupName);
-      var zoneGroupsObj = obj[key]["Children"];
-      var dic = {};
-      for (var key2 in zoneGroupsObj){
-        let value = zoneGroupsObj[key2];
-        dic[key2] = value["Identifier"];
-      }
-      retObj[zoneGroupName] = dic;
-    }
-    return [retObj,retArray]
+function getZoneOrganization(plistFile) {
+  return readPlistFile(plistFile).then((obj) => {
+    const result = {
+      groups: {},
+      groupOrder: []
+    };
+
+    obj.RPMZoneOrderList.forEach((groupData) => {
+      const groupName = groupData.RPMGroupName;
+      result.groups[groupName] = extractChildrenIdentifiers(groupData.Children);
+      result.groupOrder.push(groupName);
+    });
+    return result;
   });
+}
+
+function extractChildrenIdentifiers(children) {
+  return children.reduce((identifiers, child, index) => {
+    identifiers[index] = child.Identifier;
+    return identifiers;
+  }, {});
 }
 
 function getChannels(plistFile) {
-  return q.nfcall(plist.readFile, plistFile)
-  .then(function(obj) {
-    var ret = {};
-    var channelNameArray = [];
-    for (var key in obj) {
-      var zoneChannelNameArray = [];
-      var keyArray = key.split('-')
-      if (keyArray[4]==='SVC_AV_TV'){
-        var zoneChans = {}
-        _.forEach(obj[key],function(value,key){
-          _.set(zoneChans,value.Name,key)
-          zoneChannelNameArray.push(value.Name)
-        })
-        var serviceName = keyArray[1];
-        var zoneObj = {}
-        _.set(zoneObj,serviceName,zoneChans);
-        _.set(ret,keyArray[0],zoneObj)
-        channelNameArray = zoneChannelNameArray
+  return readPlistFile(plistFile).then((obj) => {
+    const result = {
+      channels: {},
+      channelNames: []
+    };
+
+    for (const [key, channelData] of Object.entries(obj)) {
+      const keyParts = key.split('-');
+      if (keyParts[4] === 'SVC_AV_TV') {
+        const serviceName = keyParts[1];
+        const zoneChannels = mapChannelNames(channelData);
+        result.channels[keyParts[0]] = { [serviceName]: zoneChannels };
+        result.channelNames.push(...Object.values(zoneChannels));
       }
     }
-    channelNameArray = _.uniq(channelNameArray)
-    return [ret,channelNameArray]
+
+    result.channelNames = _.uniq(result.channelNames);
+    return result;
   });
 }
 
-module.exports = {
-getZones: getZones,
-getZoneServices: getZoneServices,
-getServiceNames: getServiceNames,
-getZoneOrganization: getZoneOrganization,
-getChannels:getChannels
+function mapChannelNames(channelData) {
+  const channelNames = {};
+  Object.entries(channelData).forEach(([key, channel]) => {
+    channelNames[key] = channel.Name;
+  });
+  return channelNames;
 }
+
+module.exports = {
+  getZones,
+  getZoneServices,
+  getServiceNames,
+  getZoneOrganization,
+  getChannels
+};

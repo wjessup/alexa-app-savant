@@ -1,115 +1,111 @@
-const
-  action = require('../lib/actionLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const didYouMean = require('didyoumean');
+const _ = require('lodash');
+const q = require('q');
+const eventAnalytics = require('../eventAnalytics');
+const savantLib = require('../savantLib');
+const systemServices = require('../systemServices'); // Assuming we have a module for systemServices
 
-module.exports = function(app,callback){
+function findService(serviceIn, zoneServices) {
+  const serviceAliasIndex = _.findKey(zoneServices, ["Alias", didYouMean(serviceIn, _.map(zoneServices, "Alias"))]);
+  const serviceComponentIndex = _.findKey(zoneServices, ["Source Component", didYouMean(serviceIn, _.map(zoneServices, "Source Component"))]);
 
-  var intentDictionary = {
-    'name' : 'powerOn',
-    'version' : '3.0',
-    'description' : 'Power on requested zone with last used service',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone','zoneWithService','rangeWithRange'],
-      'test':{
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'}
-      },
-      'failMessage': []//zoneService
-    },
-    'voiceMessages' : {
-      'success': {
-        'lighting': 'Turning on lights in {0}',
-        'lightingRange': 'Setting lights to {0} in {1}',
-        'lightingPercent': 'Setting lights to {0} percent in {1}',
-        'av': 'Turning on {0}'
+  return zoneServices[serviceAliasIndex] || zoneServices[serviceComponentIndex];
+}
 
-      }
-    },
-    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO','LIGHTING':'LIGHTING','RANGE':'RANGE','PERCENTAGE':'PERCENTAGE'},
-    'utterances' : [
-      '{actionPrompt} on',
-      '{actionPrompt} on {-|ZONE}',
-      '{actionPrompt} {-|ZONE}',
-      '{actionPrompt} {-|ZONE} and {-|ZONE_TWO}',
-      '{actionPrompt} on {-|ZONE} {-|LIGHTING}',
-      '{actionPrompt} on {-|ZONE} and {-|ZONE_TWO} {-|LIGHTING}',
-      '{actionPrompt} {-|LIGHTING} on',
-      '{actionPrompt} {-|LIGHTING} in {-|ZONE}',
-      '{actionPrompt} {-|LIGHTING} in {-|ZONE} and {-|ZONE_TWO}',
-      '{actionPrompt} {-|LIGHTING} to {-|RANGE}',
-      '{actionPrompt} {-|LIGHTING} on {-|ZONE} to {-|RANGE}',
-      '{actionPrompt} {-|LIGHTING} on {-|ZONE} and {-|ZONE_TWO} to {-|RANGE}',
-      '{actionPrompt} on {-|ZONE} {-|LIGHTING} to {-|RANGE}',
-      '{actionPrompt} on {-|ZONE} {-|LIGHTING} and {-|ZONE_TWO} to {-|RANGE}',
-      '{actionPrompt} on {-|LIGHTING} to {-|RANGE} in {-|ZONE}',
-      '{actionPrompt} on {-|LIGHTING} to {-|RANGE} in {-|ZONE} and {-|ZONE_TWO}',
-      '{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent',
-      '{actionPrompt} {-|LIGHTING} on {-|ZONE} to {-|PERCENTAGE} percent',
-      '{actionPrompt} {-|LIGHTING} on {-|ZONE} and {-|ZONE_TWO} to {-|PERCENTAGE} percent',
-      '{actionPrompt} {-|ZONE} {-|LIGHTING} to {-|PERCENTAGE} percent',
-      '{actionPrompt} {-|ZONE} and {-|ZONE_TWO} {-|LIGHTING} to {-|PERCENTAGE} percent',
-      '{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE}',
-      '{actionPrompt} {-|LIGHTING} to {-|PERCENTAGE} percent {-|ZONE} and {-|ZONE_TWO} '
-    ]
-  };
+function available(actionableZones, serviceIn) {
+  const deferred = q.defer();
+  const serviceArray = [];
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-            var prams = _.get(req.sessionAttributes,'prams',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          //If not a lighting request turn on last used AV source
-          if ((!req.slot('LIGHTING')) && (!prams.range) && (!req.slot('PERCENTAGE'))){
-            a.sendAV([zone,'Zone','PowerOn']);
-            log.error(intentDictionary.name+' Intent - not a lighting request turn on last used AV source');
-            return action.lastPowerOn(zone.actionable)//Get last service and turn on in all cleanZones
-            .thenResolve(format(intentDictionary.voiceMessages.success['av'],zone.speakable));
-          }
+  const event = new eventAnalytics.event();
 
-          //If a lighting request with range, turn on lights with requested range
-          if (req.slot('LIGHTING') && prams.range){
-            a.sendLighting([zone,prams.range,req.slot('LIGHTING')]);
-            log.error(intentDictionary.name+' Intent - a lighting request with range, turn on lights with requested range');
-            return action.setLighting(zone.actionable,prams.range,'range')//set lights to range in all cleanZones
-            .thenResolve(format(intentDictionary.voiceMessages.success['lightingRange'],prams.range,zone.speakable));
-  			  }
+  for (const cleanZone of actionableZones) {
+    const zoneServices = systemServices[cleanZone];
+    console.info(`matcher.service.available - Trying to match service ${serviceIn} in ${cleanZone}`);
 
-          //if a lighting request with a percentage, turn on lights with requested percentage
-          if (req.slot('LIGHTING') && req.slot('PERCENTAGE') && (!prams.range)){
-            a.sendLighting([zone,req.slot('PERCENTAGE'),req.slot('LIGHTING')]);
-            log.error(intentDictionary.name+' Intent - a lighting request with a percentage, turn on lights with requested percentage');
-            return action.setLighting(zone.actionable,req.slot('PERCENTAGE'),'percent')//set lights to percentage in all cleanZones
-            .thenResolve(format(intentDictionary.voiceMessages.success['lightingPercent'],req.slot('PERCENTAGE'),zone.speakable));
-          }
+    const foundService = findService(serviceIn, zoneServices);
 
-          //if a lighting request without a percentage or range, turn on light to preset value
-          if (req.slot('LIGHTING') && (!req.slot('PERCENTAGE')) && (!prams.range)){
-            a.sendLighting([zone,'On',req.slot('LIGHTING')]);
-            log.error(intentDictionary.name+' Intent - a lighting request without a percentage or range, turn on light to preset value');
-            return action.setLighting(zone.actionable,"on",'range')
-            .thenResolve(format(intentDictionary.voiceMessages.success['lighting'],zone.speakable));
-          }
-          // need a catch here
-      })
-      .then(function(voiceMessage) {
-        app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
-      })
-      .fail(function(err) {
-        app.intentErr(req,res,err);
-      });
+    if (foundService) {
+      serviceArray.push([
+        foundService["Zone"],
+        foundService["Source Component"],
+        foundService["Source Logical Component"],
+        foundService["Service Variant ID"],
+        foundService["Service Type"],
+        foundService["Alias"]
+      ]);
+    } else {
+      event.sendError(`serviceMatcher Fail: ${serviceIn}`);
+      deferred.reject("zoneNotFound");
+      return deferred.promise;
     }
-    );
   }
-  callback(intentDictionary);
+
+  const result = { serviceArray, name: serviceIn };
+  console.debug(`matcher.service.available - ${JSON.stringify(result)}`);
+  
+  deferred.resolve(result);
+  event.sendTime("Matching", "service.available");
+
+  return deferred.promise;
+}
+
+function active(appDictionaryServiceNameArray, appDictionaryArray, serviceIn) {
+  const deferred = q.defer();
+
+  const event = new eventAnalytics.event();
+  let stateRequest = '';
+  const activeServicesArray = [];
+  const serviceName = didYouMean(serviceIn, appDictionaryServiceNameArray);
+
+  if (!serviceName) {
+    event.sendError(`activeServiceNameMatcher Fail: ${serviceIn}`);
+    deferred.reject("zoneNotFound");
+    return deferred.promise;
+  }
+
+  console.error(`Trying to match request: ${serviceName}`);
+  stateRequest = appDictionaryArray.map(key => `"${key}.ActiveService"`).join(' ');
+
+  savantLib.readMultipleState(stateRequest, (activeServices) => {
+    Object.values(activeServices).forEach(service => activeServicesArray.push(service.split("-")));
+    
+    const result = activeServicesArray.reduce((acc, activeService) => {
+      const zone = activeService[0];
+      const zoneServices = systemServices[zone];
+
+      for (const zoneService of zoneServices) {
+        if ((zoneService["Alias"] === serviceName && zoneService["Source Component"] === activeService[1]) ||
+            (zoneService["Source Component"] === serviceName && zoneService["Source Component"] === activeService[1])) {
+          console.error(`Found requested active service in : ${zoneService["Zone"]}`);
+
+          if (!acc) {
+            acc = { zone: { actionable: [], speakable: [] } };
+          }
+
+          acc.zone.actionable.push(zone);
+          acc.zone.speakable.push(zone);
+        }
+      }
+
+      return acc;
+    }, null);
+
+    if (!result) {
+      event.sendError(`activeServiceNameMatcher Match not active: ${serviceName}`);
+      deferred.reject({type: "endSession", exception: "serviceNotActive"});
+
+    } else {
+      result.service = { name: serviceName };
+      deferred.resolve(result);
+    }
+  });
+
+  event.sendTime("Matching", "service.active");
+
+  return deferred.promise;
+}
+
+module.exports = {
+  available,
+  active,
 };

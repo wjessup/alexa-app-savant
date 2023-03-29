@@ -1,105 +1,132 @@
-const
-  savantLib = require('../savantLib'),
-  didYouMean = require('didyoumean'),
-  action = require('../actionLib'),
-  eventAnalytics = require('../eventAnalytics'),
-  _ = require('lodash'),
-  q = require('q');
+const savantLib = require('../savantLib');
+const didYouMean = require('didyoumean');
+const action = require('../actionLib');
+const eventAnalytics = require('../eventAnalytics');
+const _ = require('lodash');
+const q = require('q');
 
-function avaiable(actionableZones,serviceIn){
-  var a = new eventAnalytics.event();
-  var defer = q.defer();
-  var serviceArray = [];
-  for (var key in actionableZones){ //do each zone
-    var cleanZone = actionableZones[key];
-    var zoneServices = systemServices[cleanZone];
-    log.info("matcher.service.avaiable - Trying to match service "+serviceIn+" in "+cleanZone);
-    //get index of service array for matched service
-    //map(create array of all zone alises), Didyoumean(compare request against array),  findkey(match request to zone returning an index if matched)
-    var foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", didYouMean(serviceIn, _.map(zoneServices, "Alias"))]);
-    var foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", didYouMean(serviceIn, _.map(zoneServices, "Source Component"))]);
-    // get service array if an index was found
-    if (foundServiceAliasIndex){ var foundService = zoneServices[foundServiceAliasIndex] }
-    if (foundServiceComponentIndex){ var foundService = zoneServices[foundServiceComponentIndex] }
-    //if we found a service save array into serviceArray
-    if (foundService){
-      serviceArray.push([foundService["Zone"],foundService["Source Component"],foundService["Source Logical Component"],foundService["Service Variant ID"],foundService["Service Type"],foundService["Alias"]]);
+// Check if given service is available in each zone
+function available(actionableZones, serviceIn) {
+  const a = new eventAnalytics.event();
+  const serviceArray = [];
+  const defer = q.defer();
+  
+  // Looping through each zone
+  for (let key in actionableZones) {
+    const cleanZone = actionableZones[key];
+    const zoneServices = systemServices[cleanZone];
+    const matchingAlias = didYouMean(serviceIn, _.map(zoneServices, 'Alias'));
+    const matchingSourceComponent = didYouMean(serviceIn, _.map(zoneServices, 'Source Component'));
+    let foundService;
+    
+    log.info(`matcher.service.available - Trying to match service ${serviceIn} in ${cleanZone}`);
+    
+    // Get the index of the matched service
+    const foundServiceAliasIndex = _.findIndex(zoneServices, { Alias: matchingAlias });
+    const foundServiceComponentIndex = _.findIndex(zoneServices, { 'Source Component': matchingSourceComponent });
+    
+    // Get service array if an index was found
+    if (foundServiceAliasIndex !== -1) foundService = zoneServices[foundServiceAliasIndex];
+    else if (foundServiceComponentIndex !== -1) foundService = zoneServices[foundServiceComponentIndex];
+    
+    // If we found a service save array into serviceArray
+    if (foundService) {
+      serviceArray.push([
+        foundService.Zone, foundService['Source Component'], foundService['Source Logical Component'],
+        foundService['Service Variant ID'], foundService['Service Type'], foundService.Alias,
+      ]);
     } else {
-      a.sendError("serviceMatcher Fail: "+serviceIn);
-      defer.reject("zoneNotFound");
+      a.sendError(`serviceMatcher Fail: ${serviceIn}`);
+      defer.reject('zoneNotFound');
       return defer.promise;
     }
   }
-  var ret = {"serviceArray":serviceArray,"name":serviceIn}
-  log.debug("matcher.service.avaiable - "+ JSON.stringify(ret));
+  
+  const ret = {
+    serviceArray,
+    name: serviceIn,
+  };
+  
+  log.debug(`matcher.service.available - ${JSON.stringify(ret)}`);
   defer.resolve(ret);
-  a.sendTime("Matching","service.available");
-  return defer.promise
+  a.sendTime('Matching', 'service.available');
+  
+  return defer.promise;
 }
 
-function active(serviceIn){
-  var a = new eventAnalytics.event();
-  var defer = q.defer();
-  var stateRequest = '';
-  var activeServicesArray = [];
-
-
-  var serviceName = didYouMean(serviceIn,appDictionaryServiceNameArray);
-  if (serviceName === null) {//we did not find a match in alias or profile names
-    a.sendError("activeServiceNameMatcher Fail: "+serviceIn);
-    defer.reject("zoneNotFound");
+// Check if given service is active
+function active(serviceIn) {
+  const a = new eventAnalytics.event();
+  const activeServicesArray = [];
+  const defer = q.defer();
+  let ret;
+  
+  // Get the closest service name for a given service in appDictionaryServiceNameArray
+  const serviceName = didYouMean(serviceIn, appDictionaryServiceNameArray);
+  
+  if (!serviceName) {
+    // We did not find a match in alias or profile names
+    a.sendError(`activeServiceNameMatcher Fail: ${serviceIn}`);
+    defer.reject('zoneNotFound');
     return defer.promise;
   }
-
-  log.error('Trying to match request: '+serviceName);
-  for (var key in appDictionaryArray){//build ActiveService states
-    stateRequest = stateRequest.concat('"'+appDictionaryArray[key]+'.ActiveService'+'" ')
+  
+  log.error(`Trying to match request: ${serviceName}`);
+  
+  // Build ActiveService states
+  let stateRequest = '';
+  for (let key in appDictionaryArray) {
+    stateRequest = stateRequest.concat(`"${appDictionaryArray[key]}.ActiveService" `);
   }
-  stateRequest = stateRequest.substring(1);
-  stateRequest = stateRequest.substring(0,stateRequest.length-2);
-
-  savantLib.readMultipleState(stateRequest, function (activeServices,stateIn){//get ActiveServies
-    //log.error('activeServices: '+activeServices);
-    for (var key in activeServices){//break services into array
-      activeServicesArray.push(activeServices[key].split("-"));
-    }
-    for (var key in activeServicesArray){
-      var zone = activeServicesArray[key][0];
-      var zoneServices = systemServices[zone];
-      for (var key2 in zoneServices){
-        //log.error("zoneServices[key2][Alias]: "+zoneServices[key2]["Alias"])
-        //log.error("zoneServices[key2][Source Component]: "+zoneServices[key2]["Source Component"])
-        //log.error("serviceName: "+serviceName);
-        if (
-          (zoneServices[key2]["Alias"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1]) ||
-          (zoneServices[key2]["Source Component"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1])
-        ){
-          log.error('Found requested active service in : '+zoneServices[key2]["Zone"]);
-          if (!ret){
-            var ret = {};
-            ret.zone = {};
-            ret.zone.actionable = [];
-            ret.zone.speakable = [];
+  stateRequest = stateRequest.substring(1, stateRequest.length - 2);
+  
+  savantLib.readMultipleState(stateRequest, (activeServices, stateIn) => {
+    // Active services are split by '-'
+    activeServices = _.map(activeServices, val => val.split('-'));
+    
+    // Check if given service is available in each zone
+    activeServices.forEach(activeService => {
+      const zone = activeService[0];
+      const zoneServices = systemServices[zone];
+      
+      zoneServices.forEach(zoneService => {
+        if (zoneService.Alias === serviceName && zoneService['Source Component'] === activeService[1] 
+             || zoneService['Source Component'] === serviceName && zoneService['Source Component'] === activeService[1]) {
+          log.error(`Found requested active service in : ${zoneService.Zone}`);
+          if (!ret) {
+            ret = {
+              zone: {
+                actionable: [],
+                speakable: [],
+              },
+            };
           }
           ret.zone.actionable.push(zone);
           ret.zone.speakable.push(zone);
         }
-      }
-    }
-    if (!ret){//we did not match an active service
-      a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
-      defer.reject({type: "endSession", exception: "serviceNotActive"});
+      });
+    });
+    
+    if (!ret) {
+      // We did not match an active service
+      a.sendError(`activeServiceNameMatcher Match not active: ${serviceName}`);
+      defer.reject({ type: 'endSession', exception: 'serviceNotActive' });
       return defer.promise;
-    }else{// we matched an active service, return
-      ret.service = {};
-      ret.service.name = serviceName;
-      defer.resolve(ret);
     }
+    
+    // We matched an active service, return
+    ret.service = {
+      name: serviceName,
+    };
+    
+    defer.resolve(ret);
   });
-  a.sendTime("Matching","service.active");
+  
+  a.sendTime('Matching', 'service.active');
   return defer.promise;
 }
+
 module.exports = {
-  avaiable:avaiable,
-  active:active
+  available,
+  active,
 }

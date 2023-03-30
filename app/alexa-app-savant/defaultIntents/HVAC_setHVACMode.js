@@ -1,98 +1,97 @@
-const
-  savantLib = require('../lib/savantLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const savantLib = require('../lib/savantLib');
+const eventAnalytics = require("../lib/eventAnalytics");
 
-module.exports = function(app,callback){
+const tstatScope = ['path', 'to', 'your', 'thermostat', 'control', 'device'];
 
-  var intentDictionary = {
-    'name' : 'setHVACMode',
-    'version' : '3.0',
-    'description' : 'Set current mode for single HVAC zone. NOTE: change tstatScope in config file',
-    'enabled' : 1,
-    'required' : {
-      'resolve': [],
-      'test':{},
-      'failMessage': []//['zoneService']
-    },
-    'voiceMessages' : {
-      'success': 'Setting system mode to {0}',
-      'error':{
-        'outOfRange' : 'I didnt understand please try again. Say a number between 60 and 90',
-        'requestMatchCurrent' : 'The system is already in {0} mode',
-        'modeNoMatch' : 'I didnt understand, please try again. Say Heat,Cool,Off,Auto,On, or Off'
-      }
-    },
-    'slots' : {"modeToSet":"LITERAL"},
-    'utterances' : ["{actionPrompt} {hvacSystemPrompt} to {hvacModes|modeToSet}"]
-  };
+const intentDictionary = {
+  name : 'setHVACMode',
+  version : '3.0',
+  description : 'Set current mode for single HVAC zone. NOTE: change tstatScope in config file',
+  enabled : true,
+  required : {
+    resolve : [],
+    test : {},
+    failMessage : [] //['zoneService']
+  },
+  voiceMessages : {
+    success: 'Setting system mode to {0}',
+    error : {
+      outOfRange : 'I didnt understand please try again. Say a number between 60 and 90',
+      requestMatchCurrent : 'The system is already in {0} mode',
+      modeNoMatch : 'I didnt understand, please try again. Say Heat, Cool, Off, Auto, On, or Off'
+    }
+  },
+  slots : { modeToSet : 'LITERAL' },
+  utterances : [ '{actionPrompt} {hvacSystemPrompt} to {hvacModes|modeToSet}' ]
+};
 
+module.exports = function(app, callback) {
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name, {
+      slots: intentDictionary.slots,
+      utterances: intentDictionary.utterances
+    }, function(req, res) {
+      const a = new eventAnalytics.event(intentDictionary.name);
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
       return app.prep(req, res)
         .then(function(req) {
-          return savantLib.readStateQ(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatMode_'+tstatScope[5])
+          return savantLib.readStateQ(`${tstatScope[1]}.${tstatScope[2]}.ThermostatMode_${tstatScope[5]}`);
         })
-        .then(function(currentMode){
-          a.sendHVAC(["ThermostatMode_",currentMode]);
-          if (((currentMode).toLowerCase()) === (req.slot('modeToSet').toLowerCase())) {
-            throw app.builderErr(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.error.requestMatchCurrent,currentMode),'requestMatchCurrent')
+        .then(function(currentMode) {
+          a.sendHVAC(["ThermostatMode_", currentMode]);
+
+          const requestedMode = req.slot('modeToSet').toLowerCase();
+
+          if (currentMode.toLowerCase() === requestedMode) {
+            throw app.builderErr(intentDictionary.name, 'endSession', 
+               format(intentDictionary.voiceMessages.error.requestMatchCurrent, currentMode), 'requestMatchCurrent');
           }
-          switch (req.slot('modeToSet').toLowerCase()){//Match request with servicerequest
-            case "heat":
-              //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-              savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeHeat","ThermostatAddress",tstatScope[5]],"full");
-              a.sendHVAC(["SetHVACModeHeat",req.slot('modeToSet')]);
+
+          switch (requestedMode) {
+            case 'heat': 
+              modeChangeHelper('SetHVACModeHeat', 'heat', a);
               break;
-            case "cool":
-              //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-              savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeCool","ThermostatAddress",tstatScope[5]],"full");
-              a.sendHVAC(["SetHVACModeCool",req.slot('modeToSet')]);
+            case 'cool': 
+              modeChangeHelper('SetHVACModeCool', 'cool', a);
               break;
-            case "off":
-              //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-              savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeOff","ThermostatAddress",tstatScope[5]],"full");
-              a.sendHVAC(["SetHVACModeOff",req.slot('modeToSet')]);
+            case 'off':
+              modeChangeHelper('SetHVACModeOff', 'off', a);
               break;
-            case "auto":
-              //savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"PowerOn"],"full");
-              savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeAuto","ThermostatAddress",tstatScope[5]],"full");
-              a.sendHVAC(["SetHVACModeAuto",req.slot('modeToSet')]);
+            case 'auto': 
+              modeChangeHelper('SetHVACModeAuto', 'auto', a);
               break;
-            case "on":
-              a.sendHVAC(["SetHVACModeOn",req.slot('modeToSet')]);
-              //get current temperature state, decide what to do based on current temperature
-              savantLib.readStateQ(tstatScope[1]+'.'+tstatScope[2]+'.ThermostatCurrentTemperature_'+tstatScope[5])
-              .then(function (currentTemperature){
-                if (currentTemperature>68){
-                  savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeCool","ThermostatAddress",tstatScope[5]],"full");
-                  a.sendHVAC(["SetHVACModeCool",req.slot('modeToSet')]);
-                }
-                if (currentTemperature<68){
-                  savantLib.serviceRequest([tstatScope[0],tstatScope[1],tstatScope[2],tstatScope[3],tstatScope[4],"SetHVACModeHeat","ThermostatAddress",tstatScope[5]],"full");
-                  a.sendHVAC(["SetHVACModeHeat",req.slot('modeToSet')]);
-                }
-              })
+            case 'on': 
+              a.sendHVAC(['SetHVACModeOn', requestedMode]);
+              
+              savantLib.readStateQ(`${tstatScope[1]}.${tstatScope[2]}.ThermostatCurrentTemperature_${tstatScope[5]}`)
+                .then(function(currentTemperature) {
+                  if (currentTemperature > 68) {
+                    modeChangeHelper('SetHVACModeCool', 'cool', a);
+                  } else if (currentTemperature < 68) {
+                    modeChangeHelper('SetHVACModeHeat', 'heat', a);
+                  }
+                });
               break;
             default:
-              throw app.builderErr(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.error.modeNoMatch),'modeNoMatch')
-              break;
-          }
-          return format(intentDictionary.voiceMessages.success,req.slot('modeToSet'))
+              throw app.builderErr(intentDictionary.name, 'endSession', 
+                 intentDictionary.voiceMessages.error.modeNoMatch, 'modeNoMatch');
+            } 
+            return format(intentDictionary.voiceMessages.success, requestedMode);
         })
         .then(function(voiceMessage) {
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
+          app.intentSuccess(req, res, app.builderSuccess(intentDictionary.name, 'endSession', voiceMessage));
         })
         .fail(function(err) {
-          app.intentErr(req,res,err);
+          app.intentErr(req, res, err);
         });
-    }
-    );
+    });
   }
-  //Return intent meta info to index
   callback(intentDictionary);
 };
+
+function modeChangeHelper(mode, requestedMode, a) {
+  savantLib.serviceRequest([tstatScope[0], tstatScope[1], tstatScope[2], tstatScope[3], 
+    tstatScope[4], mode, 'ThermostatAddress', tstatScope[5]], 'full');
+  a.sendHVAC([mode, requestedMode]);
+  return;
+}

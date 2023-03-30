@@ -1,52 +1,35 @@
-module.change_code = 1;
-const
-  os = require('os');
+// Import required modules
+const savantLib = require('../lib/savantLib');
 
-//Skill Name
-skillName = 'savant';
+// Define intent
+module.exports = function(app, callback) {
+  const intent = {
+    name: 'queryFletchButton',
+    version: '1.0',
+    description: 'Query state of Amazon IoT Button',
+    enabled: true
+  };
 
-//Single zone mode  Set to name of zone you would like set as the primary zone
-currentZone = {
-  'actionable' : [false],// 'Family Room'
-  'speakable' : [false]// 'Family Room'
+  // Verify if intent is enabled
+  if (intent.enabled) {
+    // Handle 'queryFletchButton' intent
+    app.intent(intent.name, {
+      slots: {},
+      utterances: ['is {fletchs|fletchers} button {enabled|disabled}', 'what is the state of {fletchs|fletchers} button']
+    }, function(req, res) {
+      savantLib.readState('userDefined.fletchButton', function(fletchButton) {
+        if (fletchButton === 1) {
+          console.log('queryFletchButton Intent: Fletchers Button is enabled');
+          res.say('Fletchers Button is enabled').send();
+        } else {
+          console.log('queryFletchButton Intent: Fletchers Button is currently disabled');
+          res.say('Fletchers Button is currently disabled').send();
+        };
+      });
+      return false;
+    });
+  }
+
+  // Return intent meta info to index
+  callback(intent);
 };
-
-//Custom workflow location: customWorkflowScope = ['<<Zone Name>>','<<Host Name>>'];
-customWorkflowScope = ['Dining Room','Greentree'];
-
-//Thermostat Scope - set this to match the scope of your stat
-tstatScope = ['Family Room','Savant SSTW100','HVAC_controller','1','SVC_ENV_HVAC','1'];
-
-//Share anonymous data - Set to false to stop sharing anonymous data
-allowAnonymousData = true;
-
-//Savant config stuff, Determines if its on a pro or smart host then sets dirs. no real reason to change any of this.
-switch (os.platform()){
-  case 'darwin':
-    appLocation = process.env['HOME'];
-    sclibridgePath = '/Users/RPM/Applications/RacePointMedia/sclibridge';
-    racepointfolder = '/Users/RPM/Library/Application Support/RacePointMedia';
-    savePath = racepointfolder+'/statusfiles/';
-    configPath = racepointfolder+'/userConfig.rpmConfig';
-
-    //config file locations
-    zoneInfo = configPath+'/zoneInfo.plist';
-    serviceOrderPlist = configPath+'/serviceOrder.plist';
-    globalZoneOrganization = configPath+'/globalZoneOrganization.plist';
-    channelsByService = configPath+'/channelsByService.plist';
-    documentInfo = configPath+'/documentInfo.plist';
-    break;
-  case 'linux':
-    appLocation = process.env['HOME'];
-    sclibridgePath = '/usr/local/bin/sclibridge';
-    racepointfolder = '/home/RPM/GNUstep/Library/ApplicationSupport/RacePointMedia';
-    savePath = racepointfolder+'/statusfiles/';
-    configPath = racepointfolder+'/userConfig.rpmConfig';
-
-    //config file locations
-    zoneInfo = configPath+'/zoneInfo.plist';
-    serviceOrderPlist = configPath+'/serviceOrder.plist';
-    globalZoneOrganization = configPath+'/globalZoneOrganization.plist';
-    channelsByService = configPath+'/channelsByService.plist';
-    break;
-}

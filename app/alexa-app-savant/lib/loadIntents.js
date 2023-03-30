@@ -1,41 +1,23 @@
-'use strict';
-log.error("loadintents")
-const
-  path = require('path'),
-  fs = require('fs'),
-  _ = require('lodash'),
-  intentRequired = require('./intentRequire.js');
+const _ = require('lodash');
+const similarity = require('similarity');
 
-module.exports = function(app){
-  //Import all intents from /userFiles folder
-  var userIntentsPath = path.resolve(__dirname,'../userIntents/');
-  fs.readdirSync(userIntentsPath).forEach(function(file) {
-    if (path.extname(file) === ".js") {
-      require(userIntentsPath + '/' + file)(app,function(loadedIntent){
-  			if (loadedIntent.enabled === 1){
-  				log.error(' Importing User Intent: '+ loadedIntent.name + ', Version: '+ loadedIntent.version);
-          intentRequired.set(loadedIntent);
-  			}else{
-  				log.error('Skipping User Intent: '+ loadedIntent.name + ', Version: '+ loadedIntent.version);
-  			}
-      });
+function findBest(request, library) {
+  let best = { score: 0, name: '' };
+
+  library.forEach((entry) => {
+    const distance = similarity(request, entry);
+    console.debug(`${entry} was scored: ${distance}`);
+
+    if (distance > best.score) {
+      best.score = distance;
+      best.name = entry;
+      console.debug(`best Match: ${best.name} @ ${best.score}`);
     }
   });
+  
+  return best;
+}
 
-  //Import all intents from /defaultIntents folder
-  var defaultIntentsPath = path.resolve(__dirname,'../defaultIntents/');
-  fs.readdirSync(defaultIntentsPath).forEach(function(file) {
-    if (path.extname(file) === ".js") {
-      require(defaultIntentsPath + '/' + file)(app,function(loadedIntent){
-        if (loadedIntent.enabled === 1){
-  				log.error(' Importing Default Intent: '+ loadedIntent.name + ', Version: '+ loadedIntent.version);
-          intentRequired.set(loadedIntent);
-  			}else{
-  				log.error('Skipping Default Intent: '+ loadedIntent.name + ', Version: '+ loadedIntent.version);
-  			}
-      });
-    }
-  });
-
-
+module.exports = {
+  findBest,
 };

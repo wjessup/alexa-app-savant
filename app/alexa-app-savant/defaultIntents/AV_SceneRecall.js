@@ -1,72 +1,78 @@
-const
-  savantLib = require('../lib/savantLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const savantLib = require('../lib/savantLib');
+const _ = require('lodash');
+const format = require('simple-fmt');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.exports = function(app,callback){
 
-  var intentDictionary = {
-    'name' : 'sceneRecall',
-    'version' : '3.0',
-    'description' : 'recall a fav channel',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['sceneWithScene'],
-      'test':{
-        '1' : {'scope': 'scene', 'attribute': 'name'}
-      },
-      'failMessage': []//['zoneService']
-    },
-    'voiceMessages' : {
-      'success': "activating {0}"
-    },
-    'slots' : {'SCENE':"LITERAL"},
-    'utterances' : [
-      '{sceneAction} {scene |} {sceneExample|SCENE}',
-      'I am {sceneExample|SCENE}',
-      "I'm {sceneExample|SCENE}",
-      'we are {sceneExample|SCENE}',
-      "We're {sceneExample|SCENE}"
-    ],
-    'placeholder' : {
-      'zone' : {
-        'actionable' : [],
-        'speakable' : []
+const sceneRecallIntentDictionary = {
+  name: 'sceneRecall',
+  version: '3.0',
+  description: 'Recall a favorite channel',
+  enabled: true,
+  required: {
+    resolve: ['sceneWithScene'],
+    test: [
+      {
+        scope: 'scene',
+        attribute: 'name'
       }
-    },
-    'savantVersionRequired' : '8.3'
-  };
-
-  if (app.compareVersion(app.environment.version,intentDictionary.savantVersionRequired) < 0){
-    intentDictionary.enabled = 0
-    log.error('Current savant version '+app.environment.version+' does not meet miminum required savant version for '+intentDictionary.name)
-  }
-
-  if (intentDictionary.enabled === 1 ){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var scene = _.get(req.sessionAttributes, 'scene',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          a.sendAV([intentDictionary.placeholder.zone,'Scene',scene.name]);
-          return savantLib.activateScene(scene)
-        })
-        .then(function(scene){
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,scene.name)))
-        })
-        .fail(function(err) {
-          log.error("err "+err)
-          app.intentErr(req,res,err);
-        });
+    ],
+    failMessage: []   // ['zoneService'] - commented out unused value
+  },
+  voiceMessages: {
+    success: "Activating {0}"
+  },
+  slots: {
+    SCENE: "LITERAL"
+  },
+  utterances: [
+    '{sceneAction} {scene |} {sceneExample|SCENE}',
+    'I am {sceneExample|SCENE}',
+    "I'm {sceneExample|SCENE}",
+    'We are {sceneExample|SCENE}',
+    "We're {sceneExample|SCENE}"
+  ],
+  placeholder: {
+    zone: {
+      actionable: [],
+      speakable: []
     }
-    );
+  },
+  savantVersionRequired: '8.3'
+};
+
+module.exports = function(app, callback) {
+
+  if (app.compareVersion(app.environment.version, sceneRecallIntentDictionary.savantVersionRequired) < 0) {
+    sceneRecallIntentDictionary.enabled = false;
+    log.error(`Current Savant version ${app.environment.version} does not meet the required minimum Savant version for ${sceneRecallIntentDictionary.name}`);
   }
-  callback(intentDictionary);
+
+  function handleIntent(req, res) {
+    const analytics = new eventAnalytics.event(sceneRecallIntentDictionary.name);
+    return app.prep(req, res)
+      .then(function(req) {
+        if (_.get(req.sessionAttributes, 'error', 0) === 0) {
+          const scene = _.get(req.sessionAttributes, 'scene', {});
+          analytics.sendAV([sceneRecallIntentDictionary.placeholder.zone, 'Scene', scene.name]);
+          return savantLib.activateScene(scene);
+        }
+        log.error(`${sceneRecallIntentDictionary.name} - intent not run verify failed`);
+      })
+      .then(function(scene) {
+        app.intentSuccess(req, res, app.builderSuccess(sceneRecallIntentDictionary.name, 'endSession', format(sceneRecallIntentDictionary.voiceMessages.success, scene.name)));
+      })
+      .catch(function(err) {
+        log.error(`Error: ${err}`);
+        app.intentErr(req, res, err);
+      });
+  }
+
+  if (sceneRecallIntentDictionary.enabled) {
+    app.intent(sceneRecallIntentDictionary.name, {
+      slots: sceneRecallIntentDictionary.slots,
+      utterances: sceneRecallIntentDictionary.utterances
+    }, handleIntent);
+  }
+  callback(sceneRecallIntentDictionary);
 };

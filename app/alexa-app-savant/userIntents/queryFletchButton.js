@@ -1,40 +1,46 @@
-//Intent includes
-var savantLib = require('../lib/savantLib');
+const bodyParser = require('body-parser');
 
-//Intent exports
-module.change_code = 1;
-module.exports = function(app,callback){
+// Set initial value of request state to 0
+let requestState = 0;
 
-//Intent meta information
-  var intentDictionary = {
-    'name' : 'queryFletchButton',
-    'version' : '1.0',
-    'description' : 'Query state of amazon IOT button',
-    'enabled' : 1
-  };
+// Export function that accepts express and alexaAppServerObject as arguments
+module.exports = function(express, alexaAppServerObject) {
+  // Middleware that parses incoming JSON and urlencoded request bodies
+  express.use(bodyParser.json());
+  express.use(bodyParser.urlencoded({ extended: false }));
 
-//Intent Enable/Disable
-  if (intentDictionary.enabled === 1){
+  // Middleware that handles requests to the '/login' endpoint
+  express.use('/login', function(req, res) {
+    // Send response indicating this is a server-side login action
+    res.send("Imagine this is a dynamic server-side login action");
+  });
 
-//Intent
-    app.intent('queryFletchButton', {
-    		"slots":{}
-    		,"utterances":["is {fletchs|fletchers |} button {enabled|disabled}","what is the state of {fletchs|fletchers |} button"]
-    	},function(req,res) {
-    		//Check and inform user of status of IoT Button
-    		savantLib.readState("userDefined.fletchButton" ,function(fletchButton) {
-    			if (fletchButton==1){
-    				log.error('queryFletchButton Intent: Fletchers Button is enabled');
-    				res.say('Fletchers Button is enabled').send();
-    			}else {
-    				log.error('queryFletchButton Intent: Fletchers Button is currently disabled');
-    				res.say('Fletchers Button is currently disabled').send();
-    			};
-    		});
-    		return false;
-    	}
-    );
-  }
-//Return intent meta info to index
-  callback(intentDictionary);
+  // Middleware that handles GET requests to the '/auth' endpoint
+  express.get('/auth', function(req, res) {
+    // Set the requestState variable to the value of the 'state' query parameter
+    requestState = req.query.state;
+
+    // Log the values of the query parameters
+    console.log(req.query.state);
+    console.log(req.query.client_id);
+    console.log(req.query.scope);
+    console.log(req.query.response_type);
+
+    // Redirect to the 'auth.html' page
+    res.redirect('/auth/auth.html');
+  });
+
+  // Middleware that handles POST requests to the '/auth/auth.html' endpoint
+  express.post('/auth/auth.html', function(req, res) {
+    // Create a token from the username and password in the request body
+    const stringToken = JSON.stringify({ username: req.body.username, password: req.body.password });
+    const buffer = Buffer.from(stringToken);
+    const token = buffer.toString('base64');
+
+    // Redirect to the Pitangui authentication URL with the token as a query parameter
+    res.redirect(`https://pitangui.amazon.com/api/skill/link/M2CCJYK7V32DZ5?venderId=28seven&state=${requestState}&code=${token}`);
+    
+    // Log the authentication URL (optional)
+    console.log(`https://pitangui.amazon.com/api/skill/link/M2CCJYK7V32DZ5?venderId=28seven&state=${requestState}&code=${token}`);
+  });
 };

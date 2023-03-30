@@ -1,46 +1,36 @@
-const
-  savantLib = require('../lib/savantLib'),
-  eventAnalytics = require('../lib/eventAnalytics');
+// Import required modules
+const savantLib = require('../lib/savantLib');
 
-module.exports = function(app,callback){
+// Export the intent function
+module.exports = function turnOnSantaIntent(app, callback){
 
-  var intentDictionary = {
-    'name' : 'enableFletchButton',
-    'version' : '3.0',
-    'description' : 'enable state of amazon IOT button',
-    'enabled' : 1,
-    'required' : {
-      'resolve': {},
-      'test':{}
-    },
-    'voiceMessages' : {
-      'success': 'Fletchers Button is now enabled'
-    },
-    'slots' : {},
-    'utterances' : ["enable {fletch|fletcher|fletcher's |} button"],
-    'placeholder' : {
-      'zone' : {
-        'actionable' : [],
-        'speakable' : []
-      }
-    }
+  // Intent metadata
+  const intentInfo = {
+    name : 'turnOnSanta',
+    version : '1.0',
+    description : 'Launch custom workflow making santa fart',
+    enabled : false
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-          savantLib.writeState("userDefined.fletchButton",1);
-          a.sendAlexa(['FletchButton',"enable"]);
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
-    }
-    )
+  // Enable/Disable Intent
+  if (intentInfo.enabled){
+
+    // Handle 'turnOnSanta' intent
+    app.intent('turnOnSanta', {
+      slots: {
+        ZONE: 'ZONE'
+      },
+      utterances: [
+        "Turn on santa",
+        "make santa talk"
+      ]
+    }, (req, res) => {
+        savantLib.serviceRequest(["Santa"], "custom");
+        console.log('turnOnSanta Intent: Santa');
+        res.say("").send();
+    });
   }
-  callback(intentDictionary);
+
+  // Return intent metadata
+ callback(intentInfo);
 };

@@ -1,64 +1,61 @@
-const
-  matcher = require('../lib/matchers/zone'),
-  action = require('../lib/actionLib'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const savantLib = require('../lib/savantLib');
+const format = require('simple-fmt');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
-module.exports = function(app,callback){
+const intentDictionary = {
+  name: 'fanSpeed',
+  version: '3.0',
+  description: 'Control fan with presets high/med/low as well as on/off',
+  enabled: true,
+  required: {
+    resolve: {},
+    test: {}
+  },
+  voiceMessages: {
+    success: 'Setting fan to {0}',
+    error: 'I didnt understand please try again. Say On,Off,High,Medium,or Low'
+  },
+  slots: {SPEED: "LITERAL"},
+  utterances: ["{actionPrompt} {kitchen |} fan to {speedPrompt|SPEED}", "{actionPrompt} {on|off|SPEED} {the |} {kitchen |} fan"],
+  placeholder: {zone: { actionable: [], speakable: [] }}
+};
 
-  var intentDictionary = {
-    'name' : 'muteOn',
-    'version' : '1.0',
-    'description' : 'Send Mute On to requested zone',
-    'enabled' : 1
-  };
+module.exports = function (app, callback) {
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name, { slots: intentDictionary.slots, utterances: intentDictionary.utterances }, function (req, res) {
+      const a = new eventAnalytics.event(intentDictionary.name);
+      const speed = req.slot('SPEED').toLowerCase();
 
-  if (intentDictionary.enabled === 1){
-    app.intent('muteOn', {
-    		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","SERVICE":"SERVICE"}
-    		,"utterances":[
-          "{to |} {send |} mute {command |}{in |} {-|ZONE}","{-|ZONE} mute",
-          "{to |} {send |} mute {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} mute",
-          "{to |} mute {-|SERVICE}","{-|SERVICE} {to |} mute"
-        ]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.name);
-        if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
-          serviceMatcher.activeServiceNameMatcher(req.slot('SERVICE'))
-          .then(function(cleanZones){
-            action.muteCommand(cleanZones,'on')//Send mute command to all cleanZones
-            return cleanZones
-          })
-          .then(function(cleanZones) {//Inform
-            var voiceMessage = 'Mute';
-            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-            a.sendAV([cleanZones,req.slot('SERVICE'),"MuteOn"]);
-          })
-          .fail(function(voiceMessage) {//service could not be found
-            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-          });
-          return false
-        }
-        matcher.multi(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          action.muteCommand(cleanZones,'on')//Send mute command to all cleanZones
-          return cleanZones
-        })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Mute';
-          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAV([cleanZones,"Zone","MuteOn"]);
-        })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        });
-      return false;
+      let fanSpeed;
+
+      switch (speed) {
+        case "high":
+        case "hi":
+          fanSpeed = 'HVAC_KitchenFan_High';
+          break;
+
+        case "medium":
+        case "on":
+          fanSpeed = 'HVAC_KitchenFan_Med';
+          break;
+
+        case "low":
+          fanSpeed = 'HVAC_KitchenFan_Low';
+          break;
+
+        case "off":
+          fanSpeed = 'HVAC_KitchenFan_Off';
+          break;
+
+        default:
+          throw app.builderErr(intentDictionary.name, 'endSession', intentDictionary.voiceMessages.error, 'noSpeedMatch');
       }
-    );
+
+      savantLib.serviceRequest([fanSpeed], "custom");
+      app.intentSuccess(req, res, app.builderSuccess(intentDictionary.name, 'endSession', format(intentDictionary.voiceMessages.success, speed)));
+    });
   }
+
+  // Return intent meta info to index
   callback(intentDictionary);
 };

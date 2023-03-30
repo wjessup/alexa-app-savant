@@ -1,62 +1,35 @@
-const
-  fs = require('fs'),
-  path = require('path'),
-  plist = require('simple-plist'),
-  _ = require('lodash'),
-  q = require('q');
+// Import dependencies
+const savantLib = require('../lib/savantLib');
 
-module.exports = function(app){
-  userPresets = {};
-
-  getPresets()
-  log.error("Finished Loading User Presets.")
-
-  function getPresets(){
-    var userPresetsFile = path.resolve(__dirname,'../userFiles/userPresets.plist');
-    if (fs.existsSync(userPresetsFile)) {
-      userPresets = plist.readFileSync(userPresetsFile);
-      if ( !userPresets.volume || !userPresets.lighting || !userPresets.sourceComponent ){
-        makePresets()
-        plist.writeFileSync(userPresetsFile, userPresets);
-      }
-    }else{
-      makePresets()
-      plist.writeFileSync(userPresetsFile, userPresets);
-    }
-  }
-
-  function makePresets(){
-    userPresets.volume = {};
-    userPresets.lighting = {};
-    userPresets.sourceComponent = {};
-    for (var key of app.dictionary.systemZones){
-      userPresets.volume[key] =  {};
-      userPresets.volume[key]["high"] = 34;
-      userPresets.volume[key]["medium"] = 25;
-      userPresets.volume[key]["low"] = 15;
-      userPresets.lighting[key] =  {};
-      userPresets.lighting[key]["high"] = 100;
-      userPresets.lighting[key]["medium"] = 50;
-      userPresets.lighting[key]["low"] = 25;
-      userPresets.lighting[key]["on"] = 100;
-    };
-    for (var key of app.dictionary.systemGroupNames){
-      userPresets.volume[key] =  {};
-      userPresets.volume[key]["high"] = 34;
-      userPresets.volume[key]["medium"] = 25;
-      userPresets.volume[key]["low"] = 15;
-      userPresets.lighting[key] =  {};
-      userPresets.lighting[key]["high"] = 100;
-      userPresets.lighting[key]["medium"] = 50;
-      userPresets.lighting[key]["low"] = 25;
-      userPresets.lighting[key]["on"] = 100;
-    };
-    for (var key of app.dictionary.sourceComponents){
-      if (!userPresets.sourceComponent[key]){
-        userPresets.sourceComponent[key] = {}
-      }
-      _.set(userPresets.sourceComponent[key],"playWithPower",false)
-    };
-  }
-
+// Set up intent
+const powerOffFirstFloorIntent = {
+    name: 'powerOff_FirstFloor',
+    version: '1.0',
+    description: 'Power off multiple known zones on the first floor',
+    enabled: false
 };
+
+// Check if intent is enabled
+if (powerOffFirstFloorIntent.enabled) {
+  // Set up utterances and function for intent
+  const utterances = ["{actionPrompt} off first floor"];
+  const intentFunction = function(req, res) {
+    console.log('Power Off Intent: Turning off first floor');
+    savantLib.serviceRequest(["Kitchen","PowerOff"],"zone");
+    savantLib.serviceRequest(["Family Room","PowerOff"],"zone");
+    savantLib.serviceRequest(["Living Room","PowerOff"],"zone");
+    savantLib.serviceRequest(["Dining Room","PowerOff"],"zone");
+    res.say('Turning off first floor').send();
+    return false;
+  };
+  
+  // Export intent
+  module.change_code = 1;
+  module.exports = function(app, callback) {
+    app.intent('powerOff_FirstFloor', {
+      slots: { ZONE: 'ZONE' },
+      utterances: utterances
+    }, intentFunction);
+    callback(powerOffFirstFloorIntent);
+  };
+}

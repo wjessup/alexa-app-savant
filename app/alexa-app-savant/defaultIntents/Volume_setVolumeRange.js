@@ -1,56 +1,86 @@
-const
-  action = require('../lib/actionLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const actionLib = require('../lib/actionLib');
+const _ = require('lodash');
+const simpleFmt = require('simple-fmt');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.exports = function(app,callback){
-
-  var intentDictionary = {//Intent meta information
-    'name' : 'setVolumeRange',
-    'version' : '3.0',
-    'description' : 'Set volume for AV zone with high med low presets',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone','zoneWithService','rangeWithRange'],
-      'test': {
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'},
-        '3' : {'scope': 'prams', 'attribute': 'range'}
-      }
+module.exports = function setVolume(app, callback) {
+  const intentDictionary = {
+    name: 'setVolumeRange',
+    version: '3.0',
+    description: 'Set volume for AV zone with high, med, or low presets.',
+    enabled: true,
+    required: {
+      resolve: ['zoneWithZone', 'zoneWithService', 'rangeWithRange'],
+      test: {
+        1: { scope: 'zone', attribute: 'actionable' },
+        2: { scope: 'zone', attribute: 'speakable' },
+        3: { scope: 'prams', attribute: 'range' },
+      },
     },
-    'voiceMessages' : {
-      'success' : 'Setting volume to {0} in {1}'
+    voiceMessages: {
+      success: 'Setting volume to {0} in {1}.',
     },
-    'slots' : {'RANGE':'RANGE','ZONE':'ZONE'},
-    'utterances' : ['set volume in {-|ZONE} {to |} {-|RANGE}','set {-|ZONE} volume {to |} {-|RANGE}']
+    slots: { RANGE: 'RANGE', ZONE: 'ZONE' },
+    utterances: [
+      'set volume in {-|ZONE} {to |} {-|RANGE}',
+      'set {-|ZONE} volume {to |} {-|RANGE}',
+    ],
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function (){
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-            var prams = _.get(req.sessionAttributes,'prams',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          action.setVolume(zone.actionable,prams.range,'range')//Set volume to requested range in all zones
-          a.sendAV([zone,'Zone','SetVolume',{'value':prams.range,'type':'set'}]);
-          return format(intentDictionary.voiceMessages.success,prams.range,zone.speakable)
-        })
-        .then(function (voiceMessage){
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
-      }
+  const logAndReturn = (message) => {
+    console.error(message);
+    return null;
+  };
+
+  if (intentDictionary.enabled) {
+    app.intent(
+      intentDictionary.name,
+      {
+        slots: intentDictionary.slots,
+        utterances: intentDictionary.utterances,
+      },
+      (req, res) => {
+        const a = new eventAnalytics.event(intentDictionary.name);
+
+        return app
+          .prep(req, res)
+          .then(() => {
+            const sessionAttributes = _.get(req, 'sessionAttributes');
+
+            if (
+              _.get(sessionAttributes, 'error') === 0 &&
+              _.isObject(_.get(sessionAttributes, 'zone')) &&
+              _.isObject(_.get(sessionAttributes, 'prams'))
+            ) {
+              const zone = sessionAttributes.zone;
+              const prams = sessionAttributes.prams;
+              const actionableZone = zone.actionable;
+              const range = prams.range;
+
+              actionLib.setVolume(actionableZone, range, 'range'); // Set volume to requested range in all zones.
+              a.sendAV([zone, 'Zone', 'SetVolume', { value: range, type: 'set' }]);
+
+              const voiceMessage = simpleFmt(
+                intentDictionary.voiceMessages.success,
+                range,
+                zone.speakable,
+              );
+
+              app.intentSuccess(
+                req,
+                res,
+                app.builderSuccess(intentDictionary.name, 'endSession', voiceMessage),
+              );
+            } else {
+              return logAndReturn(`${intentDictionary.name} - intent not run, verify failed.`);
+            }
+          })
+          .fail((err) => {
+            app.intentErr(req, res, err);
+          });
+      },
     );
   }
+
   callback(intentDictionary);
 };

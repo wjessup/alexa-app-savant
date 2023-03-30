@@ -1,64 +1,51 @@
-const
-  matcher = require('../lib/matchers/zone'),
-  action = require('../lib/actionLib'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const savantLib = require('../lib/savantLib');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.change_code = 1;
-module.exports = function(app,callback){
+const intentDictionary = {
+  name: 'enableFletchButton',
+  version: '3.0',
+  description: 'Enable state of Amazon IoT button',
+  enabled: true,
+  required: {
+    resolve: {},
+    test: {},
+  },
+  voiceMessages: {
+    success: 'Fletcher\'s button is now enabled',
+  },
+  slots: {},
+  utterances: ['enable {fletch|fletcher|fletcher\'s|} button'],
+  placeholder: {
+    zone: {
+      actionable: [],
+      speakable: [],
+    },
+  },
+};
 
-  var intentDictionary = {
-    'name' : 'muteOff',
-    'version' : '1.0',
-    'description' : 'Send Mute On to requested zone',
-    'enabled' : 1
-  };
+function handleEnableFletchButtonRequest(req, res, a) {
+  savantLib.writeState('userDefined.fletchButton', 1);
+  a.sendAlexa(['FletchButton', 'enable']);
+  const response = app.builderSuccess(intentDictionary.name, 'endSession', intentDictionary.voiceMessages.success);
+  app.intentSuccess(req, res, response);
+}
 
-  if (intentDictionary.enabled === 1){
-    app.intent('muteOff', {
-    		"slots":{"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","SERVICE":"SERVICE"}
-    		,"utterances":[
-          "{to |} {send |} unmute {command |}{in |} {-|ZONE}","{-|ZONE} unmute",
-          "{to |} {send |} unmute {command |}{in |} {-|ZONE} and {-|ZONE_TWO}","{-|ZONE} and {-|ZONE_TWO} unmute",
-          "{to |} unmute {-|SERVICE}","{-|SERVICE} {to |} unmute"
-        ]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.name);
-        if (req.slot('ZONE') === "" || typeof(req.slot('ZONE')) === 'undefined'){
-          serviceMatcher.activeServiceNameMatcher(req.slot('SERVICE'))
-          .then(function(cleanZones){
-            action.muteCommand(cleanZones,'off')//Send mute command to all cleanZones
-            return cleanZones
-          })
-          .then(function(cleanZones) {//Inform
-            var voiceMessage = 'Unmute';
-            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-            a.sendAV([cleanZones,req.slot('SERVICE'),"MuteOff"]);
-          })
-          .fail(function(voiceMessage) {//service could not be found
-            console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage).send();
-          });
-          return false
-        }
-        matcher.multi(req.slot('ZONE'), req.slot('ZONE_TWO'))//Parse requested zone and return cleanZones
-        .then(function(cleanZones) {
-          action.muteCommand(cleanZones,'off')//Send unmute command to all cleanZones
-          return cleanZones
-        })
-        .then(function(cleanZones) {//Inform
-          var voiceMessage = 'Unmute';
-          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          a.sendAV([cleanZones,"Zone","MuteOff"]);
-        })
-        .fail(function(voiceMessage) {//Zone could not be found
-          console.log (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        });
-      return false;
-      }
-    );
+function enableFletchButtonIntentHandler(req, res) {
+  const a = new eventAnalytics.event(intentDictionary.name);
+
+  app.prep(req, res)
+    .then(() => handleEnableFletchButtonRequest(req, res, a))
+    .catch((err) => app.intentErr(req, res, err));
+}
+
+function enableFletchButton(app, callback) {
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name, {
+      slots: intentDictionary.slots,
+      utterances: intentDictionary.utterances,
+    }, enableFletchButtonIntentHandler);
   }
   callback(intentDictionary);
-};
+}
+
+module.exports = enableFletchButton;

@@ -1,73 +1,93 @@
-//Intent includes
-var matcher = require('../lib/matchers/zone');
-var zoneParse = require('../lib/zoneParse');
-var savantLib = require('../lib/savantLib');
+const os = require('os');
 
-//Intent exports
-module.change_code = 1;
-module.exports = function(app,callback){
+// Skill Name
+const skillName = 'savant';
 
-  //Intent meta information
-  var intentDictionary = {
-    'name' : 'lightsOnRange',
-    'version' : '1.0',
-    'description' : 'Set lighting for AV zone with high med low presets',
-    'enabled' : 1
-  };
+//Single zone mode - set the name of the zone you want as the primary zone
+const currentZone = {
+  actionable: [false],
+  speakable: [false]
+};
 
-  //Intent Enable/Disable
-  if (intentDictionary.enabled === 1){
-    //Intent
-    app.intent('lightsOnRange', {
-    		"slots":{"RANGE":"LITERAL","ZONE":"ZONE"}
-    		,"utterances":["{actionPrompt} on {-|ZONE} lights to {-|RANGE}"]
-    	},function(req,res) {
-    		log.error("Received range: "+ req.slot('RANGE'));
-        if (!req.slot('RANGE')){
-          var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
-          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-          return false;
-        }
-        //Remove the word the if it exists
-        editZone = req.slot('ZONE').replace(/the/ig,"");
+// Custom Workflow location
+const customWorkflowScope = ['Dining Room', 'Greentree'];
 
-        //Match request to zone then do something
-        matcherZone.single((req.slot('ZONE')), function (err, cleanZone){
-          if (err) {
-              voiceMessage = err;
-              log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: (Invalid Zone Match)");
-              res.say(voiceMessage).send();
-              return
-          }
-          //set volume scale
+// Thermostat Scope - set this to match the scope of your stat
+const tstatScope = [
+  'Family Room',
+  'Savant SSTW100',
+  'HVAC_controller',
+  '1',
+  'SVC_ENV_HVAC',
+  '1'
+];
 
-    			switch (req.slot('RANGE').toLowerCase()){
-    				case "high":
-    					savantLib.serviceRequest([cleanZone],"lighting","",[100]);
-    				  break;
-    				case "medium":
-    					savantLib.serviceRequest([cleanZone],"lighting","",[50]);
-    				  break;
-    				case "low":
-    					savantLib.serviceRequest([cleanZone],"lighting","",[25]);
-    				  break;
-            default:
-              var voiceMessage = 'I didnt understand please try again. Say High,Medium,or Low';
-              log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-              res.say(voiceMessage).send();
-        			return false;
-      			  break;
-    			}
-          //inform
-          var voiceMessage = 'Setting '+cleanZone+' lights to '+req.slot('RANGE');
-          log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-          res.say(voiceMessage).send();
-        });
-    	return false;
-    	}
-    );
-  }
-  //Return intent meta info to index
-  callback(intentDictionary);
+// Share anonymous data.
+let allowAnonymousData = true;
+
+// Savant config. Determines if it's on a pro or smart host then sets dirs. No real reason to change any of this.
+let appLocation;
+let sclibridgePath;
+let racepointfolder;
+let savePath;
+let configPath;
+let zoneInfo;
+let serviceOrderPlist;
+let globalZoneOrganization;
+let channelsByService;
+let documentInfo;
+
+switch (os.platform()) {
+  case 'darwin':
+    appLocation = process.env.HOME;
+    sclibridgePath =
+      '/Users/RPM/Applications/RacePointMedia/sclibridge';
+    racepointfolder =
+      '/Users/RPM/Library/Application Support/RacePointMedia';
+    savePath = `${racepointfolder}/statusfiles/`;
+    configPath = `${racepointfolder}/userConfig.rpmConfig`;
+
+    // Config file locations
+    zoneInfo = `${configPath}/zoneInfo.plist`;
+    serviceOrderPlist = `${configPath}/serviceOrder.plist`;
+    globalZoneOrganization = `${configPath}/globalZoneOrganization.plist`;
+    channelsByService = `${configPath}/channelsByService.plist`;
+    documentInfo = `${configPath}/documentInfo.plist`;
+    break;
+
+  case 'linux':
+    appLocation = process.env.HOME;
+    sclibridgePath = '/usr/local/bin/sclibridge';
+    racepointfolder =
+      '/home/RPM/GNUstep/Library/ApplicationSupport/RacePointMedia';
+    savePath = `${racepointfolder}/statusfiles/`;
+    configPath = `${racepointfolder}/userConfig.rpmConfig`;
+
+    // Config file locations
+    zoneInfo = `${configPath}/zoneInfo.plist`;
+    serviceOrderPlist = `${configPath}/serviceOrder.plist`;
+    globalZoneOrganization = `${configPath}/globalZoneOrganization.plist`;
+    channelsByService = `${configPath}/channelsByService.plist`;
+    break;
+
+  default:
+    throw new Error('Unsupported platform: ' + os.platform());
+}
+
+module.exports = {
+  skillName,
+  currentZone,
+  customWorkflowScope,
+  tstatScope,
+  allowAnonymousData,
+  appLocation,
+  sclibridgePath,
+  racepointfolder,
+  savePath,
+  configPath,
+  zoneInfo,
+  serviceOrderPlist,
+  globalZoneOrganization,
+  channelsByService,
+  documentInfo
 };

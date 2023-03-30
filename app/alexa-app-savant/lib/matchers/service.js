@@ -1,105 +1,159 @@
-const
-  savantLib = require('../savantLib'),
-  didYouMean = require('didyoumean'),
-  action = require('../actionLib'),
-  eventAnalytics = require('../eventAnalytics'),
-  _ = require('lodash'),
-  q = require('q');
+const eventAnalytics = require('./eventAnalytics');
+const _ = require('lodash');
+const q = require('q');
 
-function avaiable(actionableZones,serviceIn){
-  var a = new eventAnalytics.event();
-  var defer = q.defer();
-  var serviceArray = [];
-  for (var key in actionableZones){ //do each zone
-    var cleanZone = actionableZones[key];
-    var zoneServices = systemServices[cleanZone];
-    log.info("matcher.service.avaiable - Trying to match service "+serviceIn+" in "+cleanZone);
-    //get index of service array for matched service
-    //map(create array of all zone alises), Didyoumean(compare request against array),  findkey(match request to zone returning an index if matched)
-    var foundServiceAliasIndex = _.findKey(zoneServices, ["Alias", didYouMean(serviceIn, _.map(zoneServices, "Alias"))]);
-    var foundServiceComponentIndex = _.findKey(zoneServices, ["Source Component", didYouMean(serviceIn, _.map(zoneServices, "Source Component"))]);
-    // get service array if an index was found
-    if (foundServiceAliasIndex){ var foundService = zoneServices[foundServiceAliasIndex] }
-    if (foundServiceComponentIndex){ var foundService = zoneServices[foundServiceComponentIndex] }
-    //if we found a service save array into serviceArray
-    if (foundService){
-      serviceArray.push([foundService["Zone"],foundService["Source Component"],foundService["Source Logical Component"],foundService["Service Variant ID"],foundService["Service Type"],foundService["Alias"]]);
-    } else {
-      a.sendError("serviceMatcher Fail: "+serviceIn);
-      defer.reject("zoneNotFound");
-      return defer.promise;
-    }
+function serviceRequest(requestToSend, typeIn, argumentValueIn) {
+  log.debug(`serviceRequest sending:${requestToSend}`);
+  
+  switch (typeIn.toLowerCase()) {
+
+  case "zone":
+    //only pass [zone,request]
+    requestToSend=["servicerequest \""+requestToSend[0]+"\" \"\" \"\" \"\" \"\" \""+requestToSend[1]+"\""];
+    break;
+
+  case "volume":
+    //only pass [zone,request]
+    requestToSend=["servicerequest \""+requestToSend[0]+"\" \"\" \"\" \"\" \"\" \"SetVolume\" \"VolumeValue\" \""+argumentValueIn[0]+"\""];
+    break;
+
+  case "custom":
+    //only pass request and asume its in dining genric
+    requestToSend=["servicerequest \""+customWorkflowScope[0]+"\" \""+customWorkflowScope[1]+"\" \"\" \"1\" \"SVC_GEN_GENERIC\" \""+requestToSend[0]+"\""];
+    break;
+
+  case "lighting":
+    //pass zone and %
+    requestToSend=["servicerequest \""+requestToSend[0]+"\" \"\" \"\" \"\" \"SVC_ENV_LIGHTING\" \"__RoomSetBrightness\" \"BrightnessLevel\" \""+argumentValueIn[0]+"\""];
+    break;
+
+  case "full":
+    //build full string in function call
+    requestToSend="servicerequest \""+requestToSend.join("\" \"")+"\"";
+    log.debug(requestToSend);
+    break;
   }
-  var ret = {"serviceArray":serviceArray,"name":serviceIn}
-  log.debug("matcher.service.avaiable - "+ JSON.stringify(ret));
-  defer.resolve(ret);
-  a.sendTime("Matching","service.available");
-  return defer.promise
+
+  sendToSCLI(requestToSend);
 }
 
-function active(serviceIn){
-  var a = new eventAnalytics.event();
-  var defer = q.defer();
-  var stateRequest = '';
-  var activeServicesArray = [];
+function readState(stateIn){
+  const a = new eventAnalytics.event();
+  log.debug(`savantLib.readState - Looking for state: "${stateIn}"`);
 
+  sendToSCLI(`readstate "${stateIn}"`, (response) => {
+    log.debug(`savantLib.readState - response: ${response}`);
+    response = response.replace(/(\r\n|\n|\r)/gm,"");
+    a.sendTime("readState", stateIn);
 
-  var serviceName = didYouMean(serviceIn,appDictionaryServiceNameArray);
-  if (serviceName === null) {//we did not find a match in alias or profile names
-    a.sendError("activeServiceNameMatcher Fail: "+serviceIn);
-    defer.reject("zoneNotFound");
-    return defer.promise;
-  }
-
-  log.error('Trying to match request: '+serviceName);
-  for (var key in appDictionaryArray){//build ActiveService states
-    stateRequest = stateRequest.concat('"'+appDictionaryArray[key]+'.ActiveService'+'" ')
-  }
-  stateRequest = stateRequest.substring(1);
-  stateRequest = stateRequest.substring(0,stateRequest.length-2);
-
-  savantLib.readMultipleState(stateRequest, function (activeServices,stateIn){//get ActiveServies
-    //log.error('activeServices: '+activeServices);
-    for (var key in activeServices){//break services into array
-      activeServicesArray.push(activeServices[key].split("-"));
-    }
-    for (var key in activeServicesArray){
-      var zone = activeServicesArray[key][0];
-      var zoneServices = systemServices[zone];
-      for (var key2 in zoneServices){
-        //log.error("zoneServices[key2][Alias]: "+zoneServices[key2]["Alias"])
-        //log.error("zoneServices[key2][Source Component]: "+zoneServices[key2]["Source Component"])
-        //log.error("serviceName: "+serviceName);
-        if (
-          (zoneServices[key2]["Alias"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1]) ||
-          (zoneServices[key2]["Source Component"] === serviceName && zoneServices[key2]["Source Component"] === activeServicesArray[key][1])
-        ){
-          log.error('Found requested active service in : '+zoneServices[key2]["Zone"]);
-          if (!ret){
-            var ret = {};
-            ret.zone = {};
-            ret.zone.actionable = [];
-            ret.zone.speakable = [];
-          }
-          ret.zone.actionable.push(zone);
-          ret.zone.speakable.push(zone);
-        }
-      }
-    }
-    if (!ret){//we did not match an active service
-      a.sendError(["activeServiceNameMatcher Match not active: "+serviceName]);
-      defer.reject({type: "endSession", exception: "serviceNotActive"});
-      return defer.promise;
-    }else{// we matched an active service, return
-      ret.service = {};
-      ret.service.name = serviceName;
-      defer.resolve(ret);
-    }
+    return response;
   });
-  a.sendTime("Matching","service.active");
+}
+
+function readStateQ(stateIn) {
+  const defer = q.defer();
+
+  readState(stateIn).then((stateValue) => {
+    defer.resolve(stateValue);
+  });
+
   return defer.promise;
 }
-module.exports = {
-  avaiable:avaiable,
-  active:active
+
+function readMultipleState(stateIn) {
+  const a = new eventAnalytics.event();
+  log.debug(`savantLib.readMultipleState - Looking for state: "${stateIn}"`);
+
+  sendToSCLI(`readstate "${stateIn}"`, (response) => {
+    log.debug(`savantLib.readMultipleState - Readstate response: ${response}`);
+    response = response.split(/\n/).filter(x => x !== (undefined || ''));
+    a.sendTime("readMultipleState", stateIn);
+
+    return response;
+  });
 }
+
+function readMultipleStateQ(stateIn) {
+  const defer = q.defer();
+
+  readMultipleState(stateIn).then((stateValue) => {
+    defer.resolve(stateValue);
+  });
+
+  return defer.promise;
+}
+
+function writeState(stateIn, valueIn){
+  const requestString = `writestate "${stateIn}" "${valueIn}"`;
+  log.debug(`savantLib.writeState - Requesting state: ${requestString}`);
+  
+  sendToSCLI(requestString);
+}
+
+function getSceneNames() {
+  const a = new eventAnalytics.event();
+  const defer = q.defer();
+  log.debug("savantLib.getSceneNames - Requesting scenes");
+
+  sendToSCLI("getSceneNames", (response) => {
+    log.debug(`savantLib.getSceneNames - getSceneNames response: ${response}`);
+    response = response.split(/\n/).filter(x => x !== (undefined || ''));
+    const ret = {};
+
+    for (let key in response) {
+      const scene = response[key].split(',');
+      ret[scene[0]] = {
+        name: scene[0],
+        id: scene[1],
+        user: scene[2]
+      }
+    }
+
+    a.sendTime("getSceneNames");
+
+    defer.resolve(ret);
+  });
+
+  return defer.promise;
+}
+
+function activateScene(scene) {
+  const requestString = `activateScene "${scene.name}" "${scene.id}" "${scene.user}"`;
+  log.debug(`activateScene.activateScene - Activating Scene: ${scene.name}`);
+
+  sendToSCLI(requestString);
+}
+
+function sendToSCLI(consoleString, callback) {
+  const a = new eventAnalytics.event();
+  const fullCommand = `${sclibridgePath} ${consoleString}`;
+
+  log.info(`savantLib.sendToSCLI - Running: ${fullCommand}`);
+
+    const ps = require('child_process').exec(fullCommand, (error, stdout, stderr) => {
+      log.info(`savantLib.sendToSCLI - SCLI Response: ${stdout}`);
+
+      if (error){
+        log.error(`savantLib.sendToSCLI - error: ${error}`);
+        log.error(`savantLib.sendToSCLI - error.code: ${error.code}`);
+        log.error(`savantLib.sendToSCLI - error.signal: ${error.signal}`);
+        log.error(`savantLib.sendToSCLI - stderr: ${stderr}`);
+      }
+
+      if (typeof callback !== 'undefined'){
+        a.sendTime("sendToSCLI",consoleString.substr(0,consoleString.indexOf(' ')));
+        callback (stdout);
+      };
+    });
+}
+
+module.exports = {
+  serviceRequest,
+  readState,
+  readStateQ,
+  readMultipleState,
+  readMultipleStateQ,
+  writeState,
+  getSceneNames,
+  activateScene
+};

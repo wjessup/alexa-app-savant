@@ -1,56 +1,64 @@
-const
-  action = require('../lib/actionLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const action = require('../lib/actionLib');
+const _ = require('lodash');
+const format = require('simple-fmt');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.exports = function(app,callback){
-
-  var intentDictionary = {
-    'name' : 'raiseVolume',
-    'version' : '3.0',
-    'description' : 'Increase volume for AV zone by a preset ammount',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone','zoneWithService'],
-      'test': {
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'}
-      }
-    },
-    'voiceMessages' : {
-      'success': 'Increasing volume in {0}'
-    },
-    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO'},
-    'utterances' : [
-      '{increasePrompt} volume in {-|ZONE}', 'Make {-|ZONE} louder',
-      '{increasePrompt} volume in {-|ZONE} and {-|ZONE_TWO}', 'Make {-|ZONE} and {-|ZONE_TWO} louder'
+const intentDictionary = {
+  name: 'raiseVolume',
+  version: '3.0',
+  description: 'Increase volume for AV zone by a preset amount',
+  enabled: true,
+  required: {
+    resolve: ['zoneWithZone', 'zoneWithService'],
+    test: [
+      { scope: 'zone', attribute: 'actionable' },
+      { scope: 'zone', attribute: 'speakable' }
     ]
+  },
+  voiceMessages: {
+    success: 'Increasing volume in {0}'
+  },
+  slots: {
+    ZONE: 'ZONE',
+    ZONE_TWO: 'ZONE_TWO'
+  },
+  utterances: [
+    '{increasePrompt} volume in {-|ZONE}',
+    'Make {-|ZONE} louder',
+    '{increasePrompt} volume in {-|ZONE} and {-|ZONE_TWO}',
+    'Make {-|ZONE} and {-|ZONE_TWO} louder'
+  ]
+};
+
+if (intentDictionary.enabled) {
+  module.exports = function(app, callback) {
+    app.intent(
+      intentDictionary.name,
+      { slots: intentDictionary.slots, utterances: intentDictionary.utterances },
+      function(req, res) {
+        const a = new eventAnalytics.event(intentDictionary.name);
+        return app.prep(req, res)
+          .then(() => {
+            const error = _.get(req.sessionAttributes, 'error');
+            if (error === 0) {
+              const zone = _.get(req.sessionAttributes, 'zone');
+              action.relativeVolume(zone.actionable, 6, 10);
+              return zone;
+            } else {
+              throw new Error(`${intentDictionary.name} - intent not run verify failed`);
+            }
+          })
+          .then(zone => {
+            const message = format(intentDictionary.voiceMessages.success, zone.speakable);
+            const success = app.builderSuccess(intentDictionary.name, 'endSession', message);
+            app.intentSuccess(req, res, success);
+          })
+          .catch(err => {
+            app.intentErr(req, res, err);
+          });
+      }
+    );
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function (){
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          action.relativeVolume(zone.actionable,6,10);
-          return zone
-        })
-        .then(function (zone){
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,zone.speakable)))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
-    }
-    );
-  }
   callback(intentDictionary);
-};
+}

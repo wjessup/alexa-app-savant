@@ -1,70 +1,33 @@
-const
-  savantLib = require('../lib/savantLib'),
-  format = require('simple-fmt'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const AlexaAppServer = require('alexa-app-server');
+const log = require('loglevel');
+const fs = require('fs');
+const path = require('path');
 
-module.exports = function(app,callback){
+log.setLevel(4);
+require('log-timestamp');
 
-  var intentDictionary = {
-    'name' : 'fanSpeed',
-    'version' : '3.0',
-    'description' : 'Control fan with presets high/med/low as well as on/off',
-    'enabled' : 1,
-    'required' : {
-      'resolve': {},
-      'test':{}
-    },
-    'voiceMessages' : {
-      'success': 'Setting fan to {0}',
-      'error' : 'I didnt understand please try again. Say On,Off,High,Medium,or Low'
-    },
-    'slots' : {"SPEED":"LITERAL"},
-    'utterances' : ["{actionPrompt} {kitchen |} fan to {speedPrompt|SPEED}","{actionPrompt} {on|off|SPEED} {the |} {kitchen |} fan"],
-    'placeholder' : {
-      'zone' : {
-        'actionable' : [],
-        'speakable' : []
-      }
-    }
-  };
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function(req) {
-      		switch (req.slot('SPEED').toLowerCase()){
-      		case "high":
-      			var fanSpeed = 'HVAC_KitchenFan_High';
-      			break;
-          case "hi":
-      			var fanSpeed = 'HVAC_KitchenFan_High';
-      			break;
-      		case "medium":
-      			var fanSpeed = 'HVAC_KitchenFan_Med';
-      			break;
-      		case "low":
-      			var fanSpeed = 'HVAC_KitchenFan_Low';
-      			break;
-      		case "on":
-      			var fanSpeed = 'HVAC_KitchenFan_Med';
-      			break;
-      		case "off":
-      			var fanSpeed = 'HVAC_KitchenFan_Off';
-      			break;
-      		default:
-            throw app.builderErr(intentDictionary.name,'endSession',intentDictionary.voiceMessages.error,'noSpeedMatch')
-      			break;
-      		}
-          savantLib.serviceRequest([fanSpeed],"custom");
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',format(intentDictionary.voiceMessages.success,req.slot('SPEED'))))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
-    }
-    );
+const options = {
+  server_root: __dirname,
+  app_dir: 'app',
+  port: 1415,
+  httpsEnabled: true,
+  httpsPort: 1414,
+  privateKey: fs.readFileSync(path.resolve(__dirname, 'private-key.pem')),
+  certificate: fs.readFileSync(path.resolve(__dirname,  'cert.cer')),
+  debug: true,
+  verify: false,
+  preRequest: function (json, req, res) {
+    log.error(' ');
+    log.error(' ');
+    log.error('||||||||||||||||||||||||||| start |||||||||||||||||||||||||||');
+    log.error('Intent Request: ' + JSON.stringify(json.request.intent));
+    log.error(' ');
+  },
+  postRequest: function (json, req, res) {
+    log.error('||||||||||||||||||||||||||| end |||||||||||||||||||||||||||');
+    log.error(' ');
+    log.error(' ');
   }
-//Return intent meta info to index
-  callback(intentDictionary);
 };
+
+AlexaAppServer.start(options);

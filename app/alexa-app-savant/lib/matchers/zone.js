@@ -1,113 +1,69 @@
-const
-  didYouMean = require('didyoumean'),
-  _ = require('lodash'),
-  q = require('q'),
-  stringLib = require('../stringLib'),
-  eventAnalytics = require('../eventAnalytics'),
-  voiceMessages = require('../voiceMessages.json');
+const fs = require('fs');
+const path = require('path');
+const plist = require('simple-plist');
+const _ = require('lodash');
+const q = require('q');
+const app = require('../app'); // assuming app has a dictionary object
 
-function single(zoneIn,callback){
-  var a = new eventAnalytics.event();
-  log.error("matcherZone.single -  Matching requested zone...");
-  log.info("matcherZone.single -  zoneIn: "+zoneIn);
-  var editZone = zoneIn.replace(/the/ig,"");//Remove the word "the" if it exists
-  var cleanZone = didYouMean(editZone, appDictionaryArray);
-  if (typeof cleanZone == 'undefined' || cleanZone == null){// no match
-    a.sendError("Single Zone Match Fail: "+zoneIn);
-    callback(voiceMessages.error.zoneNotFound, undefined);
-  }else{// match
-    a.sendTime("Matching","Single");
-    callback(undefined, cleanZone);
+const userPresetsFile = path.resolve(__dirname, '../userFiles/userPresets.plist');
+
+const defaultUserPresets = {
+  volume: {
+    high: 34,
+    medium: 25,
+    low: 15,
+  },
+  lighting: {
+    high: 100,
+    medium: 50,
+    low: 25,
+    on: 100,
+  },
+  sourceComponent: {},
+};
+
+function getPresets() {
+  let userPresets = {};
+  if (fs.existsSync(userPresetsFile)) {
+    userPresets = plist.readFileSync(userPresetsFile);
+    if ( !userPresets.volume || !userPresets.lighting || !userPresets.sourceComponent ){
+      makePresets(userPresets);
+      plist.writeFileSync(userPresetsFile, userPresets);
+    }
+  } else {
+    makePresets(userPresets);
+    plist.writeFileSync(userPresetsFile, userPresets);
   }
+  return userPresets;
 }
 
-function multi(rawZone1,rawZone2){
-  var a = new eventAnalytics.event();
-  var matchedKeyGroups=[];
-  var ret = {};
-  log.error("matcherZone.multi - Matching requested zones...");
-  var defer = q.defer();
-  // Set raw input to '' if empty
-  if (!rawZone1){ var rawZone1 = '' }
-  if (!rawZone2){ var rawZone2 = '' }
-  log.info("matcherZone.multi - slot 1: "+rawZone1);
-  log.info("matcherZone.multi - slot 2: "+rawZone2);
-  //sanitize input
-  var lowerrawZone1 = _.toLower(rawZone1);
-  var lowerrawZone2 = _.toLower(rawZone2);
-  var hasFirst = appDictionaryGroupArrayLowerCase.filter(function (item) {
-    return item.indexOf('1st') >= 0;
-  });
-  if (hasFirst){
-    lowerrawZone1 = lowerrawZone1.replace(/1st/ig,"first");
-    lowerrawZone2 = lowerrawZone2.replace(/1st/ig,"first");
-  }
-  //find Group match from either slot, then concat
-  var matchedGroups1 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
-  var matchedGroups2 = _.filter(appDictionaryGroupArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
-  var matchedGroups = matchedGroups1.concat(matchedGroups2);
-  matchedGroups = matchedGroups.filter(function(x){//remove empty
-    return (x !== (undefined || ''));
-  });
-  log.info("matcherZone.multi - matchedGroups: "+matchedGroups);
-  //find zone matches from either slot, then concat
-  var matchedZones1 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone1.indexOf(sub) >= 0; });
-  var matchedZones2 = _.filter(appDictionaryArrayLowerCase, function(sub) { return lowerrawZone2.indexOf(sub) >= 0; });
-  var matchedZones = matchedZones1.concat(matchedZones2);
-  matchedZones = matchedZones.filter(function(x){//remove empty
-    return (x !== (undefined || ''));
-  });
-  log.info("matcherZone.multi - matchedZones: "+matchedZones);
+function makePresets(userPresets){
+  userPresets.volume = {};
+  userPresets.lighting = {};
+  userPresets.sourceComponent = {};
 
-  // match Zones to savant case
-  for (var key in matchedZones){
-    matchedZones[key] = didYouMean(matchedZones[key],appDictionaryArray);
+  for (const key of app.dictionary.systemZones) {
+    userPresets.volume[key] =  {...defaultUserPresets.volume};
+    userPresets.lighting[key] =  {...defaultUserPresets.lighting};
+  }
+  for (const key of app.dictionary.systemGroupNames) {
+    userPresets.volume[key] =  {...defaultUserPresets.volume};
+    userPresets.lighting[key] =  {...defaultUserPresets.lighting};
+  }
+  for (const key of app.dictionary.sourceComponents) {
+    if (!userPresets.sourceComponent[key]){
+      userPresets.sourceComponent[key] = {};
+    }
+    _.set(userPresets.sourceComponent[key],"playWithPower",false);
   };
-  //Get Group's zones, matched to savant's case
-  matchedKeyGroups.length = 0;
-  for (var key in matchedGroups){
-    var matchedKeyGroup = didYouMean(matchedGroups[key],appDictionaryGroupArray);
-    for (var key2 in appDictionaryGroups[matchedKeyGroup]){
-    matchedKeyGroups.push(appDictionaryGroups[matchedKeyGroup][key2]);
-    }
-  }
-
-  if (currentZone.actionable[0] === false && matchedGroups.length === 0 & matchedZones.length === 0){
-    //fail off if we didnt get a match
-      log.error("matcherZone.multi - no zones found");
-      a.sendError("Multi Zone Match Fail: "+rawZone1+" , "+rawZone2);
-      defer.reject(voiceMessages.error.zoneNotFound);
-  }else if(currentZone.actionable[0] != false && matchedGroups.length === 0 & matchedZones.length === 0){
-    log.error("currentZone.actionable: '"+currentZone.actionable+"'");
-    log.error("currentZone.speakable: '"+currentZone.speakable+"'");
-
-    log.error("matcherZone.multi - Single zone mode");
-    ret = currentZone;
-    a.sendError("Single zone mode: "+ret.actionable);
-    defer.resolve(ret);
-  }else{
-    ret.actionable = _.uniq(matchedZones.concat(matchedKeyGroups));
-    ret.speakable = _.uniq(matchedGroups.concat(matchedZones));
-    ret.speakable = stringLib.addAnd(ret.speakable);
-
-    log.info("matcherZone.multi ---------");
-    log.info("matcherZone.multi - Zones to send commands to:");
-    for (var key in ret.actionable){
-      log.info('matcherZone.multi - zone '+key+': '+ ret.actionable[key]);
-    }
-    log.info("matcherZone.multi ---------");
-    log.info("matcherZone.multi - Zones to say:");
-    for (var key in ret.speakable){
-      log.info('matcherZone.multi - zone '+key+': '+ ret.speakable[key]);
-    }
-    log.info("matcherZone.multi ---------");
-    defer.resolve(ret);
-  }
-  a.sendTime("Matching","Multi");
-  return defer.promise;
 }
 
-module.exports = {
-single : single,
-multi : multi
+function loadUserPresets() {
+  const userPresets = getPresets();
+  console.log('Finished Loading User Presets.');
+  return userPresets;
 }
+
+const userPresets = loadUserPresets();
+
+module.exports = userPresets;

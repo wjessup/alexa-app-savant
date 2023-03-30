@@ -1,44 +1,47 @@
-const
-  savantLib = require('../lib/savantLib'),
-  currentZoneLib = require('../lib/currentZoneLib'),
-  _ = require('lodash'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const savantLib = require('../lib/savantLib');
+const currentZoneLib = require('../lib/currentZoneLib');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.exports = function(app,callback){
-
-  var intentDictionary = {
-    'name' : 'primaryZoneClear',
-    'version' : '3.0',
-    'description' : 'tell alexa what zone you are in',
-    'enabled' : 1,
-    'required' : {
-      'resolve': {},
-      'test':{}
+module.exports = function clearPrimaryZoneIntent(app, callback) {
+  const intentDictionary = {
+    name: 'ClearPrimaryZone',
+    version: '3.0',
+    description: 'Tell Alexa what zone you are in',
+    enabled: true,
+    required: {
+      resolve: {},
+      test: {}
     },
-    'voiceMessages' : {
-      'success': 'Clearing current zone'
+    voiceMessages: {
+      success: 'Primary zone cleared.'
     },
-    'slots' : {},
-    'utterances' : ['{clear|remove} {primary|current} zone']
+    slots: {},
+    utterances: [
+      '{clear|remove} {primary|current} zone'
+    ]
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name, {
+      slots: intentDictionary.slots,
+      utterances: intentDictionary.utterances
+    }, (req, res) => {
+      const { name } = intentDictionary;
+      const a = new eventAnalytics.event(name);
+      const currentZonePrevious = currentZoneLib.get();
+      currentZoneLib.set(false, 'speakable');
+      currentZoneLib.set(false, 'actionable');
+
       return app.prep(req, res)
-        .then(function(req) {
-          currentZonePrevious = currentZone;
-          currentZoneLib.set(false,'speakable');
-          currentZoneLib.set(false,'actionable');
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',intentDictionary.voiceMessages.success))
-          a.sendAlexa(['primaryZoneClear',currentZonePrevious]);
+        .then((req) => {
+          app.intentSuccess(req, res, app.builderSuccess(name, 'endSession', intentDictionary.voiceMessages.success));
+          a.sendAlexa(['PrimaryZoneClear', currentZonePrevious]);
         })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
+        .catch((err) => {
+          app.intentErr(req, res, err);
         });
-    }
-    );
+    });
   }
+
   callback(intentDictionary);
 };

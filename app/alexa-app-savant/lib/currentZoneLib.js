@@ -1,44 +1,32 @@
-const
-  _ = require('lodash'),
-  savantLib = require('./savantLib');
+"use strict";
 
-log.error("currentZoneLib - Restoring currentZone Savant...")
-//recall currentZone
-log.error('currentZoneLib - currentzone.actionable:'+ currentZone.actionable)
+const plist = require("simple-plist");
+const q = require("q");
 
-if (currentZone.actionable[0] === false){
-  currentZone = {};
-  log.error("currentZoneLib - Using currentZone from savant...")
-  savantLib.readState("userDefined.currentZone.speakable",function(stateValue) {
-		set(stateValue,"speakable");
-	});
-  savantLib.readState("userDefined.currentZone.actionable",function(stateValue) {
-		set(stateValue,"actionable");
-	});
-}else{
-  log.error("currentZoneLib - Using currentZone from config.")
-}
+module.exports = function (app) {
+  const documentInfo = ""; // add the appropriate path to documentInfo
 
-function set(stateValue,scope){
-  if (stateValue === "" ||stateValue === "false" || stateValue === false){
-    _.set(currentZone,scope,[false]);
-    savantLib.writeState("userDefined.currentZone."+scope,stateValue);
-    log.error('currentZoneLib - Setting currentZone.'+scope+': '+currentZone[scope]);
-    return
-	}
-  log.error("currentZoneLib - Setting "+stateValue)
-  if (stateValue.constructor != Array){
-    var stateValue = stateValue.split(",");
-  }else{
-    var stateValue = [stateValue];
-  }
-  _.set(currentZone,scope,stateValue)
-  savantLib.writeState("userDefined.currentZone."+scope,stateValue);
+  app.getSavantVersion = function () {
+    return q.nfcall(plist.readFile, documentInfo).then(function(obj) {
+      const ret = {
+        version: obj.RPMAppDocumentBlueprintVersionKey,
+        sceneSupport: app.compareVersion(obj.RPMAppDocumentBlueprintVersionKey, "8.3") > -1,
+      };
+      console.log("environmentLib - " + JSON.stringify(ret));
+      return ret;
+    });
+  };
 
-  log.error('currentZoneLib - Setting currentZone.'+scope+': '+currentZone[scope]);
+  app.compareVersion = function (a, b) {
+    const re = /(\.0)+[^\.]*$/;
+    a = String(a).replace(re, "").split(".");
+    b = String(b).replace(re, "").split(".");
+
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const cmp = parseInt(a[i], 10) - parseInt(b[i], 10);
+      if (cmp !== 0) return cmp;
+    }
+
+    return a.length - b.length;
+  };
 };
-
-
-module.exports = {
-  set:set
-}

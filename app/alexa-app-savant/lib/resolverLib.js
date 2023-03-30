@@ -1,215 +1,166 @@
-'use strict';
+"use strict";
 
-const
-  matcherService  = require('./matchers/service'),
-  matcherZone  = require('./matchers/zone'),
-  matcherCommand = require('./matchers/command'),
-  matcherWord  = require('./matchers/word'),
-  matcherChannel  = require('./matchers/channel'),
-  matchersScene  = require('./matchers/scene'),
-  voiceMessages = require('./voiceMessages.json'),
-  _ = require('lodash'),
-  q = require('q');
+const plist = require('simple-plist');
+const fs = require('fs');
+const _ = require('lodash');
+const q = require('q');
 
-function zoneWithZone (req, intentResolves){
-  log.debug('resovler.ZoneWithZone - start')
-  if (_.includes(intentResolves,"zoneWithZone")){
-    if (req.slot('ZONE') || req.slot('ZONE_TWO') || currentZone.actionable[0] != false){
-      let session = req.getSession();
-      if (!_.has(session, "zone")){//if we do not already have a zone
-        return matcherZone.multi(req.slot('ZONE'), req.slot('ZONE_TWO'))//parse requested zone and return
-          .then(function(ret) {
-            log.error('resovler.zoneWithZone - found actionable zone: '+ret.actionable);
-            log.error('resovler.zoneWithZone - found speakable zone: '+ret.speakable);
-            req.getSession().set("zone", {"speakable":ret.speakable,"actionable":ret.actionable});
-          })
-          .thenResolve(req)
-          .fail(function(err) {//Zone could not be found
-          //  log.error('resovler.zoneWithZone - zone err: '+err)
-          });
-      }
-    }else{
-      return q(req);
-    }
-  } else {
-    log.info('resovleZoneWithZone - did not try: '+intentResolves)
-    return q(req);
-  }
+function getZones(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+    .then(function(obj) {
+      obj = obj.ServiceOrderPerZone;
+      return Object.keys(obj);
+    });
 }
 
-function zoneWithService (req, intentResolves){
-  log.debug('resovler.zoneWithService - start')
-  if (_.includes(intentResolves,"zoneWithService")){
-    let session = req.getSession();
-    if (!_.has(session, "zone")){//if we do not already have a zone
-      return matcherService.active(req.slot('SERVICE'))//Parse requested service and return
-        .then(function(ret) {
-          log.error('resovler.zoneWithService - matched service: '+ret.service.name);
-          log.error('resovler.zoneWithService - found actionable zone: '+ret.zone.actionable);
-          log.error('resovler.zoneWithService - found speakable zone: '+ret.zone.speakable);
-          req.getSession().set("zone", ret.zone);
-          req.getSession().set("service", ret.service);
-        })
-        .thenResolve(req)
-        .fail(function(err) {//Zone could not be found
-          log.debug('resovler.zoneWithService - error: '+err)
-          if (err.type === "endSession"){
-            if (!_.has(err,"voiceMessage")){
-              err.voiceMessage = req.slot('SERVICE')+voiceMessages["error"][err.exception]
-            }
-            throw err;
+function getZoneServices(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+    .then(function(obj) {
+      obj = obj.ServiceOrderPerZone;
+      var serviceObj = {};
+
+      for (var key in obj) {
+        serviceObj[key] = [];
+
+        Object.keys(obj[key]).forEach(function(key2) {
+          let value = obj[key][key2];
+          let type = _.get(value, 'Service Type');
+          
+          const disabledTypes = [
+            "SVC_GEN_GENERIC", 
+            "SVC_ENV_LIGHTING", 
+            "SVC_ENV_HVAC", 
+            "SVC_ENV_FAN", 
+            "SVC_ENV_SHADE", 
+            "SVC_SETTINGS_STEREO", 
+            "SVC_SETTINGS_SURROUNDSOUND", 
+            "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE", 
+            "nonService", 
+            "SVC_ENV_SECURITYCAMERA"
+          ];
+          
+          if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
+            serviceObj[key].push({
+              "Zone": key,
+              "Source Component": value["Source Component"],
+              "Source Logical Component": value["Source Logical Component"],
+              "Service Variant ID": value["Service Variant ID"],
+              "Service Type": value["Service Type"],
+              "Alias": value["Alias"]
+            });
           }
         });
-    }
-  }else{
-    log.info('resovler.zoneWithService - did not try: '+intentResolves)
-    return q(req);
-  }
-}
-
-function serviceWithService(req, intentResolves){
-  log.debug('resovler.serviceWithService - start')
-  if (_.includes(intentResolves,"serviceWithService")){
-    let session = req.sessionAttributes;
-    if (_.has(session, "zone")){
-      var zone = session.zone
-    }else{
-      var zone = {"actionable":[],"speakable":[]}
-    }
-    return matcherService.avaiable(zone.actionable,req.slot('SERVICE'))
-    .then(function(ret){
-      log.error('resovler.serviceWithService - matched Services: '+JSON.stringify(ret));
-      req.getSession().set("service", ret);
-    })
-    .thenResolve(req)
-    .fail( function(err){
-      log.info('resovler.serviceWithService - did not find match')
-      return q(req);
-      //throw err;
-    });
-  }else{
-    log.info('resovler.serviceWithService - did not try: '+intentResolves)
-    return q(req);
-  }
-}
-
-function commandWithCommand (req,intentResolves){
-  log.debug('resovler.commandWithCommand - start')
-  if (_.includes(intentResolves,"commandWithCommand")){
-    return matcherCommand.commandMatcher(req.slot('COMMANDREQ'))
-    .then(function(ret) {
-      log.error('resovler.commandWithCommand - matched command: '+JSON.stringify(ret));
-      req.getSession().set("command", ret);
-    })
-    .thenResolve(req)
-    .fail(function(err) {//service could not be found
-      log.info('resovler.commandWithCommand - err: '+JSON.stringify(err))
-      if (err.type === "endSession"){
-        if (!_.has(err,"voiceMessage")){
-          err.voiceMessage = voiceMessages["error"][err.exception]
-        }
-        throw err;
       }
-      //throw err;
+
+      return serviceObj;
     });
-  }else{
-    log.info('resovler.commandWithCommand - did not try: '+intentResolves)
-    return q(req);
-  }
 }
 
-function rangeWithRange(req,intentResolves){
-  log.debug('resovler.rangeWithRange - start')
-  if (_.includes(intentResolves,"rangeWithRange")){
-    return matcherWord.range(req.slot('RANGE'))
-    .then(function(ret){
-      log.error('resovler.rangeWithRange - matched range: '+JSON.stringify(ret));
-      req.getSession().set("prams", ret);
-    })
-    .thenResolve(req)
-    .fail(function(err) {//range could not be matched
-      log.info('resovler.rangeWithRange - err: '+JSON.stringify(err))
-      //if (err.type === "endSession"){
-      //  if (!_.has(err,"voiceMessage")){
-      //    err.voiceMessage = voiceMessages["error"][err.exception]
-      //  }
-      //  throw err;
-      //}
-    });
-  }else{
-  log.info('resovler.rangeWithRange - did not try: '+intentResolves)
-  return q(req);
-  }
-}
-
-function channelWithName(req,intentResolves){
-  log.debug('resovler.channelWithName - start')
-  if (_.includes(intentResolves,"channelWithName")){
-    if (!req.slot('CHANNEL')){
-      return
-    }
-    let session = req.sessionAttributes;
-    if (_.has(session, "zone")){
-      log.error("session.zone.actionable: "+session.zone.actionable)
-      log.error("session.zone.actionable[0]: "+session.zone.actionable[0])
-      return matcherChannel.getChannel(session.zone.actionable[0],req.slot('CHANNEL'))
-      .then(function (ret){
-        log.error('resovler.channelWithName - matched channel: '+JSON.stringify(ret));
-        req.getSession().set("channel", ret);
-      })
-      .thenResolve(req)
-      .fail(function(err) {//range could not be matched
-        log.info('resovler.channelWithName - err: '+JSON.stringify(err))
-        if (err.type === "endSession"){
-          if (!_.has(err,"voiceMessage")){
-            err.voiceMessage = voiceMessages["error"][err.exception]+session.zone.actionable[0]
+function getServiceNames(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+    .then(function(obj) {
+      obj = obj.ServiceOrderPerZone;
+      
+      var sourceComponent = [];
+      var serviceAlias = [];
+      
+      for (var key in obj) {
+        for (var key2 in obj[key]) {
+          let value = obj[key][key2];
+          let type = _.get(value, 'Service Type');
+          
+          const disabledTypes = [
+            "SVC_GEN_GENERIC",
+            "SVC_ENV_LIGHTING",
+            "SVC_ENV_HVAC",
+            "SVC_ENV_SHADE",
+            "SVC_SETTINGS_STEREO",
+            "SVC_SETTINGS_SURROUNDSOUND",
+            "SVC_ENV_GENERALRELAYCONTROLLEDDEVICE",
+            "nonService",
+            "SVC_ENV_SECURITYCAMERA"
+          ];
+          
+          if (value.Enabled === 1 && (!type || !_.includes(disabledTypes, type))) {
+            sourceComponent.push(value["Source Component"]);
+            serviceAlias.push(value["Alias"]);
           }
-          throw err;
+        }
+      }
+      
+      sourceComponent = _.uniq(sourceComponent);
+      serviceAlias = _.uniq(serviceAlias);
+      
+      return {
+        "sourceComponent": sourceComponent,
+        "serviceAlias": serviceAlias
+      };
+    });
+}
+
+function getZoneOrganization(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+    .then(function(obj) {
+      obj = obj.RPMZoneOrderList;
+      var retObj = {};
+      var retArray = [];
+
+      for (var key in obj) {
+        var zoneGroupName = obj[key]["RPMGroupName"];
+        retArray.push(zoneGroupName);
+
+        var zoneGroupsObj = obj[key]["Children"];
+        var dic = {};
+
+        Object.keys(zoneGroupsObj).forEach(function(key2) {
+          let value = zoneGroupsObj[key2];
+          dic[key2] = value["Identifier"];
+        });
+
+        retObj[zoneGroupName] = dic;
+      }
+
+      return [retObj, retArray];
+    });
+}
+
+function getChannels(plistFile) {
+  return q.nfcall(plist.readFile, plistFile)
+    .then(function(obj) {
+      var ret = {};
+      var channelNameArray = [];
+
+      Object.keys(obj).forEach(function(key) {
+        var zoneChannelNameArray = [];
+        var keyArray = key.split('-');
+        
+        if (keyArray[4] === 'SVC_AV_TV') {
+          var zoneChans = {};
+          
+          Object.keys(obj[key]).forEach(function(value, key) {
+            _.set(zoneChans, value.Name, key);
+            zoneChannelNameArray.push(value.Name);
+          });
+          
+          var serviceName = keyArray[1];
+          var zoneObj = {};
+          
+          _.set(zoneObj, serviceName, zoneChans);
+          _.set(ret, keyArray[0], zoneObj);
+          channelNameArray = zoneChannelNameArray;
         }
       });
-    }else{
-      log.error('resovler.channelWithName - request was missing zone');
-    }
-  }else{
-  log.info('resovler.channelWithName - did not try: '+intentResolves)
-  return q(req);
-  }
-}
-
-function sceneWithScene(req,intentResolves){
-  log.debug('resovler.sceneWithScene - start')
-  if (_.includes(intentResolves,"sceneWithScene")){
-    if (!req.slot('SCENE')){
-      return
-    }
-    return matchersScene.getScene(req.slot('SCENE'))
-    .then(function (ret){
-      log.error('resovler.sceneWithScene - matched scene: '+JSON.stringify(ret));
-      req.getSession().set("scene", ret);
-    })
-    .thenResolve(req)
-    .fail(function(err) {//range could not be matched
-      log.info('resovler.sceneWithScene - err: '+JSON.stringify(err))
-      if (err.type === "endSession"){
-        if (!_.has(err,"voiceMessage")){
-          err.voiceMessage = "this needs something..."//voiceMessages["error"][err.exception]+session.zone.actionable[0]
-        }
-        throw err;
-      }
+      
+      channelNameArray = _.uniq(channelNameArray);
+      
+      return [ret, channelNameArray];
     });
-  }
-  log.info('resovler.sceneWithScene - did not try: '+intentResolves)
-  return q(req);
 }
-
-
 
 module.exports = {
-  zoneWithZone:zoneWithZone,
-  zoneWithService:zoneWithService,
-  serviceWithService:serviceWithService,
-  commandWithCommand:commandWithCommand,
-  rangeWithRange:rangeWithRange,
-  channelWithName:channelWithName,
-  sceneWithScene:sceneWithScene
-}
+  getZones,
+  getZoneServices,
+  getServiceNames,
+  getZoneOrganization,
+  getChannels
+};

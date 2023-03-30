@@ -1,45 +1,48 @@
-const
-  _ = require('lodash'),
-  action = require('../lib/actionLib'),
-  eventAnalytics = require('../lib/eventAnalytics');
+const _ = require('lodash');
+const actionLib = require('../lib/actionLib');
+const eventAnalytics = require('../lib/eventAnalytics');
 
-module.exports = function(app,callback){
-
-  var intentDictionary = {
-    'name' : 'zzzzCatchAll',
-    'version' : '3.0',
-    'description' : 'catch rogue requests',
-    'enabled' : 1,
-    'required' : {
-      'resolve': {},
-      'test':{}
+module.exports = (app, callback) => {
+  const catchAllIntent = {
+    name: 'zzzzCatchAll',
+    version: '3.0',
+    description: 'Catch rogue requests',
+    enabled: 1,
+    required: {
+      resolve: {},
+      test: {},
     },
-    'voiceMessages' : {
-      'success': ''
+    voiceMessages: {
+      success: '',
     },
-    'slots' : {'ZONE':'ZONE','ZONE_TWO':'ZONE_TWO','SERVICE':'SERVICE','COMMANDREQ':'COMMANDREQ'},
-    'utterances' : [
+    slots: {
+      zone: 'ZONE',
+      zoneTwo: 'ZONE_TWO',
+      service: 'SERVICE',
+      commandReq: 'COMMANDREQ',
+    },
+    utterances: [
       '{-|ZONE}',
       '{-|ZONE_TWO}',
       '{-|SERVICE}',
-      '{-|COMMANDREQ}'
-    ]
+      '{-|COMMANDREQ}',
+    ],
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
+  if (catchAllIntent.enabled === 1) {
+    app.intent(catchAllIntent.name, {
+      slots: catchAllIntent.slots,
+      utterances: catchAllIntent.utterances,
+    }, (req, res) => {
+      const event = new eventAnalytics.event(catchAllIntent.name);
       return app.prep(req, res)
-        .then(function(req) {
-          //this should never run
-          a.sendAlexa(['zzzzCatchAllIntnet','']);
+        .then((req) => {
+          event.sendAlexa(['zzzzCatchAllIntnet', '']);
         })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
+        .catch((err) => {
+          app.intentErr(req, res, err);
         });
-    }
-    );
+    });
   }
-  callback(intentDictionary);
+  callback(catchAllIntent);
 };

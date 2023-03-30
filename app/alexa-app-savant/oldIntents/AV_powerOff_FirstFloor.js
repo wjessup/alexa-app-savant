@@ -1,36 +1,63 @@
-//Intent includes
-var savantLib = require('../lib/savantLib');
+const matcherZone = require('../lib/matchers/zone');
+const savantLib = require('../lib/savantLib');
 
-//Intent exports
 module.change_code = 1;
-module.exports = function(app,callback){
 
-//Intent meta information
-  var intentDictionary = {
-    'name' : 'powerOff_FirstFloor',
-    'version' : '1.0',
-    'description' : 'Power off multiple known zone',
-    'enabled' : 0
-  };
+const intentDictionary = {
+  name: 'lightsOnRange',
+  version: '1.0',
+  description: 'Set lighting for AV zone with high, medium and low presets',
+  enabled: true,
+};
 
-//Intent Enable/Disable
-  if (intentDictionary.enabled === 1){
+module.exports = function (app, callback) {
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name,
+      {
+        slots: { RANGE: 'LITERAL', ZONE: 'ZONE' },
+        utterances: ['{actionPrompt} on {-|ZONE} lights to {-|RANGE}']
+      },
+      function (request, response) {
+        const range = request.slot('RANGE').toLowerCase();
+        const zone = request.slot('ZONE').replace(/the/ig, '');
 
-//Intent
-    app.intent('powerOff_FirstFloor', {
-    		"slots":{"ZONE":"ZONE"}
-    		,"utterances":["{actionPrompt} off first floor"]
-    	},function(req,res) {
-  			log.error('Power Off Intent: Turning off first floor');
-  			savantLib.serviceRequest(["Kitchen","PowerOff"],"zone");
-        savantLib.serviceRequest(["Family Room","PowerOff"],"zone");
-        savantLib.serviceRequest(["Living Room","PowerOff"],"zone");
-        savantLib.serviceRequest(["Dining Room","PowerOff"],"zone");
-  			res.say('Turning off first floor').send();
-    		return false;
-    	}
+        if (!range) {
+          const voiceMessage = 'I didn\'t understand. Please say high, medium or low.';
+          response.say(voiceMessage).send();
+          return false;
+        }
+
+        matcherZone.single(request.slot('ZONE'), function (error, cleanZone) {
+          if (error) {
+            const voiceMessage = error;
+            response.say(voiceMessage).send();
+            return;
+          }
+
+          switch (range) {
+            case 'high':
+              savantLib.serviceRequest([cleanZone], 'lighting', '', [100]);
+              break;
+            case 'medium':
+              savantLib.serviceRequest([cleanZone], 'lighting', '', [50]);
+              break;
+            case 'low':
+              savantLib.serviceRequest([cleanZone], 'lighting', '', [25]);
+              break;
+            default:
+              const voiceMessage = 'I didn\'t understand. Please say high, medium or low.';
+              response.say(voiceMessage).send();
+              return false;
+          }
+
+          const voiceMessage = `Setting ${cleanZone} lights to ${range}.`;
+          response.say(voiceMessage).send();
+        });
+
+        return false;
+      }
     );
   }
-//Return intent meta info to index
+
   callback(intentDictionary);
 };

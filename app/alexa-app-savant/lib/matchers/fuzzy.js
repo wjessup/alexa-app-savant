@@ -1,23 +1,30 @@
-const
-  _ = require('lodash'),
-  similarity = require("similarity");
+const _ = require('lodash');
+const q = require('q');
+const event = require('eventAnalytics').event;
 
-function findBest(request,library) {
-  var best = { score: 0, name:''};
-  _.forEach(library,function(entry){
-    //log.debug('request: '+request)
-    //log.debug('library: '+library)
-    var distance = similarity(request, entry)
-    log.debug(entry+' was scored: '+distance)
-    if (distance > best.score){
-      best.score = distance;
-      best.name = entry;
-      log.debug("best Match: "+best.name+" @ "+best.score)
-    }
-  })
-  return best;
+function getRange(requestedRange) {
+  const defer = q.defer();
+
+  switch (_.toLower(requestedRange)) {
+    case 'high':
+    case 'hi':
+      defer.resolve({ range: 'high' });
+      break;
+    case 'medium':
+      defer.resolve({ range: 'medium' });
+      break;
+    case 'low':
+      defer.resolve({ range: 'low' });
+      break;
+    default:
+      defer.reject({ type: 'endSession', exception: 'rangeNoMatch' });
+      break;
+  }
+
+  event.sendTime('Matching', 'word.range');
+  return defer.promise;
 }
 
 module.exports = {
-  findBest:findBest
-}
+  getRange,
+};

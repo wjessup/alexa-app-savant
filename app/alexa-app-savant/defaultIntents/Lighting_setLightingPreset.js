@@ -1,71 +1,74 @@
-const
-  action = require('../lib/actionLib'),
-  eventAnalytics = require('../lib/eventAnalytics'),
-  fs = require('fs'),
-  path = require('path'),
-  plist = require('simple-plist'),
-  savantLib = require('../lib/savantLib'),
-  _ = require('lodash'),
-  format = require('simple-fmt');
 
-module.exports = function(app,callback){
+const action = require('../lib/actionLib');
+const eventAnalytics = require('../lib/eventAnalytics');
+const fs = require('fs');
+const path = require('path');
+const plist = require('simple-plist');
+const savantLib = require('../lib/savantLib');
+const _ = require('lodash');
+const format = require('simple-fmt');
 
-  var intentDictionary = {//Intent meta information
-    'name' : 'setLightingPreset',
-    'version' : '3.0',
-    'description' : 'Set lighting Preset for AV with current value',
-    'enabled' : 1,
-    'required' : {
-      'resolve': ['zoneWithZone','zoneWithService','rangeWithRange'],
-      'test': {
-        '1' : {'scope': 'zone', 'attribute': 'actionable'},
-        '2' : {'scope': 'zone', 'attribute': 'speakable'},
-        '3' : {'scope': 'prams', 'attribute': 'range'}
-      }
-    },
-    'voiceMessages' : {
-      'success' : 'Saving lighting preset {0} in {1}'
-    },
-    'slots' : {'RANGE':'RANGE','ZONE':'ZONE'},
-    'utterances' : ['save current lighting level to {preset |} {-|RANGE} in {-|ZONE}']
-  };
-
-  if (intentDictionary.enabled === 1){
-    app.intent(intentDictionary.name, {'slots':intentDictionary.slots,'utterances':intentDictionary.utterances},
-    function(req,res) {
-      var a = new eventAnalytics.event(intentDictionary.name);
-      return app.prep(req, res)
-        .then(function (){
-          if (_.get(req.sessionAttributes,'error',{}) === 0){
-            var zone = _.get(req.sessionAttributes,'zone',{});
-            var prams = _.get(req.sessionAttributes,'prams',{});
-          }else {
-            log.error(intentDictionary.name+' - intent not run verify failed')
-            return
-          }
-          _.forEach(zone.actionable, function(zone){
-            savantLib.readStateQ(zone+'.BrightnessLevel')
-            .then(function (currentLevel){
-              log.info(intentDictionary.name+' - Saving current lighting level:'+currentLevel)
-              userPresets.volume[zone][prams.range] = currentLevel;
-              var userPresetsFile = path.resolve(__dirname,'../userFiles/userPresets.plist');
-              if (fs.existsSync(userPresetsFile)) {
-                log.error(intentDictionary.name + ' - Writing user preset');
-                plist.writeFileSync(userPresetsFile, userPresets);
-              }
-              a.sendAlexa(['setLightingPreset',prams.range,currentLevel]);
-            });
-          },prams);
-          return format(intentDictionary.voiceMessages.success,prams.range,zone.speakable)
-        })
-        .then(function (voiceMessage){
-          app.intentSuccess(req,res,app.builderSuccess(intentDictionary.name,'endSession',voiceMessage))
-        })
-        .fail(function(err) {
-          app.intentErr(req,res,err);
-        });
+const intentDictionary = {
+  name : 'setLightingPreset',
+  version : '3.0',
+  description : 'Set lighting Preset for AV with current value',
+  enabled : true,
+  required : {
+    resolve: ['zoneWithZone', 'zoneWithService', 'rangeWithRange'],
+    test: {
+      1 : { scope: 'zone', attribute: 'actionable' },
+      2 : { scope: 'zone', attribute: 'speakable' },
+      3 : { scope: 'prams', attribute: 'range' }
     }
-    );
+  },
+  voiceMessages : {
+    success : 'Saving lighting preset {0} in {1}'
+  },
+  slots : { 
+    RANGE: 'RANGE',
+    ZONE: 'ZONE'
+  },
+  utterances : ['save current lighting level to {preset |} {-|RANGE} in {-|ZONE}']
+};
+
+function getZoneAndParams(req) {
+  if (_.get(req.sessionAttributes, 'error', {}) === 0) {
+    const zone = _.get(req.sessionAttributes, 'zone', {});
+    const params = _.get(req.sessionAttributes, 'prams', {});
+    return { zone, params };
   }
+  log.error(intentDictionary.name + ' - intent not run verify failed');
+  return null;
+}
+
+function saveCurrentLightingLevel(zone, params, userPresets) {
+  zone.actionable.forEach((zoneName) => {
+    const currentLevel = savantLib.readStateQ(`${zoneName}.BrightnessLevel`);
+    log.info(intentDictionary.name + ' - Saving current lighting level:' + currentLevel);
+    userPresets.volume[zoneName][params.range] = currentLevel;
+    const userPresetsFile = path.resolve(__dirname, '../userFiles/userPresets.plist');
+    if (fs.existsSync(userPresetsFile)) {
+      log.error(intentDictionary.name + ' - Writing user preset');
+      plist.writeFileSync(userPresetsFile, userPresets);
+    }
+    new eventAnalytics.event(intentDictionary.name).sendAlexa(['setLightingPreset', params.range, currentLevel]);
+  });
+}
+
+module.exports = function(app, callback) {
+  if (intentDictionary.enabled) {
+    app.intent(intentDictionary.name, { slots: intentDictionary.slots, utterances: intentDictionary.utterances }, (req, res) => {
+      const zoneAndParams = getZoneAndParams(req);
+      if (!zoneAndParams) { return; }
+      
+      saveCurrentLightingLevel(zoneAndParams.zone, zoneAndParams.params, userPresets);
+
+      const voiceMessage = format(intentDictionary.voiceMessages.success, zoneAndParams.params.range, zoneAndParams.zone.speakable);
+      app.intentSuccess(req, res, app.builderSuccess(intentDictionary.name, 'endSession', voiceMessage));
+    }).fail((err) => {
+      app.intentErr(req,res,err);
+    });
+  }
+    
   callback(intentDictionary);
 };

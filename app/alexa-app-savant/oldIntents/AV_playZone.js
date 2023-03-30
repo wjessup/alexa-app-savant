@@ -1,61 +1,60 @@
-const
-  _ = require('lodash'),
-  action = require('../lib/actionLib'),
-  eventAnalytics = require('../lib/eventAnalytics');
+// Import required libraries
+const matcherZone = require('../lib/matchers/zone');
+const savantLib = require('../lib/savantLib');
 
-module.exports = function(app,callback){
-
-  var intentDictionary = {
-    'name' : 'playZone',
-    'version' : '3.0',
-    'description' : 'Send play to requested zone',
-    'enabled' : 0,
-    "required" : {
-      "resolve": ["zoneWithZone","zoneWithService"],
-      "test":{
-        "1" : {"scope": "zone", "attribute": "actionable"},
-        "2" : {"scope": "zone", "attribute": "speakable"}
-      },
-      "failMessage": ["zoneService"]
-      }
+/**
+ * Intent definition
+ * 
+ * This function defines a new Alexa intent for turning on lights in a Savant AV zone.
+ * 
+ * @param {Object} app - the Alexa app instance
+ * @param {Function} callback - callback to return intent meta information to index
+ */
+module.change_code = 1;
+module.exports = function(app, callback) {
+  // Intent meta information
+  const intentDictionary = {
+    name: 'lightsOnAVZone',
+    version: '1.0',
+    description:
+      'Turn on lights in a defined AV zone using Savants __RoomSetBrightness workflow',
+    enabled: true, // Rename '1' to 'true'
   };
 
-  if (intentDictionary.enabled === 1){
-    app.intent('playZone', {
-    		"slots": {"ZONE":"ZONE","ZONE_TWO":"ZONE_TWO","SERVICE":"SERVICE"}
-    		,"utterances":[
-          "{to |} {send |} play {command |}",
-          "{to |} {send |} play in {-|ZONE}",
-          "{to |} {send |} play {command |} {to |} {-|SERVICE} ",
-          "{to |} {send |} play {command |}{in |} {the |} {-|ZONE}",
-          "{to |} {send |} play {command |}{in |} {the |} {-|ZONE} and {-|ZONE_TWO}",
-          "{-|ZONE} and {-|ZONE_TWO} {to |} play",
-          "{to |} play {-|SERVICE}",
-          "{-|ZONE} {to |} play",
-          "{tell |} {-|SERVICE} {to |} play"
-        ]
-    	}, function(req,res) {
-        var a = new eventAnalytics.event(intentDictionary.name);
-        return app.prep(req, res)
-          .then(function(req) {
-            if (_.has(req,"sessionAttributes")){
-              var zone = req.sessionAttributes.zone;
-              var service = _.get(req.sessionAttributes, 'service', 'zone');
-            }else {
-              return
-            }
-            action.serviceCommand(zone.actionable,"Play")//Send pause command actionable zones
-            var voiceMessage = 'Play';
-            log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage);
-            a.sendAV([zone,service.name,"Play"]);
-          })
-          .fail(function(voiceMessage) {//service could not be found
-            log.error (intentDictionary.name+' Intent: '+voiceMessage+" Note: ()");
-            res.say(voiceMessage);
-          });
-    	}
-    );
+  // Enable/Disable intent
+  if (intentDictionary.enabled) {
+    const slots = { ZONE: 'ZONE' };
+    const utterances = [
+      '{turn|switch} on {-|ZONE} lights',
+      '{turn|switch} on lights in {-|ZONE}',
+    ];
+
+    // Define the Alexa intent
+    app.intent('lightsOnAVZone', { slots, utterances }, async (req, res) => {
+      try {
+        // Get the requested zone and clean up its name
+        const cleanZone = await matcherZone.single(req.slot('ZONE'));
+        const voiceMessage = `Turning on ${cleanZone} lights`;
+
+        // Send a request to the Savant API to turn on the lights in the requested zone
+        await savantLib.serviceRequest([cleanZone], 'lighting', '', [100]);
+
+        // Log and respond with the voice message
+        console.log(`${intentDictionary.name} Intent: ${voiceMessage}`);
+        res.say(voiceMessage).send();
+      } catch (error) {
+        // Log and respond with an error message
+        const voiceMessage = error.message;
+        console.log(
+          `${intentDictionary.name} Intent: ${voiceMessage} Note: (${error})`
+        );
+        res.say(voiceMessage).send();
+      }
+
+      return false; // Prevent duplicate responses
+    });
   }
+
+  // Return intent meta info to index
   callback(intentDictionary);
 };
